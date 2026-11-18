@@ -22,6 +22,7 @@
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
+#include "nav2_smac_planner/constants.hpp"
 
 namespace nav2_smac_planner
 {
@@ -39,6 +40,7 @@ struct SearchInfo
   float minimum_turning_radius{8.0};
   float non_straight_penalty{1.05};
   float change_penalty{0.0};
+  float direction_change_penalty{0.0};
   float reverse_penalty{2.0};
   float cost_penalty{2.0};
   float retrospective_penalty{0.015};
@@ -53,6 +55,8 @@ struct SearchInfo
   bool allow_primitive_interpolation{false};
   bool downsample_obstacle_heuristic{true};
   bool use_quadratic_cost_penalty{false};
+  float max_traversal_cost{MAX_NON_OBSTACLE_COST};
+  float max_traversal_cost_relief_radius{2.0};
 };
 
 /**

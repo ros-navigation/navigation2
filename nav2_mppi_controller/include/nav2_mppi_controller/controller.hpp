@@ -121,9 +121,9 @@ protected:
   nav2::TransformBuffer::SharedPtr tf_buffer_;
   nav2::Publisher<nav_msgs::msg::Trajectory>::SharedPtr opt_traj_pub_;
 
-  std::unique_ptr<ParametersHandler> parameters_handler_;
   Optimizer optimizer_;
   TrajectoryVisualizer trajectory_visualizer_;
+  std::unique_ptr<ParametersHandler> parameters_handler_;
 
   bool visualize_;
   int critic_index_to_visualize_;

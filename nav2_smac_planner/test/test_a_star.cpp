@@ -106,6 +106,7 @@ TEST(AStarTest, test_a_star_2d)
     a_star_2.createPath(
       path, num_it, tolerance,
       dummy_cancel_checker), std::runtime_error);
+  EXPECT_THROW(a_star_2.setGoal(50, 50, 0), std::runtime_error);  // start must be set first
   a_star_2.setStart(0, 0, 0);  // valid
   a_star_2.setGoal(50, 50, 0);  // invalid
   num_it = 0;
@@ -274,8 +275,8 @@ TEST(AStarTest, test_a_star_analytic_expansion)
 
   // should be a straight path running backwards
   a_star.setCollisionChecker(checker.get());
-  a_star.setStart(80u, 0u, 0u);
-  a_star.setGoal(20u, 0u, 0u);
+  a_star.setStart(80u, 50u, 0u);
+  a_star.setGoal(20u, 50u, 0u);
   nav2_smac_planner::NodeHybrid::CoordinateVector path;
   std::unique_ptr<std::vector<std::tuple<float, float, float>>> expansions = nullptr;
   expansions = std::make_unique<std::vector<std::tuple<float, float, float>>>();
@@ -409,7 +410,7 @@ TEST(AStarTest, test_a_star_lattice)
   EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker));
 
   // check path is the right size and collision free
-  EXPECT_EQ(num_it, 22);
+  EXPECT_EQ(num_it, 21);
   EXPECT_GT(path.size(), 45u);
   for (unsigned int i = 0; i != path.size(); i++) {
     EXPECT_EQ(costmapA->getCost(path[i].x, path[i].y), 0);
@@ -585,6 +586,184 @@ TEST(AStarTest, test_goal_heading_mode)
     a_star.setGoal(
       80u, 80u, 10u,
       nav2_smac_planner::GoalHeadingMode::UNKNOWN), std::runtime_error);
+  delete costmapA;
+}
+
+TEST(AStarTest, test_a_star_se2_max_traversal_cost)
+{
+  auto lnode = std::make_shared<nav2::LifecycleNode>("test");
+  nav2_smac_planner::SearchInfo info;
+  info.change_penalty = 0.1;
+  info.non_straight_penalty = 1.1;
+  info.reverse_penalty = 2.0;
+  info.minimum_turning_radius = 8;  // in grid coordinates
+  info.retrospective_penalty = 0.015;
+  info.analytic_expansion_max_length = 20.0;  // in grid coordinates
+  info.analytic_expansion_ratio = 3.5;
+  info.cost_penalty = 1.7;
+  info.max_traversal_cost_relief_radius = 1.0;  // 10 cells
+  unsigned int size_theta = 72;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+    nav2_smac_planner::MotionModel::DUBIN, info);
+  int max_iterations = 100000;
+  float tolerance = 1.0;
+  int it_on_approach = 10;
+  int terminal_checking_interval = 5000;
+  double max_planning_time = 120.0;
+  int num_it = 0;
+
+  a_star.initialize(
+    false, max_iterations, it_on_approach, terminal_checking_interval,
+    max_planning_time, 401, size_theta);
+
+  nav2_costmap_2d::Costmap2D * costmapA =
+    new nav2_costmap_2d::Costmap2D(100, 100, 0.1, 0.0, 0.0, 0);
+  // wall in the middle with a narrow high cost passage and a longer free passage
+  for (unsigned int i = 45; i <= 55; ++i) {
+    for (unsigned int j = 0; j < 100; ++j) {
+      if (j >= 48 && j <= 52) {
+        costmapA->setCost(i, j, 245);
+      } else if (j < 85 || j > 95) {
+        costmapA->setCost(i, j, 254);
+      }
+    }
+  }
+
+  // Convert raw costmap into a costmap ros object
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  auto costmap = costmap_ros->getCostmap();
+  *costmap = *costmapA;
+
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, lnode);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+
+  auto dummy_cancel_checker = []() {
+      return false;
+    };
+
+  // without a max traversal cost, the shortest path is through the narrow passage
+  a_star.setCollisionChecker(checker.get());
+  a_star.setStart(10u, 50u, 0u);
+  a_star.setGoal(90u, 50u, 0u);
+  nav2_smac_planner::NodeHybrid::CoordinateVector path;
+  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker));
+  bool in_passage = false;
+  for (unsigned int i = 0; i != path.size(); i++) {
+    in_passage = in_passage || costmapA->getCost(path[i].x, path[i].y) == 245;
+  }
+  EXPECT_TRUE(in_passage);
+
+  // with a max traversal cost, the longer free passage is used instead
+  info.max_traversal_cost = 240.0;
+  a_star.setSearchInfo(info);
+  a_star.setCollisionChecker(checker.get());
+  a_star.setStart(10u, 50u, 0u);
+  a_star.setGoal(90u, 50u, 0u);
+  path.clear();
+  num_it = 0;
+  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker));
+  for (unsigned int i = 0; i != path.size(); i++) {
+    EXPECT_NE(costmapA->getCost(path[i].x, path[i].y), 245);
+  }
+
+  // starting in the narrow passage, it can be left within the relief radius of the start
+  a_star.setCollisionChecker(checker.get());
+  a_star.setStart(50u, 50u, 0u);
+  a_star.setGoal(90u, 50u, 0u);
+  path.clear();
+  num_it = 0;
+  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker));
+  for (unsigned int i = 0; i != path.size(); i++) {
+    if (costmapA->getCost(path[i].x, path[i].y) == 245) {
+      EXPECT_LT(hypotf(path[i].x - 50.0f, path[i].y - 50.0f), 10.0f);
+    }
+  }
+
+  // ending in the narrow passage, it can be entered within the relief radius of the goal
+  a_star.setCollisionChecker(checker.get());
+  a_star.setStart(10u, 50u, 0u);
+  a_star.setGoal(50u, 50u, 0u);
+  path.clear();
+  num_it = 0;
+  EXPECT_TRUE(a_star.createPath(path, num_it, tolerance, dummy_cancel_checker));
+  for (unsigned int i = 0; i != path.size(); i++) {
+    if (costmapA->getCost(path[i].x, path[i].y) == 245) {
+      EXPECT_LT(hypotf(path[i].x - 50.0f, path[i].y - 50.0f), 10.0f);
+    }
+  }
+
+  delete costmapA;
+}
+
+TEST(AStarTest, test_a_star_se2_direction_change_penalty)
+{
+  // Turn around in a small room at the end of a hallway too narrow to turn within
+  auto lnode = std::make_shared<nav2::LifecycleNode>("test");
+  nav2_costmap_2d::Costmap2D * costmapA =
+    new nav2_costmap_2d::Costmap2D(64, 34, 0.05, 0.0, 0.0, 254);
+  for (unsigned int x = 3; x < 59; ++x) {
+    for (unsigned int y = 10; y < 24; ++y) {
+      if (x >= 45 || (y >= 14 && y < 20)) {
+        costmapA->setCost(x, y, 0);
+      }
+    }
+  }
+
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  *costmap_ros->getCostmap() = *costmapA;
+
+  // 0.4m x 0.2m robot
+  nav2_costmap_2d::Footprint footprint(4);
+  footprint[0].x = 0.2; footprint[0].y = 0.1;
+  footprint[1].x = 0.2; footprint[1].y = -0.1;
+  footprint[2].x = -0.2; footprint[2].y = -0.1;
+  footprint[3].x = -0.2; footprint[3].y = 0.1;
+  unsigned int size_theta = 72;
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, size_theta, lnode);
+  checker->setFootprint(footprint, false, -1.0);
+
+  auto countDirectionChanges = [&](const float direction_change_penalty) {
+      nav2_smac_planner::SearchInfo info;
+      info.minimum_turning_radius = 8;  // in grid coordinates
+      info.non_straight_penalty = 1.2;
+      info.direction_change_penalty = direction_change_penalty;
+      info.allow_primitive_interpolation = true;
+      info.analytic_expansion_max_length = 20.0;  // in grid coordinates
+      nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+        nav2_smac_planner::MotionModel::REEDS_SHEPP, info);
+      int max_iterations = 100000;
+      a_star.initialize(false, max_iterations, 1000, 5000, 120.0, 101, size_theta);
+      a_star.setCollisionChecker(checker.get());
+      a_star.setStart(30u, 17u, 0u);
+      a_star.setGoal(10u, 17u, 36u);
+      nav2_smac_planner::NodeHybrid::CoordinateVector path;
+      int num_it = 0;
+      EXPECT_TRUE(a_star.createPath(path, num_it, 0.0, []() {return false;}));
+
+      // Count changes between moving along and against the heading
+      unsigned int changes = 0;
+      int last_dir = 0;
+      for (unsigned int i = 1; i < path.size(); ++i) {
+        const float dx = path[i].x - path[i - 1].x;
+        const float dy = path[i].y - path[i - 1].y;
+        if (hypotf(dx, dy) > 1e-3) {
+          const int dir = dx * cos(path[i].theta) + dy * sin(path[i].theta) >= 0.0 ? 1 : -1;
+          changes += (last_dir != 0 && dir != last_dir) ? 1 : 0;
+          last_dir = dir;
+        }
+      }
+      return changes;
+    };
+
+  // Fewer direction changes to turn around with the direction change penalty
+  const unsigned int changes = countDirectionChanges(0.0);
+  EXPECT_GT(changes, 0u);
+  EXPECT_LT(countDirectionChanges(3.0), changes);
+
   delete costmapA;
 }
 

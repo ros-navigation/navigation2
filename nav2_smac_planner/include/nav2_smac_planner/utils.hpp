@@ -113,6 +113,18 @@ inline double findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DRO
 }
 
 /**
+* @brief Whether the cached obstacle heuristic conflicts with the max traversal cost's
+* start relief zone, which changes with the start and invalidates the cached heuristic
+* @param info Search info
+* @return If the settings conflict
+*/
+inline bool cachedHeuristicConflicts(const SearchInfo & info)
+{
+  return info.cache_obstacle_heuristic && info.max_traversal_cost < MAX_NON_OBSTACLE_COST &&
+         info.max_traversal_cost_relief_radius > 0.0f;
+}
+
+/**
  * @brief convert json to lattice metadata
  * @param[in] json json object
  * @param[out] lattice meta data

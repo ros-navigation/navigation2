@@ -57,9 +57,9 @@ TEST(Node2DTest, test_node_2d)
 
   // test construction
   unsigned char cost = static_cast<unsigned char>(1);
-  nav2_smac_planner::Node2D testA(1, ctx);
+  nav2_smac_planner::Node2D testA(44, ctx);
   testA.setCost(cost);
-  nav2_smac_planner::Node2D testB(1, ctx);
+  nav2_smac_planner::Node2D testB(44, ctx);
   testB.setCost(cost);
   EXPECT_EQ(testA.getCost(), 1.0f);
 
@@ -85,7 +85,7 @@ TEST(Node2DTest, test_node_2d)
 
   // check operator== works on index
   unsigned char costC = '2';
-  nav2_smac_planner::Node2D testC(1, ctx);
+  nav2_smac_planner::Node2D testC(44, ctx);
   testC.setCost(costC);
   EXPECT_TRUE(testA == testC);
 
@@ -102,7 +102,7 @@ TEST(Node2DTest, test_node_2d)
   EXPECT_EQ(testC.isQueued(), false);
 
   // check index
-  EXPECT_EQ(testC.getIndex(), 1u);
+  EXPECT_EQ(testC.getIndex(), 44u);
 
   // check static index functions
   EXPECT_EQ(nav2_smac_planner::Node2D::getIndex(1u, 1u, 10u), 11u);
