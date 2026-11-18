@@ -281,6 +281,53 @@ TEST_F(ConcatenatePathsTestFixture, test_transform_unavailable_fails)
     BT::NodeStatus::FAILURE);
 }
 
+TEST_F(ConcatenatePathsTestFixture, test_empty_first_path_different_frame)
+{
+  // An empty first path still sets the output frame, so its frame is checked too
+  config_->blackboard->set("path1", makePath("map", 0.0, 0));
+  config_->blackboard->set("path2", makePath("odom", 0.0, 2));
+
+  EXPECT_EQ(
+    runTree(
+      R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+          <ConcatenatePaths input_path1="{path1}" input_path2="{path2}"
+            output_path="{concat_path}"/>
+        </BehaviorTree>
+      </root>)"),
+    BT::NodeStatus::FAILURE);
+
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.stamp = node_->now();
+  transform.header.frame_id = "map";
+  transform.child_frame_id = "odom";
+  transform.transform.translation.x = 10.0;
+  transform.transform.rotation.w = 1.0;
+  transform_handler_->getBuffer()->setTransform(transform, "unit_test", true);
+
+  EXPECT_EQ(
+    runTree(
+      R"(
+      <root BTCPP_format="4">
+        <BehaviorTree ID="MainTree">
+          <ConcatenatePaths input_path1="{path1}" input_path2="{path2}" output_path="{concat_path}"
+            transform_path2="true"/>
+        </BehaviorTree>
+      </root>)"),
+    BT::NodeStatus::SUCCESS);
+
+  nav_msgs::msg::Path concat_path;
+  EXPECT_TRUE(config_->blackboard->get("concat_path", concat_path));
+  EXPECT_EQ(concat_path.header.frame_id, "map");
+  ASSERT_EQ(concat_path.poses.size(), 2u);
+  EXPECT_DOUBLE_EQ(concat_path.poses[0].pose.position.x, 10.0);
+  EXPECT_DOUBLE_EQ(concat_path.poses[1].pose.position.x, 11.0);
+  for (const auto & pose : concat_path.poses) {
+    EXPECT_EQ(pose.header.frame_id, "map");
+  }
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

@@ -51,7 +51,7 @@ inline BT::NodeStatus ConcatenatePaths::tick()
 
   const std::string & frame1 = input_path1.header.frame_id;
   const std::string & frame2 = input_path2.header.frame_id;
-  if (!input_path1.poses.empty() && !input_path2.poses.empty() &&
+  if (!input_path2.poses.empty() &&
     !frame1.empty() && !frame2.empty() && frame1 != frame2)
   {
     auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
