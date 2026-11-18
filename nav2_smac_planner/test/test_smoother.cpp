@@ -13,6 +13,7 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -265,6 +266,78 @@ TEST(SmootherTest, rejects_non_circular_footprint_collision)
   // A smoother must reject and roll back an update that creates a collision.
   EXPECT_FALSE(success);
   EXPECT_FALSE(footprint_collision);
+}
+
+TEST(SmootherTest, respects_max_traversal_cost)
+{
+  nav2_smac_planner::SmootherParams params;
+  params.tolerance_ = 2.0;
+  params.max_its_ = 1000;
+  params.w_data_ = 0.2;
+  params.w_smooth_ = 0.3;
+  params.do_refinement_ = false;
+  params.refinement_num_ = 0;
+  params.holonomic_ = false;
+
+  nav2_costmap_2d::Costmap2D costmap(
+    200, 200, 0.1, 0.0, 0.0, nav2_costmap_2d::FREE_SPACE);
+
+  // High cost, but non-lethal, area inside of the path's corner
+  for (unsigned int x = 21; x <= 40; ++x) {
+    for (unsigned int y = 100; y <= 119; ++y) {
+      costmap.setCost(x, y, 230);
+    }
+  }
+
+  auto make_path = []() {
+      nav_msgs::msg::Path path;
+      geometry_msgs::msg::PoseStamped pose;
+      for (unsigned int i = 0; i <= 5; ++i) {
+        pose.pose.position.x = 2.0;
+        pose.pose.position.y = 2.0 + 2.0 * i;
+        pose.pose.orientation =
+          nav2_util::geometry_utils::orientationAroundZAxis(i == 5 ? 0.0 : M_PI_2);
+        path.poses.push_back(pose);
+      }
+      for (unsigned int i = 1; i <= 6; ++i) {
+        pose.pose.position.x = 2.0 + 2.0 * i;
+        pose.pose.position.y = 12.0;
+        pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
+        path.poses.push_back(pose);
+      }
+      return path;
+    };
+
+  auto max_path_cost = [&](const nav_msgs::msg::Path & path) {
+      unsigned int max_cost = 0;
+      for (const auto & path_pose : path.poses) {
+        unsigned int mx, my;
+        if (costmap.worldToMap(path_pose.pose.position.x, path_pose.pose.position.y, mx, my)) {
+          max_cost = std::max(max_cost, static_cast<unsigned int>(costmap.getCost(mx, my)));
+        }
+      }
+      return max_cost;
+    };
+
+  // Without a max cost, smoothing pulls the corner into the high cost area
+  nav_msgs::msg::Path path = make_path();
+  ASSERT_EQ(max_path_cost(path), 0u);
+  SmootherWrapper smoother(params);
+  smoother.initialize(0.4);
+  EXPECT_TRUE(smoother.smooth(path, &costmap, 1.0));
+  EXPECT_EQ(max_path_cost(path), 230u);
+
+  // With a max cost below it, the update entering it is rejected and rolled back
+  nav2_smac_planner::GridCollisionChecker checker(nullptr, 72, nullptr);
+  checker.setCostmap(&costmap);
+  checker.setMaxCost(200.0f, 0.0f, 20.0f, 20.0f, 140.0f, 120.0f);
+  path = make_path();
+  SmootherWrapper max_cost_smoother(params);
+  max_cost_smoother.initialize(0.4);
+  EXPECT_FALSE(
+    max_cost_smoother.smooth(
+      path, &costmap, 1.0, std::vector<geometry_msgs::msg::Point>(), &checker));
+  EXPECT_LE(max_path_cost(path), 200u);
 }
 
 int main(int argc, char ** argv)

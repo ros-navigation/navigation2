@@ -134,14 +134,14 @@ TEST(SmacTest, test_smac_lattice)
 
   std::vector<geometry_msgs::msg::PoseStamped> no_viapoints{};
   geometry_msgs::msg::PoseStamped start, goal, viapoint;
-  start.pose.position.x = 0.0;
-  start.pose.position.y = 0.0;
+  start.pose.position.x = 1.0;
+  start.pose.position.y = 1.0;
   start.pose.orientation.w = 1.0;
-  goal.pose.position.x = 1.0;
-  goal.pose.position.y = 1.0;
+  goal.pose.position.x = 2.0;
+  goal.pose.position.y = 2.0;
   goal.pose.orientation.w = 1.0;
-  viapoint.pose.position.x = 0.5;
-  viapoint.pose.position.y = 0.5;
+  viapoint.pose.position.x = 1.5;
+  viapoint.pose.position.y = 1.5;
   viapoint.pose.orientation.w = 1.0;
   std::vector<geometry_msgs::msg::PoseStamped> viapoints{viapoint};
   auto planner = std::make_unique<LatticeWrap>();
@@ -205,8 +205,8 @@ TEST(SmacTest, test_smac_lattice)
 
 
   // corner case where the start and goal are on the same cell
-  goal.pose.position.x = 0.01;
-  goal.pose.position.y = 0.01;
+  goal.pose.position.x = 1.01;
+  goal.pose.position.y = 1.01;
 
   nav_msgs::msg::Path plan = planner->createPlan(start, goal, no_viapoints, dummy_cancel_checker);
   EXPECT_EQ(plan.poses.size(), 1);  // single point path
@@ -340,6 +340,23 @@ TEST(SmacTest, test_smac_lattice_reconfigure)
   EXPECT_NO_THROW(planner->callDynamicParams(parameters));
   EXPECT_EQ(planner->getCoarseSearchResolution(), 4);
 
+  // Max traversal cost and relief radius, invalid negative values are ignored
+  parameters = {rclcpp::Parameter("test.cache_obstacle_heuristic", false),
+    rclcpp::Parameter("test.max_traversal_cost", 240),
+    rclcpp::Parameter("test.max_traversal_cost_relief_radius", 1.5)};
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  parameters = {rclcpp::Parameter("test.max_traversal_cost", -1)};
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  parameters = {rclcpp::Parameter("test.max_traversal_cost", 253)};
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost, 240.0f);
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost_relief_radius, 1.5f);
+
+  // Cached obstacle heuristic cannot be used with the max traversal cost's relief radius
+  parameters = {rclcpp::Parameter("test.cache_obstacle_heuristic", true)};
+  EXPECT_NO_THROW(planner->callDynamicParams(parameters));
+  EXPECT_FALSE(planner->getSearchInfo().cache_obstacle_heuristic);
+
 
   // So instead, let's call manually on a change
   parameters.clear();
@@ -364,9 +381,13 @@ TEST(SmacTest, test_smac_lattice_omni_configure)
 
   nodeLattice->declare_parameter("test_omni.lattice_filepath", omni_filepath);
   nodeLattice->declare_parameter("test_omni.allow_reverse_expansion", true);
+  nodeLattice->declare_parameter("test_omni.max_traversal_cost", 253);
 
   auto planner = std::make_unique<LatticeWrap>();
   planner->configure(nodeLattice, "test_omni", nullptr, costmap_ros);
+
+  // Out of range max traversal cost is set to the max non-obstacle cost
+  EXPECT_EQ(planner->getSearchInfo().max_traversal_cost, 252.0f);
 
   // Verify OMNI was loaded and reverse expansion was auto-disabled
   EXPECT_EQ(planner->getMotionModelName(), "omni");

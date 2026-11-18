@@ -13,9 +13,12 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+#include <algorithm>
 #include <cmath>
+#include <limits>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -84,6 +87,8 @@ TEST(NodeHybridTest, test_node_hybrid)
   EXPECT_TRUE(std::isnan(testA.getCost()));
 
   // check collision checking
+  testA.pose.x = 5;
+  testA.pose.y = 5;
   EXPECT_EQ(testA.isNodeValid(false, checker.get()), true);
 
   // check traversal cost computation
@@ -254,8 +259,8 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
     costmap->setCost(50, j, 254);
   }
   ctx->obstacle_heuristic->resetObstacleHeuristic(
-    costmap_ros, testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y,
-    info.downsample_obstacle_heuristic);
+    checker.get(), testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y,
+    info.downsample_obstacle_heuristic, false);
   float wide_passage_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
     testA.pose,
     info.cost_penalty,
@@ -271,8 +276,9 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
     costmap->setCost(50, j, 250);
   }
   ctx->obstacle_heuristic->resetObstacleHeuristic(
-    costmap_ros,
-    testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y, info.downsample_obstacle_heuristic);
+    checker.get(),
+    testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y,
+    info.downsample_obstacle_heuristic, false);
   float two_passages_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
     testA.pose,
     info.cost_penalty,
@@ -280,6 +286,38 @@ TEST(NodeHybridTest, test_obstacle_heuristic)
     info.downsample_obstacle_heuristic);
 
   EXPECT_EQ(wide_passage_cost, two_passages_cost);
+
+  // then block the wide passage to make sure the cost spreads through the narrow path
+  for (unsigned int j = 0; j < 40; ++j) {
+    costmap->setCost(50, j, 254);
+    costmap->setCost(51, j, 254);
+  }
+  ctx->obstacle_heuristic->resetObstacleHeuristic(
+    checker.get(),
+    testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y,
+    info.downsample_obstacle_heuristic, false);
+  float narrow_passage_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
+    testA.pose,
+    info.cost_penalty,
+    info.use_quadratic_cost_penalty,
+    info.downsample_obstacle_heuristic);
+
+  EXPECT_GT(narrow_passage_cost, wide_passage_cost);
+
+  // then set a max traversal cost below the narrow passage's cost to make sure it's
+  // not traversable and the start is unreachable (0)
+  checker->setMaxCost(240.0f, 0.0f, testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y);
+  ctx->obstacle_heuristic->resetObstacleHeuristic(
+    checker.get(),
+    testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y,
+    info.downsample_obstacle_heuristic, false);
+  float max_cost_passage_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
+    testA.pose,
+    info.cost_penalty,
+    info.use_quadratic_cost_penalty,
+    info.downsample_obstacle_heuristic);
+
+  EXPECT_EQ(max_cost_passage_cost, 0.0f);
 
   delete costmapA;
 }
@@ -357,8 +395,8 @@ TEST(NodeHybridTest, test_obstacle_heuristic_no_downsample)
     costmap->setCost(50, j, 254);
   }
   ctx->obstacle_heuristic->resetObstacleHeuristic(
-    costmap_ros, testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y,
-    info.downsample_obstacle_heuristic);
+    checker.get(), testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y,
+    info.downsample_obstacle_heuristic, false);
   float wide_passage_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
     testA.pose,
     info.cost_penalty,
@@ -374,8 +412,9 @@ TEST(NodeHybridTest, test_obstacle_heuristic_no_downsample)
     costmap->setCost(50, j, 250);
   }
   ctx->obstacle_heuristic->resetObstacleHeuristic(
-    costmap_ros,
-    testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y, info.downsample_obstacle_heuristic);
+    checker.get(),
+    testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y,
+    info.downsample_obstacle_heuristic, false);
   float two_passages_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
     testA.pose,
     info.cost_penalty,
@@ -384,7 +423,149 @@ TEST(NodeHybridTest, test_obstacle_heuristic_no_downsample)
 
   EXPECT_EQ(wide_passage_cost, two_passages_cost);
 
+  // then block the wide passage to make sure the cost spreads through the narrow path
+  for (unsigned int j = 0; j < 40; ++j) {
+    costmap->setCost(50, j, 254);
+  }
+  ctx->obstacle_heuristic->resetObstacleHeuristic(
+    checker.get(),
+    testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y,
+    info.downsample_obstacle_heuristic, false);
+  float narrow_passage_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
+    testA.pose,
+    info.cost_penalty,
+    info.use_quadratic_cost_penalty,
+    info.downsample_obstacle_heuristic);
+
+  EXPECT_GT(narrow_passage_cost, wide_passage_cost);
+
+  // then set a max traversal cost below the narrow passage's cost to make sure it's
+  // not traversable and the start is unreachable (0)
+  checker->setMaxCost(240.0f, 0.0f, testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y);
+  ctx->obstacle_heuristic->resetObstacleHeuristic(
+    checker.get(),
+    testA.pose.x, testA.pose.y, testB.pose.x, testB.pose.y,
+    info.downsample_obstacle_heuristic, false);
+  float max_cost_passage_cost = ctx->obstacle_heuristic->getObstacleHeuristic(
+    testA.pose,
+    info.cost_penalty,
+    info.use_quadratic_cost_penalty,
+    info.downsample_obstacle_heuristic);
+
+  EXPECT_EQ(max_cost_passage_cost, 0.0f);
+
   delete costmapA;
+}
+
+TEST(NodeHybridTest, test_obstacle_heuristic_searched_costmap)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  nav2_smac_planner::SearchInfo info;
+  info.downsample_obstacle_heuristic = false;
+  nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+    nav2_smac_planner::MotionModel::DUBIN, info);
+  int max_iterations = 10000;
+  a_star.initialize(false, max_iterations, 10, 5000, 120.0, 401, 72);
+
+  // costmap ros' costmap is free, while the searched costmap (e.g. downsampled 2x) has a wall
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  *costmap_ros->getCostmap() = nav2_costmap_2d::Costmap2D(100, 100, 0.1, 0.0, 0.0, 0);
+  nav2_costmap_2d::Costmap2D * costmapA = new nav2_costmap_2d::Costmap2D(
+    50, 50, 0.2, 0.0, 0.0, 0);
+  for (unsigned int j = 0; j < 50; ++j) {
+    costmapA->setCost(25, j, 254);
+  }
+
+  std::unique_ptr<nav2_smac_planner::GridCollisionChecker> checker =
+    std::make_unique<nav2_smac_planner::GridCollisionChecker>(costmap_ros, 72, node);
+  checker->setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+  checker->setCostmap(costmapA);
+  a_star.setCollisionChecker(checker.get());
+  auto ctx = a_star.getContext();
+
+  // the wall in the searched costmap makes the start unreachable from the goal (0)
+  ctx->obstacle_heuristic->resetObstacleHeuristic(
+    checker.get(), 5u, 25u, 45u, 25u, info.downsample_obstacle_heuristic, false);
+  float cost = ctx->obstacle_heuristic->getObstacleHeuristic(
+    nav2_smac_planner::NodeHybrid::Coordinates(5.0f, 25.0f, 0.0f),
+    info.cost_penalty,
+    info.use_quadratic_cost_penalty,
+    info.downsample_obstacle_heuristic);
+  EXPECT_EQ(cost, 0.0f);
+
+  delete costmapA;
+}
+
+TEST(NodeHybridTest, test_obstacle_heuristic_reaches_valid_poses)
+{
+  // Every valid pose must be reachable by the obstacle heuristic
+  auto node = std::make_shared<nav2::LifecycleNode>("test");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  const unsigned int size = 100;
+  *costmap_ros->getCostmap() = nav2_costmap_2d::Costmap2D(size, size, 0.05, 0.0, 0.0, 0);
+  nav2_costmap_2d::Costmap2D * costmap = costmap_ros->getCostmap();
+
+  // Inflated pillars, one near the start to use its relief zone, and an unknown area
+  const std::vector<std::pair<int, int>> pillars = {{20, 40}, {50, 30}, {50, 75}, {78, 60}};
+  for (unsigned int x = 0; x < size; ++x) {
+    for (unsigned int y = 0; y < size; ++y) {
+      float d = std::numeric_limits<float>::max();
+      for (const auto & p : pillars) {
+        d = std::min(
+          d, std::hypot(static_cast<float>(x) - p.first, static_cast<float>(y) - p.second));
+      }
+      unsigned char cost = 254;
+      if (d > 4.0f) {
+        cost = static_cast<unsigned char>(252.0f * std::exp(-0.15f * (d - 4.0f)));
+      } else if (d > 0.0f) {
+        cost = 253;
+      }
+      costmap->setCost(x, y, cost);
+    }
+  }
+  for (unsigned int x = 60; x < 70; ++x) {
+    for (unsigned int y = 15; y < 30; ++y) {
+      costmap->setCost(x, y, 255);
+    }
+  }
+
+  const float start_x = 20.3f, start_y = 47.6f, goal_x = 85.2f, goal_y = 50.4f;
+  for (const bool downsample : {false, true}) {
+    nav2_smac_planner::SearchInfo info;
+    info.downsample_obstacle_heuristic = downsample;
+    nav2_smac_planner::AStarAlgorithm<nav2_smac_planner::NodeHybrid> a_star(
+      nav2_smac_planner::MotionModel::DUBIN, info);
+    int max_iterations = 10000;
+    a_star.initialize(true, max_iterations, 10, 5000, 120.0, 401, 72);
+
+    nav2_smac_planner::GridCollisionChecker checker(costmap_ros, 72, node);
+    checker.setFootprint(nav2_costmap_2d::Footprint(), true, 0.0);
+    a_star.setCollisionChecker(&checker);
+    auto ctx = a_star.getContext();
+
+    checker.setMaxCost(200.0f, 10.0f, start_x, start_y, goal_x, goal_y);
+
+    ctx->obstacle_heuristic->resetObstacleHeuristic(
+      &checker, start_x, start_y, goal_x, goal_y, downsample, true);
+
+    unsigned int num_valid = 0;
+    for (float x = 0.0f; x < size; x += 0.25f) {
+      for (float y = 0.0f; y < size; y += 0.25f) {
+        if (checker.inCollision(x, y, 0.0f, true)) {
+          continue;
+        }
+        num_valid++;
+        const float h = ctx->obstacle_heuristic->getObstacleHeuristic(
+          nav2_smac_planner::NodeHybrid::Coordinates(
+            std::floor(x), std::floor(y), 0.0f),
+          info.cost_penalty, info.use_quadratic_cost_penalty, downsample);
+        ASSERT_GT(h, 0.0f) << "x: " << x << " y: " << y << " downsample: " << downsample;
+      }
+    }
+    EXPECT_GT(num_valid, 0u);
+  }
 }
 
 TEST(NodeHybridTest, test_node_debin_neighbors)

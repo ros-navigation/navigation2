@@ -42,7 +42,7 @@ static const double PLANNER_TOLERANCE{0.1};
 // Some parameters for costmap
 static const int COSTMAP_HEIGHT_METERS{1};
 static const int COSTMAP_WIDTH_METERS{1};
-static const double COSTMAP_RESOLUTION{0.1};
+static const double COSTMAP_RESOLUTION{0.025};
 static const std::vector<std::string> COSTMAP_PLUGINS{"static_layer"};
 static const char COSTMAP_LAYER_NAME[]{"nav2_costmap_2d::StaticLayer"};
 

@@ -20,6 +20,7 @@
 #include <memory>
 #include "nav2_smac_planner/constants.hpp"
 #include "nav2_smac_planner/types.hpp"
+#include "nav2_smac_planner/collision_checker.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 
 namespace nav2_smac_planner
@@ -55,14 +56,16 @@ public:
 
   /**
    * @brief Compute the wavefront heuristic
-   * @param costmap Costmap to use
+   * @param collision_checker Collision checker for the costmap and max traversal cost
    * @param goal_coords Coordinates to start heuristic expansion at
+   * @param traverse_unknown Whether unknown space is traversable
    */
   void resetObstacleHeuristic(
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_i,
+    GridCollisionChecker * collision_checker,
     const unsigned int & start_x, const unsigned int & start_y,
     const unsigned int & goal_x, const unsigned int & goal_y,
-    const bool downsample_obstacle_heuristic);
+    const bool downsample_obstacle_heuristic,
+    const bool traverse_unknown);
 
   /**
    * @brief Compute the Obstacle heuristic
@@ -86,9 +89,22 @@ public:
   }
 
 protected:
+  /**
+   * @brief Whether a heuristic cell is traversable, if any of its costmap cells are valid
+   * @param idx Heuristic cell index
+   * @param size_x Size of the heuristic grid in X
+   * @param scale Number of costmap cells per heuristic cell along each axis
+   * @param cost Lowest valid cost of its costmap cells
+   * @return If the cell is traversable
+   */
+  bool isCellOpen(
+    const unsigned int idx, const unsigned int size_x, const unsigned int scale,
+    float & cost) const;
+
   LookupTable obstacle_heuristic_lookup_table_;
   ObstacleHeuristicQueue obstacle_heuristic_queue_;
-  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros;
+  GridCollisionChecker * collision_checker_{nullptr};
+  bool traverse_unknown_{true};
 };
 
 }  // namespace nav2_smac_planner
