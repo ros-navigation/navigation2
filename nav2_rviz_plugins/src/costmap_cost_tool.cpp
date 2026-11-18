@@ -30,7 +30,7 @@ CostmapCostTool::CostmapCostTool()
   auto_deactivate_property_ = new rviz_common::properties::BoolProperty(
     "Single click", true,
     "Switch away from this tool after one click.",
-    getPropertyContainer(), SLOT(updateAutoDeactivate()), this);
+    getPropertyContainer(), nullptr, this);
 }
 
 CostmapCostTool::~CostmapCostTool() {}

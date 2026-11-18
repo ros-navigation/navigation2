@@ -21,7 +21,9 @@
 // xtensor creates warnings that needs to be ignored as we are building with -Werror
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Warray-bounds"
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
 #include <xtensor/xtensor.hpp>
 #include <xtensor/xview.hpp>
 #pragma GCC diagnostic pop
@@ -46,6 +48,10 @@
 #include "nav2_mppi_controller/tools/noise_generator.hpp"
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 #include "nav2_mppi_controller/tools/utils.hpp"
+
+#ifdef __APPLE__
+  #include "nav2_mppi_controller/tools/apple_utils.hpp"
+#endif
 
 namespace mppi
 {
@@ -271,6 +277,26 @@ protected:
 
   geometry_msgs::msg::Twist last_command_vel_;
 };
+
+template<typename E>
+inline auto cumsum_1d(const E & expression)
+{
+  #ifdef __APPLE__
+  return utils::manual_cumsum_1d(expression);
+  #else
+  return xt::cumsum(expression, 0);
+  #endif
+}
+
+template<typename E>
+inline auto cumsum_2d(const E & expression, int axis)
+{
+ #ifdef __APPLE__
+  return utils::manual_cumsum_2d(expression, axis);
+ #else
+  return xt::cumsum(expression, axis);
+ #endif
+}
 
 }  // namespace mppi
 

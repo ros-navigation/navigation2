@@ -43,29 +43,35 @@ nav2_package()
 
 include(CheckCXXCompilerFlag)
 
-check_cxx_compiler_flag("-mno-avx512f" COMPILER_SUPPORTS_AVX512)
-check_cxx_compiler_flag("-msse4.2" COMPILER_SUPPORTS_SSE4)
-check_cxx_compiler_flag("-mavx2" COMPILER_SUPPORTS_AVX2)
-check_cxx_compiler_flag("-mfma" COMPILER_SUPPORTS_FMA)
+# x86 SIMD flags: clang on arm64 accepts them in the check but ignores them when compiling
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|i[3-6]86)$")
+  check_cxx_compiler_flag("-mno-avx512f" COMPILER_SUPPORTS_AVX512)
+  check_cxx_compiler_flag("-msse4.2" COMPILER_SUPPORTS_SSE4)
+  check_cxx_compiler_flag("-mavx2" COMPILER_SUPPORTS_AVX2)
+  check_cxx_compiler_flag("-mfma" COMPILER_SUPPORTS_FMA)
 
-if(COMPILER_SUPPORTS_AVX512)
-  add_compile_options(-mno-avx512f)
-endif()
+  if(COMPILER_SUPPORTS_AVX512)
+    add_compile_options(-mno-avx512f)
+  endif()
 
-if(COMPILER_SUPPORTS_SSE4)
-  add_compile_options(-msse4.2)
-endif()
+  if(COMPILER_SUPPORTS_SSE4)
+    add_compile_options(-msse4.2)
+  endif()
 
-if(COMPILER_SUPPORTS_AVX2)
-  add_compile_options(-mavx2)
-endif()
+  if(COMPILER_SUPPORTS_AVX2)
+    add_compile_options(-mavx2)
+  endif()
 
-if(COMPILER_SUPPORTS_FMA)
-  add_compile_options(-mfma)
+  if(COMPILER_SUPPORTS_FMA)
+    add_compile_options(-mfma)
+  endif()
 endif()
 
 # If building one the same hardware to be deployed on, try `-march=native`!
-add_compile_options(-O3 -finline-limit=10000000 -ffp-contract=fast -ffast-math -mtune=generic)
+add_compile_options(-O3 -ffp-contract=fast -ffast-math -mtune=generic)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  add_compile_options(-finline-limit=10000000)
+endif()
 
 add_library(mppi_controller SHARED
   src/controller.cpp
@@ -96,7 +102,7 @@ add_library(mppi_critics SHARED
 set(libraries mppi_controller mppi_critics)
 
 foreach(lib IN LISTS libraries)
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Clang: use C++20 and optimization, omit -fconcepts
     target_compile_features(${lib} PUBLIC cxx_std_20)
   else()
