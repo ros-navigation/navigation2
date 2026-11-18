@@ -221,7 +221,7 @@ bool ObstacleHeuristic::isCellOpen(
     return is_valid(cost, x0, y0);
   }
 
-  // With downsampling, check if the heuristic cell's window is interior to bypass futher checks
+  // With downsampling, check if the heuristic cell's window is interior to bypass further checks
   const bool interior =
     !collision_checker_->outsideRange(costmap_size_x, x0) &&
     !collision_checker_->outsideRange(costmap_size_x, x0 + scale - 1) &&
