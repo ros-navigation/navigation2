@@ -363,7 +363,8 @@ TEST(AStarTest, analytic_expansion_wraps_heading_bin)
   nav2_smac_planner::AStarAlgorithm<Node> a_star(
     nav2_smac_planner::MotionModel::REEDS_SHEPP, info);
   int max_iterations = 10000;
-  a_star.initialize(false, max_iterations, 1000, 5000, 5.0, 401, size_theta);
+  // Small lookup table: this test never queries the heuristic and a large one is slow to build
+  a_star.initialize(false, max_iterations, 1000, 5000, 5.0, 21, size_theta);
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>();
   costmap_ros->on_configure(rclcpp_lifecycle::State());
   *costmap_ros->getCostmap() = nav2_costmap_2d::Costmap2D(400, 400, 0.05, 0, 0, 0);
