@@ -25,6 +25,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/msg/costmap_meta_data.hpp"
+#include "nav2_msgs/msg/costmap_update.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "map_msgs/msg/occupancy_grid_update.hpp"
 #include "sensor_msgs/msg/range.hpp"
@@ -292,6 +293,17 @@ bool validateMsg(const nav2_msgs::msg::Costmap & msg)
   const uint32_t num_cells = msg.metadata.size_x * msg.metadata.size_y;
 
   if (msg.data.size() != static_cast<size_t>(num_cells)) {
+    return false;
+  }
+
+  return true;
+}
+
+bool validateMsg(const nav2_msgs::msg::CostmapUpdate & msg)
+{
+  if (!validateMsg(msg.header)) {return false;}
+  if (msg.size_x == 0 || msg.size_y == 0) {return false;}
+  if (msg.data.size() != static_cast<size_t>(msg.size_x) * msg.size_y) {
     return false;
   }
 
