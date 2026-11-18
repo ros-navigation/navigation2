@@ -33,7 +33,7 @@ void NoiseGenerator::initialize(
   ndistribution_wz_ = std::normal_distribution(0.0f, settings_.sampling_std.wz);
 
   auto getParam = param_handler->getParamGetter(name);
-  getParam(regenerate_noises_, "regenerate_noises", false);
+  getParam(regenerate_noises_, "regenerate_noises", false, ParameterType::Static);
 
   if (regenerate_noises_) {
     noise_thread_ = std::thread(std::bind(&NoiseGenerator::noiseThread, this));
