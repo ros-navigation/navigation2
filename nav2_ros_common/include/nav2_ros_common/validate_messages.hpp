@@ -301,13 +301,13 @@ bool validateMsg(const nav2_msgs::msg::Costmap & msg)
 
 bool validateMsg(const nav2_msgs::msg::CostmapUpdate & msg)
 {
-    if (!validateMsg(msg.header)) {return false;}
-    if (msg.size_x == 0 || msg.size_y == 0) { return false;}
-    if (msg.data.size() != static_cast<size_t>(msg.size_x) * msg.size_y) {
-            return false;
-    }
+  if (!validateMsg(msg.header)) {return false;}
+  if (msg.size_x == 0 || msg.size_y == 0) {return false;}
+  if (msg.data.size() != static_cast<size_t>(msg.size_x) * msg.size_y) {
+    return false;
+  }
 
-    return true;
+  return true;
 }
 
 }  //  namespace nav2
