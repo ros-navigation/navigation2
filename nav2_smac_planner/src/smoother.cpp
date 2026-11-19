@@ -296,7 +296,7 @@ void Smoother::findBoundaryExpansion(
   }
 
   std::vector<double> reals;
-  double theta(0.0), x(0.0), y(0.0);
+  double x(0.0), y(0.0);
   double x_m = start.position.x;
   double y_m = start.position.y;
 
@@ -304,9 +304,6 @@ void Smoother::findBoundaryExpansion(
   for (double i = 0; i <= expansion.path_end_idx; i++) {
     state_space_->interpolate(from(), to(), i / expansion.path_end_idx, s());
     reals = s.reals();
-    // Make sure in range [0, 2PI)
-    theta = (reals[2] < 0.0) ? (reals[2] + 2.0 * M_PI) : reals[2];
-    theta = (theta > 2.0 * M_PI) ? (theta - 2.0 * M_PI) : theta;
     x = reals[0];
     y = reals[1];
 
@@ -323,7 +320,7 @@ void Smoother::findBoundaryExpansion(
     y_m = y;
 
     // Store point
-    expansion.pts.emplace_back(x, y, theta);
+    expansion.pts.emplace_back(x, y, reals[2]);
   }
 }
 
