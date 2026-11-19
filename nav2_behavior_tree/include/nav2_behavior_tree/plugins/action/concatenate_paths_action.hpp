@@ -32,8 +32,8 @@ namespace nav2_behavior_tree
  * @brief A BT::ActionNodeBase to concatenate two paths
  *
  * Both paths must be in the same frame. If their frames differ the node fails,
- * unless transform_to_path1_frame is set, in which case input_path2 is transformed
- * into the frame of input_path1 before the poses are appended.
+ * unless allow_frame_transform is set, in which case input_path2 is transformed into
+ * the frame of input_path1 before the poses are appended.
  *
  * Usage in XML:
  * @code
@@ -62,7 +62,7 @@ public:
       BT::InputPort<nav_msgs::msg::Path>("input_path1", "Input Path 1 to cancatenate"),
       BT::InputPort<nav_msgs::msg::Path>("input_path2", "Input Path 2 to cancatenate"),
       BT::InputPort<bool>(
-        "transform_to_path1_frame", false,
+        "allow_frame_transform", false,
         "Transform input_path2 into the frame of input_path1 when the frames differ, "
         "instead of failing"),
       BT::OutputPort<nav_msgs::msg::Path>("output_path", "Paths concatenated"),
@@ -86,7 +86,7 @@ private:
    */
   BT::NodeStatus tick() override;
 
-  nav2::LifecycleNode::SharedPtr node_;
+  rclcpp::Logger logger_{rclcpp::get_logger("ConcatenatePaths")};
   nav2::TransformBuffer::SharedPtr tf_;
   double transform_tolerance_{0.1};
 };
