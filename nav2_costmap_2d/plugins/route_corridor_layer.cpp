@@ -49,55 +49,47 @@ void RouteCorridorLayer::onInitialize()
   if (!node) {
     throw std::runtime_error("RouteCorridorLayer: failed to lock node");
   }
-  
-  // Declare parameters
-  declareParameter("enabled", rclcpp::ParameterValue(true));
-  declareParameter("path_topic", rclcpp::ParameterValue(std::string("/plan")));
-  declareParameter("map_topic", rclcpp::ParameterValue("~/" + name_ + "/map"));
-  declareParameter("max_deviation", rclcpp::ParameterValue(1.0));
-  declareParameter("recovery_cost", rclcpp::ParameterValue(200));// default 200, must be in [1, 252]
-  declareParameter("goal_status_topics", rclcpp::ParameterValue(std::vector<std::string>{
-      "navigate_to_pose/_action/status", "navigate_through_poses/_action/status"}));
-  
-  // Initiate parameters
-  int recovery_cost = 200;
-  std::string map_topic;
-  std::string path_topic;
-  rclcpp::SubscriptionOptions options;
-  std::vector<std::string> goal_status_topics;
 
-  node->get_parameter(name_ + ".enabled", enabled_);
-  node->get_parameter(name_ + ".max_deviation", max_deviation_);
+  // Declare parameters
+  enabled_ =                      node->declare_or_get_parameter(name_ + ".enabled", true);
+  const auto path_topic =         node->declare_or_get_parameter<std::string>(
+                                    name_ + ".path_topic", "/plan");
+  const auto map_topic =          node->declare_or_get_parameter<std::string>(
+                                    name_ + ".map_topic", "~/" + name_ + "/map");
+  max_deviation_ =                node->declare_or_get_parameter(name_ + ".max_deviation", 1.0);
+  const auto recovery_cost =      node->declare_or_get_parameter(name_ + ".recovery_cost", 200);
+  const auto goal_status_topics = node->declare_or_get_parameter(
+                                    name_ + ".goal_status_topics",
+                                    std::vector<std::string>{
+                                      "navigate_to_pose/_action/status", "navigate_through_poses/_action/status"});
+
   if (!std::isfinite(max_deviation_) || max_deviation_ <= 0.0) {
     throw std::invalid_argument("RouteCorridorLayer: width must be positive and finite");
   }
-  node->get_parameter(name_ + ".recovery_cost", recovery_cost);
   if (recovery_cost < 1 || recovery_cost >= INSCRIBED_INFLATED_OBSTACLE) {
     throw std::invalid_argument("RouteCorridorLayer: recovery_cost must be in [1, 252]");
   }
   recovery_cost_ = static_cast<unsigned char>(recovery_cost);
   current_ = true;
-  
+
   // Create corridor map publisher
-  node->get_parameter(name_ + ".map_topic", map_topic);
   mask_pub_ = node->create_publisher<nav_msgs::msg::OccupancyGrid>(
     map_topic, rclcpp::QoS(1).transient_local().reliable());
   mask_pub_->on_activate();
-  
+
   // Path subscriber and pathCallback
-  node->get_parameter(name_ + ".path_topic", path_topic);
-  options.callback_group = callback_group_;
   path_sub_ = node->create_subscription<nav_msgs::msg::Path>(
-    joinWithParentNamespace(path_topic), rclcpp::QoS(1).reliable(),
-    std::bind(&RouteCorridorLayer::pathCallback, this, std::placeholders::_1), options);
-  
+    joinWithParentNamespace(path_topic),
+    std::bind(&RouteCorridorLayer::pathCallback, this, std::placeholders::_1),
+    rclcpp::QoS(1).reliable(), callback_group_);
+
   // goal status subscriber and goalStatusCallback: when goal is reached or aborted
   // clear the corridor and reset costmaps
-  node->get_parameter(name_ + ".goal_status_topics", goal_status_topics);
   for (const auto & topic : goal_status_topics) {
     goal_status_subs_.push_back(node->create_subscription<action_msgs::msg::GoalStatusArray>(
-        joinWithParentNamespace(topic), rclcpp::QoS(1).reliable().transient_local(),
-        std::bind(&RouteCorridorLayer::goalStatusCallback, this, std::placeholders::_1), options));
+        joinWithParentNamespace(topic),
+        std::bind(&RouteCorridorLayer::goalStatusCallback, this, std::placeholders::_1),
+        rclcpp::QoS(1).reliable().transient_local(), callback_group_));
   }
 }
 
@@ -189,7 +181,7 @@ void RouteCorridorLayer::goalStatusCallback(
     newest->status == GoalStatus::STATUS_SUCCEEDED ? "succeeded" : "aborted");
 }
 
-// Maybe useful
+// Clear costmaps
 void RouteCorridorLayer::clearCostmaps(Costmap2D & master)
 {
   // The caller runs in the costmap update thread with the costmap locked.

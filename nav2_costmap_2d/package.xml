@@ -26,7 +26,6 @@
 
   <depend>backward_ros</depend>
   <depend>action_msgs</depend>
-  <depend>angles</depend>
   <depend>geometry_msgs</depend>
   <depend>laser_geometry</depend>
   <depend>map_msgs</depend>

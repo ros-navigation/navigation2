@@ -4,6 +4,9 @@ find_package(nav2_controller REQUIRED)
 nav2_add_gtest(test_graceful_controller
   test_graceful_controller.cpp
 )
+get_target_property(nav2_controller_include_dirs
+  nav2_controller::simple_goal_checker INTERFACE_INCLUDE_DIRECTORIES)
+target_include_directories(test_graceful_controller BEFORE PRIVATE ${nav2_controller_include_dirs})
 target_link_libraries(test_graceful_controller
   ${library_name}
   geometry_msgs::geometry_msgs

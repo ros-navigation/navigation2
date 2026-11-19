@@ -34,6 +34,9 @@ target_include_directories(dwb_core PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
+get_target_property(nav_2d_utils_include_dirs
+  nav_2d_utils::conversions INTERFACE_INCLUDE_DIRECTORIES)
+target_include_directories(dwb_core BEFORE PUBLIC ${nav_2d_utils_include_dirs})
 target_link_libraries(dwb_core PUBLIC
   builtin_interfaces::builtin_interfaces
   dwb_msgs::dwb_msgs

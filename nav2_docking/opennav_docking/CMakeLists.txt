@@ -30,6 +30,8 @@ nav2_package()
 
 set(executable_name opennav_docking)
 set(library_name ${executable_name}_core)
+get_target_property(opennav_docking_core_include_dirs
+  opennav_docking_core::opennav_docking_core INTERFACE_INCLUDE_DIRECTORIES)
 
 add_library(controller SHARED
   src/controller.cpp
@@ -58,6 +60,7 @@ target_include_directories(${library_name}
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  ${opennav_docking_core_include_dirs}
 )
 target_link_libraries(${library_name} PUBLIC
   angles::angles
@@ -119,6 +122,7 @@ target_include_directories(simple_charging_dock
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  ${opennav_docking_core_include_dirs}
 )
 target_link_libraries(simple_charging_dock PUBLIC
   geometry_msgs::geometry_msgs
@@ -146,6 +150,7 @@ target_include_directories(simple_non_charging_dock
   PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+  ${opennav_docking_core_include_dirs}
 )
 target_link_libraries(simple_non_charging_dock PUBLIC
   geometry_msgs::geometry_msgs
