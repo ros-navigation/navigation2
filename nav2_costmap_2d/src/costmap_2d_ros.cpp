@@ -869,10 +869,8 @@ Costmap2DROS::updateParametersCallback(const std::vector<rclcpp::Parameter> & pa
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == "robot_radius") {
         robot_radius_ = parameter.as_double();
-        // Set the footprint
-        if (use_radius_) {
-          setRobotFootprint(makeFootprintFromRadius(robot_radius_));
-        }
+        use_radius_ = true;
+        setRobotFootprint(makeFootprintFromRadius(robot_radius_));
       } else if (param_name == "footprint_padding") {
         footprint_padding_ = parameter.as_double();
 #ifdef __cpp_lib_atomic_shared_ptr
@@ -915,6 +913,7 @@ Costmap2DROS::updateParametersCallback(const std::vector<rclcpp::Parameter> & pa
         footprint_ = parameter.as_string();
         std::vector<geometry_msgs::msg::Point> new_footprint;
         if (makeFootprintFromString(footprint_, new_footprint)) {
+          use_radius_ = false;
           setRobotFootprint(new_footprint);
         }
       } else if (param_name == "robot_base_frame") {
