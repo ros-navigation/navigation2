@@ -66,6 +66,9 @@ void LatticeMotionTable::initMotionModel(
 
   // Get the metadata about this minimum control set
   lattice_metadata = getLatticeMetadata(current_lattice_filepath);
+  for (auto & heading_angle : lattice_metadata.heading_angles) {
+    heading_angle = angles::normalize_angle_positive(heading_angle);
+  }
   std::ifstream latticeFile(current_lattice_filepath);
   if (!latticeFile.is_open()) {
     throw std::runtime_error("Could not open lattice file");
@@ -97,6 +100,9 @@ void LatticeMotionTable::initMotionModel(
   for (unsigned int i = 0; i < json_primitives.size(); ++i) {
     MotionPrimitive new_primitive;
     fromJsonToMotionPrimitive(json_primitives[i], new_primitive);
+    for (auto & pose : new_primitive.poses) {
+      pose._theta = angles::normalize_angle_positive(pose._theta);
+    }
 
     if (prev_start_angle != new_primitive.start_angle) {
       motion_primitives.push_back(primitives);
