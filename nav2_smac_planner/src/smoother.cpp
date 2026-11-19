@@ -182,7 +182,6 @@ bool Smoother::smoothImpl(
 
     // validate update is admissible, only checks cost if a valid costmap pointer is provided
     if (costmap) {
-
       for (unsigned int i = 1; i != path_size - 1; i++) {
         // Center cost of the pose's cell, off the map is in collision
         const bool in_map = costmap->worldToMap(
@@ -321,17 +320,13 @@ void Smoother::findBoundaryExpansion(
     const bool in_map = costmap->worldToMap(x, y, mx, my);
     const float center_cost =
       in_map ? static_cast<float>(costmap->getCost(mx, my)) : OCCUPIED_COST;
-    if (footprint.empty()) {
-      if (center_cost >= INSCRIBED_COST) {
-        expansion.in_collision = true;
-      }
-    } else {
+    if (!footprint.empty()) {
       const double cost = footprint_checker_.footprintCostAtPose(x, y, theta, footprint);
       if (static_cast<float>(cost) >= OCCUPIED_COST) {
         expansion.in_collision = true;
       }
     }
-    if (in_map && exceedsMaxCost(center_cost, mx, my)) {
+    if (!in_map || exceedsMaxCost(center_cost, mx, my)) {
       expansion.in_collision = true;
     }
 
