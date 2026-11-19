@@ -318,7 +318,7 @@ void Smoother::findBoundaryExpansion(
     const float center_cost =
       in_map ? static_cast<float>(costmap->getCost(mx, my)) : OCCUPIED_COST;
     if (!footprint.empty()) {
-      const double cost = footprint_checker_.footprintCostAtPose(x, y, theta, footprint);
+      const double cost = footprint_checker_.footprintCostAtPose(x, y, reals[2], footprint);
       if (static_cast<float>(cost) >= OCCUPIED_COST) {
         expansion.in_collision = true;
       }
