@@ -2,6 +2,8 @@ nav2_add_gtest(test_behavior_tree_node
   test_behavior_tree_node.cpp
   server_handler.cpp
 )
+get_target_property(nav2_behavior_tree_include_dirs
+  nav2_behavior_tree::nav2_behavior_tree INTERFACE_INCLUDE_DIRECTORIES)
 target_link_libraries(test_behavior_tree_node
   ament_index_cpp::ament_index_cpp
   behaviortree_cpp::behaviortree_cpp
@@ -18,4 +20,5 @@ target_include_directories(test_behavior_tree_node
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    ${nav2_behavior_tree_include_dirs}
 )

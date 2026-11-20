@@ -25,6 +25,7 @@
   <build_export_depend>angles</build_export_depend>
 
   <depend>backward_ros</depend>
+  <depend>action_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>laser_geometry</depend>
   <depend>map_msgs</depend>

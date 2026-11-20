@@ -1,4 +1,6 @@
 set(test_planner_costmaps_exec test_planner_costmaps_node)
+get_target_property(nav2_planner_include_dirs
+  nav2_planner::planner_server_core INTERFACE_INCLUDE_DIRECTORIES)
 
 ament_add_gtest_executable(${test_planner_costmaps_exec}
   test_planner_costmaps_node.cpp
@@ -21,6 +23,7 @@ target_include_directories(${test_planner_costmaps_exec}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    ${nav2_planner_include_dirs}
 )
 
 set(test_planner_random_exec test_planner_random_node)
@@ -46,6 +49,7 @@ target_include_directories(${test_planner_random_exec}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    ${nav2_planner_include_dirs}
 )
 
 nav2_add_test(test_planner_costmaps
@@ -91,6 +95,7 @@ target_include_directories(test_planner_plugins
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    ${nav2_planner_include_dirs}
 )
 
 nav2_add_gtest(test_planner_is_path_valid
@@ -113,4 +118,5 @@ target_include_directories(test_planner_is_path_valid
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    ${nav2_planner_include_dirs}
 )
