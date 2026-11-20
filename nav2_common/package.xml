@@ -14,7 +14,6 @@
   <depend condition="$ROS_DISTRO != jazzy">python3-osrf-pycommon</depend>
   <depend>rclpy</depend>
   <depend>python3-yaml</depend>
-  <depend>python3-types-pyyaml</depend>
 
   <buildtool_depend>ament_cmake_core</buildtool_depend>
 
