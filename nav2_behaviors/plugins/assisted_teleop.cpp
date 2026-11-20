@@ -107,7 +107,7 @@ ResultStatus AssistedTeleop::onCycleUpdate()
 
   geometry_msgs::msg::PoseStamped current_pose;
   std::string tf_error;
-  if (!getCurrentPoseChecked(current_pose, &tf_error)) {
+  if (!getLatestPose(current_pose, &tf_error)) {
     std::string error_msg = "Current robot pose is not available for " + behavior_name_ + ": " +
       tf_error;
     RCLCPP_ERROR_STREAM(logger_, error_msg.c_str());
