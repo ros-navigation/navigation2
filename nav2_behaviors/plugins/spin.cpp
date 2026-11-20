@@ -63,7 +63,7 @@ ResultStatus Spin::onRun(const std::shared_ptr<const SpinActionGoal> command)
 {
   geometry_msgs::msg::PoseStamped current_pose;
   std::string tf_error;
-  if (!getCurrentPoseChecked(current_pose, &tf_error)) {
+  if (!getLatestPose(current_pose, &tf_error)) {
     std::string error_msg = "Current robot pose is not available: " + tf_error;
     RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::TF_ERROR, error_msg};
@@ -95,7 +95,7 @@ ResultStatus Spin::onCycleUpdate()
 
   geometry_msgs::msg::PoseStamped current_pose;
   std::string tf_error;
-  if (!getCurrentPoseChecked(current_pose, &tf_error)) {
+  if (!getLatestPose(current_pose, &tf_error)) {
     std::string error_msg = "Current robot pose is not available: " + tf_error;
     RCLCPP_ERROR(logger_, "%s", error_msg.c_str());
     return ResultStatus{Status::FAILED, SpinActionResult::TF_ERROR, error_msg};

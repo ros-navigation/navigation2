@@ -182,7 +182,7 @@ protected:
    * @param error_msg Optional TF failure details; cleared on success
    * @return False if the transform is missing or stale; pose is unchanged on failure
    */
-  bool getCurrentPoseChecked(
+  bool getLatestPose(
     geometry_msgs::msg::PoseStamped & pose, std::string * error_msg = nullptr)
   {
     const auto pose_result = tf_manager_->getLatestPose(
