@@ -232,8 +232,8 @@ bool SimpleChargingDock::getRefinedPose(geometry_msgs::msg::PoseStamped & pose, 
     const auto detected_pose = tf_manager_->transformStampedPose(
       pose.header.frame_id, detected, 0.2, &detected_pose_error);
     if (!detected_pose) {
-      RCLCPP_WARN(node_->get_logger(), "Failed to transform detected dock pose: %s",
-          detected_pose_error.c_str());
+      RCLCPP_WARN_THROTTLE(node_->get_logger(), *node_->get_clock(), 2000,
+        "Failed to transform detected dock pose: %s", detected_pose_error.c_str());
       return false;
     }
     detected = *detected_pose;
