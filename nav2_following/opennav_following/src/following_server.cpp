@@ -62,7 +62,7 @@ FollowingServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Note: Collision detection is not supported in following server so we force it off
   // and warn if the user has it enabled (from launch file or parameter file)
   controller_ =
-    std::make_unique<opennav_docking::Controller>(node, tf2_buffer_, params_->base_frame);
+    std::make_unique<opennav_following::Controller>(node, tf2_buffer_, params_->base_frame);
 
   if (params_->use_collision_detection) {
     RCLCPP_ERROR(

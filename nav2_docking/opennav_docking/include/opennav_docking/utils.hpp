@@ -15,10 +15,13 @@
 #ifndef OPENNAV_DOCKING__UTILS_HPP_
 #define OPENNAV_DOCKING__UTILS_HPP_
 
+#include <algorithm>
+#include <cmath>
 #include <string>
 #include <vector>
 
 #include "yaml-cpp/yaml.h"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/parameter_value.hpp"
@@ -34,6 +37,46 @@
 
 namespace utils
 {
+
+/**
+ * @brief Target pose on the dock axis at look ahead distance.
+ *
+ * The robot is projected onto the dock axis (the line along dock's x axis).
+ * The target is placed lookahead_dist ahead on that axis, but never more than
+ * max_projection_dist past the dock. Steering at a point that slides along the axis makes
+ * the robot align with the axis early instead of curving into the dock from the staging pose,
+ * which reduces lateral and heading error at contact.
+ *
+ * If lookahead_dist <= 0, the behavior does not change, it directly targets dock.
+ *
+ * @param dock Dock pose
+ * @param robot Robot pose in the same frame
+ * @param lookahead_dist Distance [m] of the target ahead of the robot's projection on the dock axis
+ * @param max_projection_dist Furthest [m] distance where target may lie past the dock
+ * @return Target pose in the same frame
+ */
+inline geometry_msgs::msg::Pose approachLineTarget(
+  const geometry_msgs::msg::Pose & dock, const geometry_msgs::msg::Pose & robot,
+  double lookahead_dist, double max_projection_dist)
+{
+  const double yaw = tf2::getYaw(dock.orientation);
+  const double c = std::cos(yaw);
+  const double s = std::sin(yaw);
+
+  // Signed distance along the line from the dock to the robot's projection onto dock axis
+  const double along =
+    (robot.position.x - dock.position.x) * c + (robot.position.y - dock.position.y) * s;
+
+  double target_along = max_projection_dist;
+  if (lookahead_dist > 0.0) {
+    target_along = std::min(along + lookahead_dist, max_projection_dist);
+  }
+
+  geometry_msgs::msg::Pose target = dock;
+  target.position.x = dock.position.x + target_along * c;
+  target.position.y = dock.position.y + target_along * s;
+  return target;
+}
 
 using rclcpp::ParameterType::PARAMETER_STRING;
 using rclcpp::ParameterType::PARAMETER_STRING_ARRAY;
@@ -67,10 +110,11 @@ inline bool parseDockFile(
   }
 
   auto yaml_docks = yaml_file["docks"];
-  Dock curr_dock;
   for (const auto & yaml_dock : yaml_docks) {
     std::string dock_name = yaml_dock.first.as<std::string>();
     const YAML::Node & dock_attribs = yaml_dock.second;
+
+    Dock curr_dock;
 
     curr_dock.frame = "map";
     if (dock_attribs["frame"]) {
@@ -106,6 +150,10 @@ inline bool parseDockFile(
       curr_dock.id = dock_attribs["id"].as<std::string>();
     }
 
+    if (dock_attribs["controller"]) {
+      curr_dock.controller_name = dock_attribs["controller"].as<std::string>();
+    }
+
     // Insert into dock instance database
     dock_db.emplace(dock_name, curr_dock);
   }
@@ -124,9 +172,9 @@ inline bool parseDockParams(
   const nav2::LifecycleNode::SharedPtr & node,
   DockMap & dock_db)
 {
-  Dock curr_dock;
   std::vector<double> pose_arr;
   for (const auto & dock_name : docks_param) {
+    Dock curr_dock;
     curr_dock.frame = node->declare_or_get_parameter(dock_name + ".frame", std::string("map"));
 
     try {
@@ -152,6 +200,8 @@ inline bool parseDockParams(
     curr_dock.pose.orientation = orientationAroundZAxis(pose_arr[2]);
 
     curr_dock.id = node->declare_or_get_parameter(dock_name + ".id", std::string(""));
+    curr_dock.controller_name =
+      node->declare_or_get_parameter(dock_name + ".controller", std::string(""));
 
     // Insert into dock instance database
     dock_db.emplace(dock_name, curr_dock);

@@ -17,7 +17,7 @@
 
 #include "rclcpp/logging.hpp"
 #include "rclcpp/parameter.hpp"
-#include "opennav_docking/controller.hpp"
+#include "opennav_following/controller.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "tf2/utils.hpp"
@@ -25,7 +25,7 @@
 
 using rcl_interfaces::msg::ParameterType;
 
-namespace opennav_docking
+namespace opennav_following
 {
 
 Controller::Controller(
@@ -278,4 +278,4 @@ Controller::updateParametersCallback(const std::vector<rclcpp::Parameter> & para
   }
 }
 
-}  // namespace opennav_docking
+}  // namespace opennav_following
