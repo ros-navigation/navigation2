@@ -16,7 +16,6 @@
 #define NAV2_ROS_COMMON__TF_MANAGER_HPP_
 
 #include <cmath>
-#include <functional>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -27,6 +26,8 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "rclcpp/callback_group.hpp"
 #include "rclcpp/clock.hpp"
+#include "rclcpp/node_interfaces/node_parameters_interface.hpp"
+#include "rclcpp/node_interfaces/node_topics_interface.hpp"
 #include "rclcpp/time.hpp"
 #include "rclcpp/version.h"
 #include "tf2/LinearMath/Transform.hpp"
@@ -77,8 +78,8 @@ public:
     }
     buffer_ = std::make_shared<tf2_ros::Buffer>(clock_);
     auto base = node->get_node_base_interface();
-    auto parameters = node->get_node_parameters_interface();
-    auto topics = node->get_node_topics_interface();
+    parameters_ = node->get_node_parameters_interface();
+    topics_ = node->get_node_topics_interface();
 #if RCLCPP_VERSION_GTE(30, 0, 0)
     auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(*node, callback_group);
 #else
@@ -97,28 +98,12 @@ public:
 #if RCLCPP_VERSION_GTE(30, 0, 0)
       listener_ = std::make_unique<tf2_ros::TransformListener>(
         *buffer_, tf2_ros::TransformListener::RequiredInterfaces{
-          base, logging, parameters, topics}, spin_thread_);
+          base, logging, parameters_, topics_}, spin_thread_);
 #else
       listener_ = std::make_unique<tf2_ros::TransformListener>(
-        *buffer_, base, logging, parameters, topics, spin_thread_);
+        *buffer_, base, logging, parameters_, topics_, spin_thread_);
 #endif
     }
-    create_broadcaster_ = [parameters, topics]() {
-#if RCLCPP_VERSION_GTE(30, 0, 0)
-        return std::make_unique<tf2_ros::TransformBroadcaster>(
-          tf2_ros::TransformBroadcaster::RequiredInterfaces{parameters, topics});
-#else
-        return std::make_unique<tf2_ros::TransformBroadcaster>(parameters, topics);
-#endif
-      };
-    create_static_broadcaster_ = [parameters, topics]() {
-#if RCLCPP_VERSION_GTE(30, 0, 0)
-        return std::make_unique<tf2_ros::StaticTransformBroadcaster>(
-          tf2_ros::StaticTransformBroadcaster::RequiredInterfaces{parameters, topics});
-#else
-        return std::make_unique<tf2_ros::StaticTransformBroadcaster>(parameters, topics);
-#endif
-      };
   }
 
   ~TransformManager()
@@ -516,7 +501,12 @@ private:
   tf2_ros::TransformBroadcaster & getBroadcaster()
   {
     if (!broadcaster_) {
-      broadcaster_ = create_broadcaster_();
+#if RCLCPP_VERSION_GTE(30, 0, 0)
+      broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(
+        tf2_ros::TransformBroadcaster::RequiredInterfaces{parameters_, topics_});
+#else
+      broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(parameters_, topics_);
+#endif
     }
     return *broadcaster_;
   }
@@ -528,7 +518,13 @@ private:
   tf2_ros::StaticTransformBroadcaster & getStaticBroadcaster()
   {
     if (!static_broadcaster_) {
-      static_broadcaster_ = create_static_broadcaster_();
+#if RCLCPP_VERSION_GTE(30, 0, 0)
+      static_broadcaster_ = std::make_unique<tf2_ros::StaticTransformBroadcaster>(
+        tf2_ros::StaticTransformBroadcaster::RequiredInterfaces{parameters_, topics_});
+#else
+      static_broadcaster_ = std::make_unique<tf2_ros::StaticTransformBroadcaster>(parameters_,
+          topics_);
+#endif
     }
     return *static_broadcaster_;
   }
@@ -536,8 +532,8 @@ private:
   rclcpp::Clock::SharedPtr clock_;
   tf2_ros::Buffer::SharedPtr buffer_;
   bool spin_thread_{true};
-  std::function<std::unique_ptr<tf2_ros::TransformBroadcaster>()> create_broadcaster_;
-  std::function<std::unique_ptr<tf2_ros::StaticTransformBroadcaster>()> create_static_broadcaster_;
+  rclcpp::node_interfaces::NodeParametersInterface::SharedPtr parameters_;
+  rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr topics_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> broadcaster_;
   std::unique_ptr<tf2_ros::StaticTransformBroadcaster> static_broadcaster_;
   std::unique_ptr<tf2_ros::TransformListener> listener_;
