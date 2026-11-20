@@ -58,7 +58,9 @@ bool GeoJsonGraphFileLoader::loadGraphFromFile(
     return false;
   }
 
+  graph.clear();
   graph.resize(nodes.size());
+  graph_to_id_map.clear();
   addNodesToGraph(graph, graph_to_id_map, nodes);
   addEdgesToGraph(graph, graph_to_id_map, edges);
   return true;
@@ -90,8 +92,12 @@ void GeoJsonGraphFileLoader::addNodesToGraph(
   int idx = 0;
   for (const auto & node : nodes) {
     const auto properties = node.at("properties");
-    graph[idx].nodeid = properties.at("id");
-    graph_to_id_map[graph[idx].nodeid] = idx;
+    const unsigned int id = properties.at("id");
+    if (!graph_to_id_map.emplace(id, idx).second) {
+      RCLCPP_ERROR(logger_, "Node id %u is repeated, node ids must be unique", id);
+      throw nav2_core::NoValidGraph("Node id is not unique");
+    }
+    graph[idx].nodeid = id;
     graph[idx].coords = convertCoordinatesFromJson(node);
     graph[idx].operations = convertOperationsFromJson(properties);
     graph[idx].metadata = convertMetaDataFromJson(properties);
