@@ -78,7 +78,6 @@ private:
   BT::NodeStatus tick() override;
 
   std::string global_frame_, robot_base_frame_;
-  rclcpp::Clock::SharedPtr clock_;
   nav2::TransformManager::SharedPtr tf_manager_;
   double transform_staleness_threshold_{0.0};
 };

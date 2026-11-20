@@ -43,7 +43,6 @@ GoalReachedCondition::~GoalReachedCondition()
 void GoalReachedCondition::initialize()
 {
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-  clock_ = node_->get_clock();
 
   goal_reached_tol_ = node_->declare_or_get_parameter("goal_reached_tol", 0.25);
   tf_manager_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("transform_manager");

@@ -100,7 +100,6 @@ protected:
 
 private:
   nav2::LifecycleNode::SharedPtr node_;
-  rclcpp::Clock::SharedPtr clock_;
   nav2::TransformManager::SharedPtr tf_manager_;
 
   double goal_reached_tol_;

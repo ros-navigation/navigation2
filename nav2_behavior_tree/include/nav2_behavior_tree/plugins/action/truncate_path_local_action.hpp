@@ -126,7 +126,6 @@ private:
     const double angular_distance_weight);
 
   nav2::TransformManager::SharedPtr tf_manager_;
-  rclcpp::Clock::SharedPtr clock_;
   double transform_staleness_threshold_{0.0};
 
   nav_msgs::msg::Path path_;
