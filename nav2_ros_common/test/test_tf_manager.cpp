@@ -662,6 +662,22 @@ TEST_F(TransformListenerTest, ListenerReceivesTransformsByDefault)
   tf_manager_.reset();
 }
 
+TEST_F(TransformListenerTest, InternalListenerReceivesTransforms)
+{
+  tf_manager_ = nav2::create_transform_manager(node_, true, true, nullptr, true);
+  auto buffer = tf_manager_->getRawBuffer();
+  EXPECT_TRUE(buffer->isUsingDedicatedThread());
+  expectTransforms();
+  tf_manager_.reset();
+  EXPECT_FALSE(buffer->isUsingDedicatedThread());
+}
+
+TEST_F(TransformListenerTest, InternalListenerRequiresDedicatedThread)
+{
+  EXPECT_THROW(
+    nav2::create_transform_manager(node_, true, false, nullptr, true), std::invalid_argument);
+}
+
 TEST_F(TransformListenerTest, RetainedBufferDoesNotAdvertiseStoppedListenerThread)
 {
   tf_manager_ = nav2::create_transform_manager(node_);

@@ -60,12 +60,15 @@ public:
    * @param spin_thread Spin a dedicated listener thread. When false, the caller
    *   must spin the node to receive transforms.
    * @param callback_group Optional callback group for the timer interface.
-   * @throws std::invalid_argument if node is null.
+   * @param use_internal_node Use TF2's auxiliary node for the listener. Requires
+   *   spin_thread=true and uses process-global arguments rather than the supplied node's options.
+   *   This can be used when creating the listener inside a namespaced node.
+   * @throws std::invalid_argument if node is null or an internal listener cannot be spun.
    */
   template<typename NodeT>
   explicit TransformManager(
     const NodeT & node, bool activate_listener = true, bool spin_thread = true,
-    rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
+    rclcpp::CallbackGroup::SharedPtr callback_group = nullptr, bool use_internal_node = false)
   : clock_(node ? node->get_clock() : nullptr),
     spin_thread_(spin_thread)
   {
@@ -74,7 +77,6 @@ public:
     }
     buffer_ = std::make_shared<tf2_ros::Buffer>(clock_);
     auto base = node->get_node_base_interface();
-    auto logging = node->get_node_logging_interface();
     auto parameters = node->get_node_parameters_interface();
     auto topics = node->get_node_topics_interface();
 #if RCLCPP_VERSION_GTE(30, 0, 0)
@@ -85,7 +87,13 @@ public:
 #endif
     buffer_->setCreateTimerInterface(timer_interface);
     // Retain interfaces rather than the node, which may itself own this manager.
-    if (activate_listener) {
+    if (activate_listener && use_internal_node && !spin_thread_) {
+      throw std::invalid_argument("An internal TF listener node requires a dedicated thread");
+    }
+    if (activate_listener && use_internal_node) {
+      listener_ = std::make_unique<tf2_ros::TransformListener>(*buffer_);
+    } else if (activate_listener) {
+      auto logging = node->get_node_logging_interface();
 #if RCLCPP_VERSION_GTE(30, 0, 0)
       listener_ = std::make_unique<tf2_ros::TransformListener>(
         *buffer_, tf2_ros::TransformListener::RequiredInterfaces{
@@ -541,15 +549,18 @@ private:
  * @param activate_listener Start receiving transforms immediately.
  * @param spin_thread Whether to spin a dedicated listener thread.
  * @param callback_group Optional callback group for the timer interface.
+ * @param use_internal_node Use TF2's auxiliary listener node with process-global arguments.
+ *   Requires spin_thread=true when the listener is active.
+ *   This can be used when creating the listener inside a namespaced node.
  * @return Shared pointer to the configured TransformManager.
  */
 template<typename NodeT>
 inline nav2::TransformManager::SharedPtr create_transform_manager(
   const NodeT & node, bool activate_listener = true, bool spin_thread = true,
-  rclcpp::CallbackGroup::SharedPtr callback_group = nullptr)
+  rclcpp::CallbackGroup::SharedPtr callback_group = nullptr, bool use_internal_node = false)
 {
   return std::make_shared<nav2::TransformManager>(
-    node, activate_listener, spin_thread, callback_group);
+    node, activate_listener, spin_thread, callback_group, use_internal_node);
 }
 
 }  // namespace nav2

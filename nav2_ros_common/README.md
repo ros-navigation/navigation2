@@ -26,6 +26,10 @@ The node supplies the clock and timer interfaces. The listener starts by default
 Pass `activate_listener=false` to create a manager without a listener.
 The listener is destroyed before the native buffer.
 Set `spin_thread=false` when the application spins the node to receive transforms.
+Pass `use_internal_node=true` to receive TF on TF2's auxiliary node with a dedicated thread.
+This listener uses process-global arguments, not the supplied node's namespace or local remappings, which allows namespaced nodes to subscribe to the right topics.
+Costmaps use this option to keep TF reception outside their child namespace.
+The supplied node still provides the clock, timers, and broadcaster interfaces.
 Dynamic and static broadcasters are advertised independently on the first `sendTransform()` or `sendStaticTransform()` call.
 Both methods accept a single transform or a vector of transforms. Static transforms are retained for late subscribers.
 Applications must synchronize concurrent broadcaster calls on the same manager.
