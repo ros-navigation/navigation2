@@ -46,7 +46,8 @@ enum class RouteOperationType
 {
   ON_GRAPH = 0,
   ON_STATUS_CHANGE = 1,
-  ON_QUERY = 2
+  ON_QUERY = 2,
+  ON_APPROACH = 3
 };
 
 /**
@@ -60,6 +61,8 @@ enum class RouteOperationType
  * reroute when blocked or at a required rate (though may want to use BTs instead),
  * adjust speed limits, wait, call an external service or action to perform a task
  * such as calling an elevator or opening an automatic door, etc.
+ * Operations may also be triggered when the robot approaches a node ahead on the
+ * route, before it is achieved, such as to pre-call an elevator or notify a station.
  * Operations may throw nav2_core::OperationFailed exceptions in failure cases
  */
 class RouteOperation
@@ -98,13 +101,38 @@ public:
   /**
    * @brief Indication of which type of route operation this plugin is. Whether it is
    * be called by the graph's nodes or edges, whether it should be triggered at any
-   * status change, or whether it should be called constantly on any query. By default,
+   * status change, be called constantly on any query, or when approaching a node. By default,
    * it will create operations that are only called when a graph's node or edge requests it.
    * Note that On Query, On Status Change, and On Graph are mutually exclusive since each
    * operation type is merely a subset of the previous level's specificity.
-   * @return The type of operation (on graph call, on status changes, or constantly)
+   * @return The type of operation (on graph call, on status changes, constantly, or on approach)
    */
   virtual RouteOperationType processType() {return RouteOperationType::ON_GRAPH;}
+
+  /**
+   * @brief For ON_APPROACH operations only: the distance along the route from a node within
+   * which this operation may consider it approached, and so the upper bound of any
+   * node-specific radius applied in isApproaching(). Nodes further away are not given to
+   * isApproaching(), and the operations manager does not look further ahead than the largest
+   * radius of its operations. Should be larger than the tracker's node achievement radius
+   * to trigger before achievement.
+   * @return The approach radius
+   */
+  virtual float approachRadius() {return 0.0f;}
+
+  /**
+   * @brief For ON_APPROACH operations only: whether the robot is approaching a node ahead
+   * within approachRadius(), given the distance along the route to it (e.g. the node is
+   * tagged, optionally with a smaller node-specific radius). perform() is called with the node,
+   * the edge into it (nullptr for the route's start node) and its metadata the first time this
+   * returns true, and not again until the node is achieved or a new route no longer has it ahead
+   * and approached. Called each tick for the nodes ahead not yet approached, and on a new route
+   * for those approached.
+   * @param node A node ahead on the route
+   * @param route_dist Distance along the route from the robot to the node
+   * @return Whether this operation considers the node approached
+   */
+  virtual bool isApproaching(const NodePtr /*node*/, const float /*route_dist*/) {return false;}
 
   /**
    * @brief The main route operation API to perform an operation when triggered.

@@ -15,6 +15,7 @@
 #include <math.h>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -25,6 +26,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/service_client.hpp"
 #include "nav2_ros_common/node_thread.hpp"
+#include "nav2_msgs/msg/route_node.hpp"
 #include "nav2_msgs/msg/speed_limit.hpp"
 #include "std_srvs/srv/trigger.hpp"
 #include "nav2_route/operations_manager.hpp"
@@ -538,6 +540,454 @@ TEST(OperationsManagerTest, test_time_marker)
   EXPECT_GT(time, 0.5f);
 }
 
+// Declares an ApproachNotifier operation with the given approach radius
+void declareApproachNotifier(
+  const nav2::LifecycleNode::SharedPtr & node, const std::string & name, const double radius)
+{
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".plugin", rclcpp::ParameterValue(std::string{"nav2_route::ApproachNotifier"}));
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".approach_radius", rclcpp::ParameterValue(radius));
+}
+
+// Tracking state traversing an edge, having achieved its start node. The edge index is -1 when
+// rerouted along the edge, as it is then removed from the route
+RouteTrackingState stateOnEdge(const EdgePtr edge, const int route_edges_idx)
+{
+  RouteTrackingState state;
+  state.route_edges_idx = route_edges_idx;
+  state.last_node = edge->start;
+  state.current_edge = edge;
+  state.next_node = edge->end;
+  return state;
+}
+
+TEST(OperationsManagerTest, test_approach_notifier)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("operations_manager_test");
+  auto node_thread = std::make_unique<nav2::NodeThread>(node);
+  node->declare_parameter(
+    "operations", rclcpp::ParameterValue(std::vector<std::string>{"ApproachNotifier"}));
+  declareApproachNotifier(node, "ApproachNotifier", 2.0);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  OperationsManager manager(node, costmap_subscriber);
+
+  std::vector<unsigned int> approached;
+  auto sub = node->create_subscription<nav2_msgs::msg::RouteNode>(
+    "approached_node",
+    [&](nav2_msgs::msg::RouteNode msg) {approached.push_back(msg.nodeid);});
+
+  // A straight route 0 -> 1 -> 2 -> 3 where nodes 1 and 3 are tagged
+  Node node0, node1, node2, node3;
+  node0.nodeid = 0;
+  node1.nodeid = 1;
+  node1.coords.x = 5.0f;
+  node1.metadata.setValue<bool>("notify_on_approach", true);
+  node2.nodeid = 2;
+  node2.coords.x = 10.0f;
+  node3.nodeid = 3;
+  node3.coords.x = 15.0f;
+  node3.metadata.setValue<bool>("notify_on_approach", true);
+  DirectionalEdge edge0, edge1, edge2;
+  edge0.start = &node0;
+  edge0.end = &node1;
+  edge1.start = &node1;
+  edge1.end = &node2;
+  edge2.start = &node2;
+  edge2.end = &node3;
+  Route route;
+  route.start_node = &node0;
+  route.edges = {&edge0, &edge1, &edge2};
+  ReroutingState info;
+
+  // On the first edge, not yet close enough to node 1
+  RouteTrackingState state = stateOnEdge(&edge0, 0);
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 2.0;
+  OperationsResult result = manager.process(false, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+
+  // Approaching node 1, should trigger without a status change
+  pose.pose.position.x = 3.5;
+  result = manager.process(false, state, route, pose, info);
+  ASSERT_EQ(result.operations_triggered.size(), 1u);
+  EXPECT_EQ(result.operations_triggered[0], std::string("ApproachNotifier"));
+  EXPECT_FALSE(result.reroute);
+
+  // But only once per approach
+  pose.pose.position.x = 4.0;
+  result = manager.process(false, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+
+  // Even if leaving and coming back within its approach radius
+  pose.pose.position.x = 2.5;
+  result = manager.process(false, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+  pose.pose.position.x = 3.5;
+  result = manager.process(false, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+
+  // Node 2 is not tagged, so approaching it does nothing
+  state = stateOnEdge(&edge1, 1);
+  pose.pose.position.x = 9.0;
+  result = manager.process(true, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+
+  // Entering the edge into node 3, not yet within its approach radius
+  state = stateOnEdge(&edge2, 2);
+  pose.pose.position.x = 11.5;
+  result = manager.process(true, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+
+  // Approaching node 3
+  pose.pose.position.x = 13.5;
+  result = manager.process(false, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 1u);
+
+  // Route completed, nothing ahead
+  state = RouteTrackingState();
+  state.route_edges_idx = 3;
+  state.last_node = &node3;
+  result = manager.process(true, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+
+  // Driving the route again triggers its nodes again, as they were achieved
+  state = stateOnEdge(&edge0, 0);
+  pose.pose.position.x = 3.5;
+  result = manager.process(false, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 1u);
+
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+  while (approached.size() < 3u && std::chrono::steady_clock::now() < deadline) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  EXPECT_EQ(approached, (std::vector<unsigned int>{1u, 3u, 1u}));
+}
+
+TEST(OperationsManagerTest, test_approach_notifier_beyond_next_node)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("operations_manager_test");
+  node->declare_parameter(
+    "operations", rclcpp::ParameterValue(std::vector<std::string>{"ApproachNotifier"}));
+  declareApproachNotifier(node, "ApproachNotifier", 3.0);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  OperationsManager manager(node, costmap_subscriber);
+
+  // An L-shaped route 0 -> 1 -> 2 with a short edge after the turn into tagged node 2
+  Node node0, node1, node2;
+  node0.nodeid = 0;
+  node1.nodeid = 1;
+  node1.coords.x = 10.0f;
+  node2.nodeid = 2;
+  node2.coords.x = 10.0f;
+  node2.coords.y = 1.0f;
+  node2.metadata.setValue<bool>("notify_on_approach", true);
+  DirectionalEdge edge0, edge1;
+  edge0.start = &node0;
+  edge0.end = &node1;
+  edge1.start = &node1;
+  edge1.end = &node2;
+  Route route;
+  route.start_node = &node0;
+  route.edges = {&edge0, &edge1};
+  ReroutingState info;
+
+  // 2.5 m left on the first edge + the 1 m edge after the turn: beyond the 3 m radius
+  RouteTrackingState state = stateOnEdge(&edge0, 0);
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 7.5;
+  OperationsResult result = manager.process(false, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+
+  // 2 m to node 1 + the 1 m edge after the turn: the distance is measured along the
+  // route, so node 2 is approached before the robot reaches the turn
+  pose.pose.position.x = 8.0;
+  result = manager.process(false, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 1u);
+
+  // Achieving node 1 and entering the edge into node 2 does not trigger it again
+  state = stateOnEdge(&edge1, 1);
+  pose.pose.position.x = 10.0;
+  pose.pose.position.y = 0.2;
+  result = manager.process(true, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+}
+
+TEST(OperationsManagerTest, test_approach_notifier_rerouted)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("operations_manager_test");
+  node->declare_parameter(
+    "operations", rclcpp::ParameterValue(std::vector<std::string>{"ApproachNotifier"}));
+  declareApproachNotifier(node, "ApproachNotifier", 2.0);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  OperationsManager manager(node, costmap_subscriber);
+
+  // Rerouted along the partial edge 0 -> 1, which is removed from the route 1 -> 2 where
+  // node 1 is tagged
+  Node node0, node1, node2;
+  node0.nodeid = 0;
+  node1.nodeid = 1;
+  node1.coords.x = 5.0f;
+  node1.metadata.setValue<bool>("notify_on_approach", true);
+  node2.nodeid = 2;
+  node2.coords.x = 10.0f;
+  DirectionalEdge edge0, edge1;
+  edge0.start = &node0;
+  edge0.end = &node1;
+  edge1.start = &node1;
+  edge1.end = &node2;
+  Route route;
+  route.start_node = &node1;
+  route.edges = {&edge1};
+  ReroutingState info;
+  info.curr_edge = &edge0;
+
+  // Not yet close enough to node 1, then approaching it
+  RouteTrackingState state = stateOnEdge(&edge0, -1);
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 2.5;
+  OperationsResult result = manager.process(false, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+
+  pose.pose.position.x = 3.5;
+  result = manager.process(false, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 1u);
+}
+
+TEST(OperationsManagerTest, test_approach_notifier_reroute_keeps_notified)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("operations_manager_test");
+  node->declare_parameter(
+    "operations", rclcpp::ParameterValue(std::vector<std::string>{"ApproachNotifier"}));
+  declareApproachNotifier(node, "ApproachNotifier", 2.0);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  OperationsManager manager(node, costmap_subscriber);
+
+  // A straight route 0 -> 1 -> 2 where node 1 is tagged
+  Node node0, node1, node2;
+  node0.nodeid = 0;
+  node1.nodeid = 1;
+  node1.coords.x = 5.0f;
+  node1.metadata.setValue<bool>("notify_on_approach", true);
+  node2.nodeid = 2;
+  node2.coords.x = 10.0f;
+  DirectionalEdge edge0, edge1;
+  edge0.start = &node0;
+  edge0.end = &node1;
+  edge1.start = &node1;
+  edge1.end = &node2;
+  Route route;
+  route.start_node = &node0;
+  route.edges = {&edge0, &edge1};
+  ReroutingState info;
+
+  // Approaching node 1
+  RouteTrackingState state = stateOnEdge(&edge0, 0);
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 3.5;
+  OperationsResult result = manager.process(false, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 1u);
+
+  // Rerouted along the same edge: node 1 is still ahead and approached, so not notified again
+  Route rerouted;
+  rerouted.start_node = &node1;
+  rerouted.edges = {&edge1};
+  ReroutingState rerouted_info;
+  rerouted_info.curr_edge = &edge0;
+  state = stateOnEdge(&edge0, -1);
+  pose.pose.position.x = 3.6;
+  result = manager.process(false, state, rerouted, pose, rerouted_info);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+}
+
+TEST(OperationsManagerTest, test_approach_notifier_detour_notifies_again)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("operations_manager_test");
+  node->declare_parameter(
+    "operations", rclcpp::ParameterValue(std::vector<std::string>{"ApproachNotifier"}));
+  declareApproachNotifier(node, "ApproachNotifier", 2.0);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  OperationsManager manager(node, costmap_subscriber);
+
+  // A straight route 0 -> 1 where node 1 is tagged, and a detour 0 -> 2 -> 1
+  Node node0, node1, node2;
+  node0.nodeid = 0;
+  node1.nodeid = 1;
+  node1.coords.x = 5.0f;
+  node1.metadata.setValue<bool>("notify_on_approach", true);
+  node2.nodeid = 2;
+  node2.coords.x = 5.0f;
+  node2.coords.y = 5.0f;
+  DirectionalEdge edge0, edge1, edge2;
+  edge0.start = &node0;
+  edge0.end = &node1;
+  edge1.start = &node0;
+  edge1.end = &node2;
+  edge2.start = &node2;
+  edge2.end = &node1;
+  Route route;
+  route.start_node = &node0;
+  route.edges = {&edge0};
+  ReroutingState info;
+
+  // Approaching node 1
+  RouteTrackingState state = stateOnEdge(&edge0, 0);
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 3.5;
+  OperationsResult result = manager.process(false, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 1u);
+
+  // Rerouted back through node 0: node 1 is now far away along the route, so it is re-armed
+  Route detour;
+  detour.start_node = &node0;
+  detour.edges = {&edge1, &edge2};
+  state = RouteTrackingState();
+  state.next_node = &node0;
+  result = manager.process(false, state, detour, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+
+  // Approaching node 1 again at the end of the detour notifies it again
+  state = stateOnEdge(&edge2, 1);
+  pose.pose.position.x = 5.0;
+  pose.pose.position.y = 1.5;
+  result = manager.process(true, state, detour, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 1u);
+}
+
+TEST(OperationsManagerTest, test_approach_notifier_uturn_through_last_node)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("operations_manager_test");
+  node->declare_parameter(
+    "operations", rclcpp::ParameterValue(std::vector<std::string>{"ApproachNotifier"}));
+  declareApproachNotifier(node, "ApproachNotifier", 3.0);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  OperationsManager manager(node, costmap_subscriber);
+
+  // Rerouted along the partial edge 0 -> 1, which is removed from the U-turn route 1 -> 0
+  // where node 0 is tagged
+  Node node0, node1;
+  node0.nodeid = 0;
+  node0.metadata.setValue<bool>("notify_on_approach", true);
+  node1.nodeid = 1;
+  node1.coords.x = 2.0f;
+  DirectionalEdge edge0, edge1;
+  edge0.start = &node0;
+  edge0.end = &node1;
+  edge1.start = &node1;
+  edge1.end = &node0;
+  Route route;
+  route.start_node = &node1;
+  route.edges = {&edge1};
+  ReroutingState info;
+  info.curr_edge = &edge0;
+
+  // 0.5 m to node 1 + the 2 m edge back: node 0 is approached, once, while still the last node
+  RouteTrackingState state = stateOnEdge(&edge0, -1);
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 1.5;
+  OperationsResult result = manager.process(false, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 1u);
+  result = manager.process(false, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+  result = manager.process(false, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+}
+
+TEST(OperationsManagerTest, test_approach_notifier_reroute_from_achieved_node)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("operations_manager_test");
+  node->declare_parameter(
+    "operations", rclcpp::ParameterValue(std::vector<std::string>{"ApproachNotifier"}));
+  declareApproachNotifier(node, "ApproachNotifier", 3.0);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  OperationsManager manager(node, costmap_subscriber);
+
+  // A straight route 0 -> 1 -> 2 where node 1 is tagged
+  Node node0, node1, node2;
+  node0.nodeid = 0;
+  node1.nodeid = 1;
+  node1.coords.x = 5.0f;
+  node1.metadata.setValue<bool>("notify_on_approach", true);
+  node2.nodeid = 2;
+  node2.coords.x = 10.0f;
+  DirectionalEdge edge0, edge1;
+  edge0.start = &node0;
+  edge0.end = &node1;
+  edge1.start = &node1;
+  edge1.end = &node2;
+  Route route;
+  route.start_node = &node0;
+  route.edges = {&edge0, &edge1};
+  ReroutingState info;
+
+  // Approaching node 1
+  RouteTrackingState state = stateOnEdge(&edge0, 0);
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 2.5;
+  OperationsResult result = manager.process(false, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 1u);
+
+  // Node 1 achieved within the tracker's radius, before the robot reaches it
+  state = stateOnEdge(&edge1, 1);
+  pose.pose.position.x = 3.5;
+  result = manager.process(true, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+
+  // Rerouted (or preempted) on achieving it: the robot has not passed node 1 yet, so it is not
+  // pruned and the new route starts at it. It is not approached again
+  Route rerouted;
+  rerouted.start_node = &node1;
+  rerouted.edges = {&edge1};
+  ReroutingState rerouted_info;
+  rerouted_info.rerouting_start_id = 1;
+  state = RouteTrackingState();
+  state.next_node = &node1;
+  result = manager.process(false, state, rerouted, pose, rerouted_info);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+}
+
+TEST(OperationsManagerTest, test_approach_notifier_multiple_radii)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("operations_manager_test");
+  node->declare_parameter(
+    "operations", rclcpp::ParameterValue(std::vector<std::string>{"Near", "Far"}));
+  declareApproachNotifier(node, "Near", 1.0);
+  declareApproachNotifier(node, "Far", 3.0);
+  std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
+  OperationsManager manager(node, costmap_subscriber);
+
+  // A straight route 0 -> 1 where node 1 is tagged
+  Node node0, node1;
+  node0.nodeid = 0;
+  node1.nodeid = 1;
+  node1.coords.x = 5.0f;
+  node1.metadata.setValue<bool>("notify_on_approach", true);
+  DirectionalEdge edge0;
+  edge0.start = &node0;
+  edge0.end = &node1;
+  Route route;
+  route.start_node = &node0;
+  route.edges = {&edge0};
+  ReroutingState info;
+
+  // Each operation triggers once, at its own radius
+  RouteTrackingState state = stateOnEdge(&edge0, 0);
+  geometry_msgs::msg::PoseStamped pose;
+  pose.pose.position.x = 2.5;
+  OperationsResult result = manager.process(false, state, route, pose, info);
+  ASSERT_EQ(result.operations_triggered.size(), 1u);
+  EXPECT_EQ(result.operations_triggered[0], std::string("Far"));
+
+  pose.pose.position.x = 4.5;
+  result = manager.process(false, state, route, pose, info);
+  ASSERT_EQ(result.operations_triggered.size(), 1u);
+  EXPECT_EQ(result.operations_triggered[0], std::string("Near"));
+
+  pose.pose.position.x = 4.6;
+  result = manager.process(false, state, route, pose, info);
+  EXPECT_EQ(result.operations_triggered.size(), 0u);
+}
+
 // A test operation that does nothing to test `processType()`
 class TestRouteOperations : public nav2_route::RouteOperation
 {
@@ -563,6 +1013,9 @@ TEST(OperationsTest, test_interface)
 {
   TestRouteOperations op;
   EXPECT_EQ(op.processType(), nav2_route::RouteOperationType::ON_GRAPH);
+  Node node;
+  EXPECT_EQ(op.approachRadius(), 0.0f);
+  EXPECT_FALSE(op.isApproaching(&node, 0.0f));
 }
 
 int main(int argc, char ** argv)
