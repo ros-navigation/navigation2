@@ -62,6 +62,9 @@ bool Smoother::smooth(
   }
 
   collision_checker_ = collision_checker;
+  if (costmap && !footprint.empty()) {
+    footprint_checker_.setCostmap(const_cast<nav2_costmap_2d::Costmap2D *>(costmap));
+  }
 
   steady_clock::time_point start = steady_clock::now();
   double time_remaining = max_time;
@@ -97,8 +100,10 @@ bool Smoother::smooth(
 
       // Enforce boundary conditions
       if (!is_holonomic_ && local_success) {
-        enforceStartBoundaryConditions(start_pose, curr_path_segment, costmap, reversing_segment);
-        enforceEndBoundaryConditions(goal_pose, curr_path_segment, costmap, reversing_segment);
+        enforceStartBoundaryConditions(
+          start_pose, curr_path_segment, costmap, reversing_segment, footprint);
+        enforceEndBoundaryConditions(
+          goal_pose, curr_path_segment, costmap, reversing_segment, footprint);
       }
 
       // Assemble the path changes to the main path
@@ -177,11 +182,6 @@ bool Smoother::smoothImpl(
 
     // validate update is admissible, only checks cost if a valid costmap pointer is provided
     if (costmap) {
-      if (!footprint.empty()) {
-        footprint_checker_.setCostmap(
-          const_cast<nav2_costmap_2d::Costmap2D *>(costmap));
-      }
-
       for (unsigned int i = 1; i != path_size - 1; i++) {
         // Center cost of the pose's cell, off the map is in collision
         const bool in_map = costmap->worldToMap(
@@ -276,7 +276,8 @@ void Smoother::findBoundaryExpansion(
   const geometry_msgs::msg::Pose & start,
   const geometry_msgs::msg::Pose & end,
   BoundaryExpansion & expansion,
-  const nav2_costmap_2d::Costmap2D * costmap)
+  const nav2_costmap_2d::Costmap2D * costmap,
+  const std::vector<geometry_msgs::msg::Point> & footprint)
 {
   ompl::base::ScopedState<> from(state_space_), to(state_space_), s(state_space_);
 
@@ -311,11 +312,18 @@ void Smoother::findBoundaryExpansion(
     x = reals[0];
     y = reals[1];
 
-    // Check for collision
-    unsigned int mx, my;
-    const float cost = costmap->worldToMap(x, y, mx, my) ?
-      static_cast<float>(costmap->getCost(mx, my)) : OCCUPIED_COST;
-    if (cost >= INSCRIBED_COST || exceedsMaxCost(cost, mx, my)) {
+    // Check for collision, off the map is in collision
+    unsigned int mx = 0, my = 0;
+    const bool in_map = costmap->worldToMap(x, y, mx, my);
+    const float center_cost =
+      in_map ? static_cast<float>(costmap->getCost(mx, my)) : OCCUPIED_COST;
+    if (!footprint.empty()) {
+      const double cost = footprint_checker_.footprintCostAtPose(x, y, reals[2], footprint);
+      if (static_cast<float>(cost) >= OCCUPIED_COST) {
+        expansion.in_collision = true;
+      }
+    }
+    if (!in_map || exceedsMaxCost(center_cost, mx, my)) {
       expansion.in_collision = true;
     }
 
@@ -371,7 +379,8 @@ void Smoother::enforceStartBoundaryConditions(
   const geometry_msgs::msg::Pose & start_pose,
   nav_msgs::msg::Path & path,
   const nav2_costmap_2d::Costmap2D * costmap,
-  const bool & reversing_segment)
+  const bool & reversing_segment,
+  const std::vector<geometry_msgs::msg::Point> & footprint)
 {
   // Find range of points for testing
   BoundaryExpansions boundary_expansions =
@@ -387,11 +396,11 @@ void Smoother::enforceStartBoundaryConditions(
     if (!reversing_segment) {
       findBoundaryExpansion(
         start_pose, path.poses[expansion.path_end_idx].pose, expansion,
-        costmap);
+        costmap, footprint);
     } else {
       findBoundaryExpansion(
         path.poses[expansion.path_end_idx].pose, start_pose, expansion,
-        costmap);
+        costmap, footprint);
     }
   }
 
@@ -417,7 +426,8 @@ void Smoother::enforceEndBoundaryConditions(
   const geometry_msgs::msg::Pose & end_pose,
   nav_msgs::msg::Path & path,
   const nav2_costmap_2d::Costmap2D * costmap,
-  const bool & reversing_segment)
+  const bool & reversing_segment,
+  const std::vector<geometry_msgs::msg::Point> & footprint)
 {
   // Find range of points for testing
   BoundaryExpansions boundary_expansions =
@@ -432,9 +442,11 @@ void Smoother::enforceEndBoundaryConditions(
     }
     expansion_starting_idx = path.poses.size() - expansion.path_end_idx - 1;
     if (!reversing_segment) {
-      findBoundaryExpansion(path.poses[expansion_starting_idx].pose, end_pose, expansion, costmap);
+      findBoundaryExpansion(
+        path.poses[expansion_starting_idx].pose, end_pose, expansion, costmap, footprint);
     } else {
-      findBoundaryExpansion(end_pose, path.poses[expansion_starting_idx].pose, expansion, costmap);
+      findBoundaryExpansion(
+        end_pose, path.poses[expansion_starting_idx].pose, expansion, costmap, footprint);
     }
   }
 
