@@ -14,6 +14,9 @@
 
 #include <gtest/gtest.h>
 
+#include <atomic>
+#include <thread>
+
 #include "nav2_core/behavior_tree_navigator.hpp"
 
 // Mock navigator to test NavigatorMuxer class
@@ -79,6 +82,44 @@ TEST(NavigatorMuxerTest, PreemptCurrentNavigatorCallsPreempt)
   EXPECT_FALSE(nav.preempt_called_);
   muxer.preemptCurrentNavigator();
   EXPECT_TRUE(nav.preempt_called_);
+}
+
+TEST(NavigatorMuxerTest, PreemptWithoutActiveNavigatorIsSafe)
+{
+  nav2_core::NavigatorMuxer muxer;
+  EXPECT_NO_THROW(muxer.preemptCurrentNavigator());
+  EXPECT_FALSE(muxer.isNavigating());
+}
+
+TEST(NavigatorMuxerTest, StartNavigatingRefusesAnotherOwner)
+{
+  nav2_core::NavigatorMuxer muxer;
+  MockNavigator nav_a, nav_b;
+  EXPECT_TRUE(muxer.startNavigating(&nav_a));
+  EXPECT_TRUE(muxer.startNavigating(&nav_a));
+  EXPECT_FALSE(muxer.startNavigating(&nav_b));
+  EXPECT_TRUE(muxer.isCurrentNavigator(&nav_a));
+}
+
+TEST(NavigatorMuxerTest, ConcurrentStartNavigatingHasOneOwner)
+{
+  nav2_core::NavigatorMuxer muxer;
+  MockNavigator nav_a, nav_b;
+  for (int round = 0; round < 2000; ++round) {
+    std::atomic_bool go{false};
+    std::atomic_int owners{0};
+    auto acquire = [&](nav2_core::NavigatorBase * nav) {
+        while (!go) {}
+        owners += muxer.startNavigating(nav) ? 1 : 0;
+      };
+    std::thread first(acquire, &nav_a);
+    std::thread second(acquire, &nav_b);
+    go = true;
+    first.join();
+    second.join();
+    ASSERT_EQ(owners, 1);
+    muxer.stopNavigating(muxer.isCurrentNavigator(&nav_a) ? &nav_a : &nav_b);
+  }
 }
 
 int main(int argc, char ** argv)

@@ -72,12 +72,18 @@ public:
 protected:
   /**
    * @brief A callback to be called when a new goal is received by the BT action server
-   * Can be used to check if goal is valid and put values on
-   * the blackboard which depend on the received goal
+   * Validate transforms without modifying the running blackboard or feedback state.
    * @param goal Action template's goal message
    * @return bool if goal was received successfully to be processed
    */
   bool goalReceived(ActionT::Goal::ConstSharedPtr goal) override;
+
+  /**
+   * @brief Initialize the goal blackboard and feedback state on the execution thread
+   * @param goal Action template's goal message to process
+   * @return bool If the goal poses were transformed and initialized successfully
+   */
+  bool goalStarted(ActionT::Goal::ConstSharedPtr goal) override;
 
   /**
    * @brief A callback that defines execution that happens on one iteration through the BT
@@ -102,6 +108,19 @@ protected:
     nav2_behavior_tree::BtStatus & final_bt_status) override;
 
   /**
+   * @brief Prepare poses without modifying the active goal, blackboard, or result state
+   * @param goal Action template's goal message to process
+   * @param current_pose Current robot pose in the global frame
+   * @param goals Goal poses transformed into the global frame
+   * @param error Description of the failure if pose preparation is unsuccessful
+   * @return bool If the current robot pose and all transformed goal poses are available
+   */
+  bool prepareGoalPoses(
+    ActionT::Goal::ConstSharedPtr goal,
+    geometry_msgs::msg::PoseStamped & current_pose,
+    nav_msgs::msg::Goals & goals, std::string & error);
+
+  /**
    * @brief Goal pose initialization on the blackboard
    * @return bool if goal was initialized successfully to be processed
    */
@@ -112,6 +131,8 @@ protected:
   std::string path_blackboard_id_;
   std::string tracking_feedback_blackboard_id_;
   std::string waypoint_statuses_blackboard_id_;
+  // Completion can run before goal initialization when BT loading or TF validation fails.
+  bool goal_initialized_ = false;
 
   // Odometry smoother object
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;

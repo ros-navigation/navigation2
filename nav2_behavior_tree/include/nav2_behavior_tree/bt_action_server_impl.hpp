@@ -42,6 +42,7 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
   const std::vector<std::string> & plugin_lib_names,
   const std::string & default_bt_xml_filename,
   OnGoalReceivedCallback on_goal_received_callback,
+  OnGoalStartedCallback on_goal_started_callback,
   OnLoopCallback on_loop_callback,
   OnPreemptCallback on_preempt_callback,
   OnCompletionCallback on_completion_callback,
@@ -52,6 +53,7 @@ BtActionServer<ActionT, NodeT>::BtActionServer(
   plugin_lib_names_(plugin_lib_names),
   node_(parent),
   on_goal_received_callback_(on_goal_received_callback),
+  on_goal_started_callback_(on_goal_started_callback),
   on_loop_callback_(on_loop_callback),
   on_preempt_callback_(on_preempt_callback),
   on_completion_callback_(on_completion_callback),
@@ -400,8 +402,6 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
 template<class ActionT, class NodeT>
 void BtActionServer<ActionT, NodeT>::executeCallback()
 {
-  muxer_preemption_requested_ = false;
-
   auto current_goal = action_server_->get_current_goal();
   if (!current_goal) {
     setInternalError(
@@ -409,7 +409,12 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
       "No current goal available when starting BT execution.");
   }
 
-  if (!current_goal || !loadBehaviorTree(current_goal->behavior_tree)) {
+  if (!current_goal || !loadBehaviorTree(current_goal->behavior_tree) ||
+    (on_goal_started_callback_ && !on_goal_started_callback_(current_goal)))
+  {
+    if (internal_error_code_ == ActionT::Result::NONE) {
+      setInternalError(ActionT::Result::UNKNOWN, "Goal failed to start.");
+    }
     auto result = std::make_shared<typename ActionT::Result>();
     populateErrorCode(result);
 
@@ -422,6 +427,7 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
       result->error_msg.c_str());
 
     cleanErrorCodes();
+    muxer_preemption_requested_ = false;
     return;
   }
 
@@ -480,6 +486,9 @@ void BtActionServer<ActionT, NodeT>::executeCallback()
   }
 
   cleanErrorCodes();
+  // Cleared only after completion released the navigator, so a preemption requested
+  // between acquiring the navigator and starting execution is not lost.
+  muxer_preemption_requested_ = false;
 }
 
 template<class ActionT, class NodeT>
