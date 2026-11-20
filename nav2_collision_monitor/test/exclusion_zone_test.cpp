@@ -21,7 +21,6 @@
 #include <vector>
 
 #include "nav2_ros_common/tf_manager.hpp"
-#include "rcl/time.h"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/parameter.hpp"
@@ -191,10 +190,6 @@ public:
   ExclusionZoneTester()
   {
     node_ = std::make_shared<nav2::LifecycleNode>("exclusion_zone_test_node");
-    tf_clock_ = node_->get_clock();
-    const auto initial_time = node_->now();
-    EXPECT_EQ(rcl_enable_ros_time_override(tf_clock_->get_clock_handle()), RCL_RET_OK);
-    setTime(initial_time);
     tf_manager_ = std::make_shared<nav2::TransformManager>(node_, false, false);
     executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     executor_->add_node(node_->get_node_base_interface());
@@ -207,23 +202,17 @@ public:
   }
 
 protected:
-  void setTime(const rclcpp::Time & time)
-  {
-    ASSERT_EQ(rcl_set_ros_time_override(tf_clock_->get_clock_handle(), time.nanoseconds()),
-      RCL_RET_OK);
-  }
-
-  // Populate both legs synchronously; these tests exercise zone logic, not TF transport.
+  // Use static transforms for tests that do not exercise TF freshness.
   void setTransform(const std::string & child_frame, double tx, double ty)
   {
     const auto stamp = node_->now();
-    setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp);
-    setFrame(BASE_FRAME_ID, child_frame, tx, ty, stamp);
+    setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp, true);
+    setFrame(BASE_FRAME_ID, child_frame, tx, ty, stamp, true);
   }
 
   void setFrame(
     const std::string & parent_frame, const std::string & child_frame, double tx, double ty,
-    const rclcpp::Time & stamp)
+    const rclcpp::Time & stamp, bool is_static = false)
   {
     geometry_msgs::msg::TransformStamped tf_msg;
     tf_msg.header.frame_id = parent_frame;
@@ -231,8 +220,7 @@ protected:
     tf_msg.header.stamp = stamp;
     tf_msg.transform.translation.x = tx;
     tf_msg.transform.translation.y = ty;
-    tf_msg.transform.rotation.w = 1.0;
-    ASSERT_TRUE(tf_manager_->getRawBuffer()->setTransform(tf_msg, "test"));
+    ASSERT_TRUE(tf_manager_->getRawBuffer()->setTransform(tf_msg, "test", is_static));
   }
 
   // Declare the parameters describing a zone before it is configured.
@@ -254,7 +242,6 @@ protected:
   }
 
   nav2::LifecycleNode::SharedPtr node_;
-  rclcpp::Clock::SharedPtr tf_clock_;
   nav2::TransformManager::SharedPtr tf_manager_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
 };  // ExclusionZoneTester
@@ -561,20 +548,19 @@ TEST_F(ExclusionZoneTester, DynamicTransformStalenessThresholdUpdateExtendsWindo
   node_->declare_parameter(
     std::string(ZONE_NAME) + ".transform_staleness_threshold", rclcpp::ParameterValue(1.0));
 
-  const rclcpp::Time stamp0 = node_->now();
+  const auto now = node_->now();
+  const auto stamp0 = now - rclcpp::Duration::from_seconds(3.0);
   setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp0);
   setFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 0.0, 0.0, stamp0);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
 
-  // 3 s after the last detection exceeds the 1 s hold window -> fail safe.
-  const rclcpp::Time later = stamp0 + rclcpp::Duration::from_seconds(3.0);
-  setTime(later);
-  setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, later);
+  // A detection from 3 s ago exceeds the 1 s hold window -> fail safe.
+  setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, now);
   {
     std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
-    zone->apply(later, data);
+    zone->apply(now, data);
     EXPECT_EQ(data.size(), 2u);
   }
 
@@ -585,7 +571,7 @@ TEST_F(ExclusionZoneTester, DynamicTransformStalenessThresholdUpdateExtendsWindo
   EXPECT_TRUE(result.successful);
   {
     std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
-    zone->apply(later, data);
+    zone->apply(now, data);
     ASSERT_EQ(data.size(), 1u);
     EXPECT_NEAR(data[0].x, 5.0, EPSILON);
   }
@@ -647,15 +633,16 @@ TEST_F(ExclusionZoneTester, HeldZoneDoesNotMaskWithStaleRobotPose)
   node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
   node_->declare_parameter(
     std::string(ZONE_NAME) + ".transform_staleness_threshold", rclcpp::ParameterValue(5.0));
-  setTransform(ZONE_FRAME_ID, 0.0, 0.0);
+  const auto now = node_->now();
+  const auto stamp = now - rclcpp::Duration::from_seconds(2.0);
+  setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp);
+  setFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 0.0, 0.0, stamp);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
 
   std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}};
-  const auto later = node_->now() + rclcpp::Duration::from_seconds(2.0);
-  setTime(later);
-  zone->apply(later, data);
+  zone->apply(now, data);
   EXPECT_EQ(data.size(), 1u);
 }
 
@@ -667,20 +654,19 @@ TEST_F(ExclusionZoneTester, HeldZoneKeepsMaskingWithinWindow)
     std::string(ZONE_NAME) + ".transform_staleness_threshold", rclcpp::ParameterValue(5.0));
 
   // Detection at stamp0; robot at the odom origin, zone at the origin.
-  const rclcpp::Time stamp0 = node_->now();
+  const auto now = node_->now();
+  const auto stamp0 = now - rclcpp::Duration::from_seconds(2.0);
   setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp0);
   setFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 0.0, 0.0, stamp0);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
 
-  // 2 s later the frame has not refreshed, but that is within the 5 s hold
+  // The detection is 2 s old, which is within the 5 s hold
   // window, so the zone must keep masking at its last known pose.
-  const rclcpp::Time later = stamp0 + rclcpp::Duration::from_seconds(2.0);
-  setTime(later);
-  setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, later);
+  setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, now);
   std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
-  zone->apply(later, data);
+  zone->apply(now, data);
   ASSERT_EQ(data.size(), 1u);
   EXPECT_NEAR(data[0].x, 5.0, EPSILON);
 }
@@ -692,18 +678,19 @@ TEST_F(ExclusionZoneTester, HeldZoneFailsSafeAfterWindowExpires)
   node_->declare_parameter(
     std::string(ZONE_NAME) + ".transform_staleness_threshold", rclcpp::ParameterValue(1.0));
 
-  const rclcpp::Time stamp0 = node_->now();
+  const auto now = node_->now();
+  const auto stamp0 = now - rclcpp::Duration::from_seconds(3.0);
   setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp0);
   setFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 0.0, 0.0, stamp0);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
 
-  // 3 s later exceeds the 1 s hold window -> fail safe, keep all points.
-  const rclcpp::Time later = stamp0 + rclcpp::Duration::from_seconds(3.0);
-  setTime(later);
+  // A detection from 3 s ago exceeds the 1 s hold window. Keep the robot
+  // pose fresh so only the expired zone transform causes the fail-safe.
+  setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, now);
   std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
-  zone->apply(later, data);
+  zone->apply(now, data);
   EXPECT_EQ(data.size(), 2u);
 }
 
@@ -715,12 +702,12 @@ TEST_F(ExclusionZoneTester, HeldZoneStaysFixedInWorldAsRobotMoves)
     std::string(ZONE_NAME) + ".transform_staleness_threshold", rclcpp::ParameterValue(5.0));
 
   // Robot at the odom origin; charger detected 10 m ahead -> world pose (10, 0).
-  const rclcpp::Time stamp0 = node_->now();
+  const auto stamp1 = node_->now();
+  const auto stamp0 = stamp1 - rclcpp::Duration::from_seconds(0.5);
   setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp0);
   setFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 10.0, 0.0, stamp0);
 
   // Robot drives +5 m in x; the detection is NOT refreshed (zone frozen at stamp0).
-  const rclcpp::Time stamp1 = stamp0 + rclcpp::Duration::from_seconds(0.5);
   setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 5.0, 0.0, stamp1);
 
   auto zone = makeZone();
