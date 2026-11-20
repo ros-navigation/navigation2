@@ -34,7 +34,6 @@ GetCurrentPoseAction::GetCurrentPoseAction(
 : BT::ActionNodeBase(name, conf)
 {
   auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
-  clock_ = node->get_clock();
   tf_manager_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("transform_manager");
   transform_staleness_threshold_ = node->declare_or_get_parameter(
     "transform_staleness_threshold", 0.0);
