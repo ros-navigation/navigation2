@@ -30,6 +30,7 @@ The following models of safety behaviors are employed by Collision Monitor:
 * **Stop model**: Define a zone and a point threshold. If more that `N` obstacle points appear inside this area, stop the robot until the obstacles will disappear.
 * **Slowdown model**: Define a zone around the robot and slow the maximum speed for a `%S` percent, if more than `N` points will appear inside the area.
 * **Approach model**: Using the current robot speed, estimate the time to collision to sensor data. If the time is less than `M` seconds (0.5, 2, 5, etc...), the robot will slow such that it is now at least `M` seconds to collision. The effect here would be to keep the robot always `M` seconds from any collision.
+  The robot motion is the constant-velocity projection of the current speed, or the received trajectory when the optional trajectory input is used.
 
 The zones around the robot can take the following shapes:
 
@@ -84,6 +85,28 @@ For `stop`, `slowdown`, and `limit` polygons, temporal debounce can be tuned wit
 
 A value of `1/1` behaves like the historical behavior (single-cycle trigger/release). In practice, values larger than `1` are recommended to reduce sensor noise flicker while keeping response times reasonable.
 
+
+#### Trajectory input
+
+The optional `trajectory_topic` parameter subscribes the node to a `nav_msgs::msg::Trajectory`, which is an alternative to `cmd_vel_in_topic`.
+Each trajectory is processed when it arrives, like a `cmd_vel`.
+The velocity of the first point is the desired robot velocity, so the output `cmd_vel_out` is that velocity, limited by the polygons.
+`approach` polygons check their footprint along the trajectory instead of along the projection of the current speed, up to `time_before_collision`.
+`stop`, `slowdown` and `limit` polygons behave as for a `cmd_vel`.
+If `cmd_vel` and trajectories both arrive, each one is processed and published as it is received.
+Use a single producer, or mux several producers before this node, as for `cmd_vel`.
+
+The trajectory producer is responsible for correct timestamps and sampling.
+The first point is time 0, and the time of every other point is its stamp difference from the first.
+The robot stops if the trajectory:
+
+* is empty or has an invalid first velocity,
+* has a non-finite pose or a point frame different from the header frame,
+* has a stamp that does not increase,
+* has more than the smallest `simulation_time_step` of the `approach` polygons between two points,
+* cannot be transformed to the base frame.
+
+The protection horizon of an `approach` polygon is the shorter of `time_before_collision` and the length of the trajectory.
 
 ### Metrics
 

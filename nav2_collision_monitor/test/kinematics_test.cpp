@@ -89,6 +89,30 @@ TEST(KinematicsTest, testProjectState)
   EXPECT_NEAR(vel.tw, M_PI / 4.0, EPSILON);  // should be the same
 }
 
+TEST(KinematicsTest, testProjectConstantVelocity)
+{
+  // 1 m/s forward, turning 1 rad/s: points are labelled with the time at the start of their step
+  const double dt = 0.1;
+  const nav2_collision_monitor::Velocity velocity{1.0, 0.0, 1.0};
+  const nav2_collision_monitor::Trajectory trajectory =
+    nav2_collision_monitor::projectConstantVelocity(velocity, 1.0, dt);
+
+  // Labels 0.0, 0.1, ... accumulate like the loop: the last one, 0.9999999999999999, is within 1.0
+  ASSERT_EQ(trajectory.size(), 11u);
+
+  nav2_collision_monitor::Pose pose{0.0, 0.0, 0.0};
+  nav2_collision_monitor::Velocity vel = velocity;
+  double time = 0.0;
+  for (const auto & point : trajectory) {
+    nav2_collision_monitor::projectState(dt, pose, vel);
+    EXPECT_DOUBLE_EQ(point.time_s, time);
+    EXPECT_DOUBLE_EQ(point.pose.x, pose.x);
+    EXPECT_DOUBLE_EQ(point.pose.y, pose.y);
+    EXPECT_DOUBLE_EQ(point.pose.theta, pose.theta);
+    time += dt;
+  }
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
