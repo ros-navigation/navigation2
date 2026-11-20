@@ -22,3 +22,5 @@ target_link_libraries(test_plan_through_poses
   nav_msgs::nav_msgs
   nav2_msgs::nav2_msgs
 )
+
+nav2_add_pytest_test(test_error_codes test_error_codes.py)

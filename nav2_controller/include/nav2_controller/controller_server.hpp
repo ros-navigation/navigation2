@@ -208,6 +208,13 @@ protected:
    * @brief Called on goal exit
    */
   void onGoalExit(bool force_stop);
+
+  /**
+   * @brief Abort the current goal and report the error in the action result
+   * @param error_code FollowPath error code
+   * @param error_msg Error message
+   */
+  void terminateWithError(uint16_t error_code, const std::string & error_msg);
   /**
    * @brief Wait for costmap to become current, with timeout
    * @return Duration in seconds spent waiting for the costmap (0.0 if already current)

@@ -9,6 +9,9 @@ bool use_start # If false, use current robot pose as path start, if true, use st
 
 # Error codes
 # Note: The expected priority order of the errors should match the message order
+# Note: Each code is the matching ComputePathThroughPoses code minus 100, and the planner
+# server relies on this. Every code here must also exist in ComputePathThroughPoses. A code
+# only in ComputePathThroughPoses keeps its number reserved here, like 209 below
 uint16 NONE=0
 uint16 GOAL_REJECTED=1
 uint16 SEND_GOAL_FAILURE=2
@@ -21,6 +24,7 @@ uint16 START_OCCUPIED=205
 uint16 GOAL_OCCUPIED=206
 uint16 TIMEOUT=207
 uint16 NO_VALID_PATH=208
+# uint16 NO_VIAPOINTS_GIVEN=209  # Reserved, only used by ComputePathThroughPoses (309)
 
 nav_msgs/Path path
 builtin_interfaces/Duration planning_time

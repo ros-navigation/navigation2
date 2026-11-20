@@ -7,6 +7,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(nav2_behavior_tree REQUIRED)
 find_package(nav2_common REQUIRED)
 find_package(nav2_costmap_2d REQUIRED)
+find_package(nav2_msgs REQUIRED)
 find_package(nav2_util REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
@@ -27,6 +28,7 @@ target_link_libraries(nav2_core INTERFACE
   nav2_behavior_tree::nav2_behavior_tree
   nav2_costmap_2d::nav2_costmap_2d_core
   nav2_costmap_2d::nav2_costmap_2d_client
+  nav2_msgs::nav2_msgs
   nav2_util::nav2_util_core
   nav_msgs::nav_msgs
   pluginlib::pluginlib
@@ -63,6 +65,7 @@ ament_export_dependencies(
   geometry_msgs
   nav2_behavior_tree
   nav2_costmap_2d
+  nav2_msgs
   nav2_util
   nav_msgs
   pluginlib

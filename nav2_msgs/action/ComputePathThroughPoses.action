@@ -11,6 +11,9 @@ int16 ALL_GOALS = -1
 
 # Error codes
 # Note: The expected priority order of the errors should match the message order
+# Note: Each code is the matching ComputePathToPose code plus 100, and the planner server
+# relies on this. Every ComputePathToPose code must also exist here. A code only here keeps
+# its number reserved in ComputePathToPose, like 209 for NO_VIAPOINTS_GIVEN
 uint16 NONE=0
 uint16 GOAL_REJECTED=1
 uint16 SEND_GOAL_FAILURE=2
