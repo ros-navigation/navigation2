@@ -81,11 +81,6 @@ public:
     initialPoseReceived(msg);
   }
 
-  std::unique_lock<std::recursive_mutex> lockScanProcessing()
-  {
-    return std::unique_lock<std::recursive_mutex>(mutex_);
-  }
-
   double mapOriginX() const {return map_->origin_x;}
   double lastPoseX() const {return last_published_pose_.pose.pose.position.x;}
 
