@@ -22,7 +22,7 @@ namespace nav2_behavior_tree
 
 IsGoalNearbyCondition::IsGoalNearbyCondition(
   const std::string & condition_name, const BT::NodeConfiguration & conf)
-: BT::ConditionNode(condition_name, conf), transform_tolerance_(0.1)
+: BT::ConditionNode(condition_name, conf)
 {
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   clock_ = node_->get_clock();

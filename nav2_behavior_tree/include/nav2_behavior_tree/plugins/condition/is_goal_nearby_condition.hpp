@@ -92,8 +92,8 @@ private:
   nav2::TransformManager::SharedPtr tf_manager_;
   nav_msgs::msg::Path path_;
   std::vector<geometry_msgs::msg::PoseStamped>::iterator closest_pose_detection_begin_;
-  double transform_tolerance_;
-  double transform_staleness_threshold_;
+  double transform_tolerance_{0.1};
+  double transform_staleness_threshold_{0.0};
   std::string global_frame_;
   std::string robot_base_frame_;
 };
