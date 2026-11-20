@@ -97,6 +97,11 @@
       <input_port name="plugins" type="vector&lt;string&gt;">Optional. A list of costmap plugin names to be cleared. If specified, only these costmap plugins will be cleared. Otherwise, all "clearable" costmap plugins will be cleared.</input_port>
     </Action>
 
+    <Action ID="GetForwardVelocity">
+      <input_port name="max_odom_age" type="double" default="1.0">Maximum odometry age in seconds.</input_port>
+      <output_port name="forward_velocity" type="double">Forward body-frame velocity in m/s.</output_port>
+    </Action>
+
     <Action ID="ComputePathToPose">
       <input_port name="start" type="geometry_msgs::msg::PoseStamped">Start pose. Optional. Used as the planner start pose instead of the current robot pose, if `use_start` is not false (i.e. not provided or set to true). Takes in a blackboard variable, e.g. "{start}".</input_port>
       <input_port name="use_start" type="bool">Optional. For using or not using (i.e. ignoring) the provided start pose `start`. Takes in a blackboard variable, e.g. "{use_start}".</input_port>
