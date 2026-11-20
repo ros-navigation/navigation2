@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <chrono>
 #include <memory>
-#include <thread>
 
 #include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_route/graph_loader.hpp"
@@ -130,14 +128,8 @@ bool GraphLoader::transformGraph(Graph & graph)
     if (cached_transforms.find(node_frame) == cached_transforms.end()) {
       tf2::Transform tf_transform;
       std::string transform_error;
-      auto transform = tf_manager_->getLatestTransform(
-        route_frame_, node_frame, 0.0, &transform_error);
-      // Allow up to one second for the listener to receive the graph frame transform.
-      for (int retry = 0; !transform && retry < 10 && rclcpp::ok(); ++retry) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        transform = tf_manager_->getLatestTransform(
-          route_frame_, node_frame, 0.0, &transform_error);
-      }
+      auto transform = tf_manager_->getStampedTransform(
+        route_frame_, node_frame, rclcpp::Time(0), 1.0, &transform_error);
 
       if (!transform) {
         RCLCPP_ERROR(logger_, "Failed to transform graph node into route frame: %s",
