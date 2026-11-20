@@ -20,32 +20,27 @@ Thus, see the migration guide below for how to migrate from the previous version
 
 ### Transform manager
 
-`nav2::TransformManager` in `nav2_ros_common/tf_manager.hpp` owns a TF buffer, listener, and lazy dynamic and static broadcasters.
-Create it with `nav2::create_transform_manager(node)` or construct it directly with the node.
-The node supplies the clock and timer interfaces. The listener starts by default using a dedicated thread.
-Pass `activate_listener=false` to create a manager without a listener.
-The listener is destroyed before the native buffer.
-Set `spin_thread=false` when the application spins the node to receive transforms.
-Pass `use_internal_node=true` to receive TF on TF2's auxiliary node with a dedicated thread.
-This listener uses process-global arguments, not the supplied node's namespace or local remappings, which allows namespaced nodes to subscribe to the right topics.
-Costmaps use this option to keep TF reception outside their child namespace.
-The supplied node still provides the clock, timers, and broadcaster interfaces.
-Dynamic and static broadcasters are advertised independently on the first `sendTransform()` or `sendStaticTransform()` call.
-Both methods accept a single transform or a vector of transforms. Static transforms are retained for late subscribers.
-Applications must synchronize concurrent broadcaster calls on the same manager.
+The `nav2::TransformManager` in `nav2_ros_common/tf_manager.hpp` brings TF reception, broadcasting, lookups, and pose conversions together in a single object.
 
-Application code uses `getLatestTransform`, `getLatestPose`, `getStampedTransform`, and `transformStampedPose`.
-Lookups return `std::optional`.
-Lookup APIs do not log failures. Pass an optional `std::string * error_msg` as the final
-argument to receive the unmodified TF exception text, or the reason for validation or
-staleness failures. The output is cleared on success. Callers should log once with
-context, or propagate the details to the caller that owns logging.
-For availability probes, check the returned optional without emitting a diagnostic.
-Latest lookups measure staleness against the buffer's stored clock.
+By default, it starts listening for transforms when instantiated. Transforms and poses can be queried using:
 
-For TF-aware subscriptions, include `nav2_ros_common/message_filter.hpp` and use `nav2::create_message_filter()`.
+- `getStampedTransform` to retrieve a transform between frames at a specified time.
+- `transformStampedPose` to transform a stamped pose into a different frame.
+- `getLatestTransform` / `getLatestPose` to retrieve the latest available transform / pose, optionally checking its age against a specified threshold.
 
-The method `getRawBuffer()` returns a shared pointer to the native TF buffer and should be used only exceptionally for objects requiring the native buffer implementation.
+With the default configuration, the manager creates a dedicated thread to receive TF messages. Set `spin_thread=false` if your application already spins the supplied node through an executor and you want that executor to process TF messages instead. In this mode, the executor must keep running for the manager to receive new transforms.
+
+If the node uses a namespace, set `use_internal_node=true` to receive TF through an auxiliary node that doesn't prepend the supplied node's namespace to the subscribed TF topics. This option requires `spin_thread=true`.
+
+Lookups and pose transformations return `std::optional` values that callers must check for validity before use. Callers can also supply an `error_msg` string pointer to receive failure details.
+
+Transforms can be broadcast using `sendTransform()` or `sendStaticTransform()`. Each broadcaster advertises its topic independently on first use.
+
+If the application is only broadcasting transformations, it is advised to create the manager using the option that disables the internal listener.
+
+Applications must synchronize concurrent broadcaster calls on the same manager, including initialization on first use, as the object is not thread-safe.
+
+The `getRawBuffer()` method returns a shared pointer to the native TF buffer. Reserve it for integrations requiring direct buffer access; use the manager's methods for ordinary lookups and pose transformations.
 
 ## Migration Guide
 
