@@ -16,11 +16,14 @@
 
 #include <math.h>
 #include <chrono>
+#include <cmath>
 #include <memory>
 #include <utility>
 #include <vector>
 #include <string>
 #include <limits>
+#include <thread>
+#include <unordered_map>
 
 #include "rclcpp/duration.hpp"
 #include "rclcpp/exceptions.hpp"
@@ -33,6 +36,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "geometry_msgs/msg/point32.hpp"
 #include "geometry_msgs/msg/polygon_stamped.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
 
 #include "nav2_ros_common/tf2_factories.hpp"
 
@@ -204,6 +208,16 @@ public:
   double isVisualize() const
   {
     return visualize_;
+  }
+
+  bool hasApproachPublisher() const
+  {
+    return approach_pub_ != nullptr;
+  }
+
+  size_t getApproachSubscriptionCount() const
+  {
+    return approach_pub_->get_subscription_count();
   }
 };  // PolygonWrapper
 
@@ -1199,6 +1213,231 @@ TEST_F(Tester, testPolygonDebounceRejectsInvalidDynamicParameters)
     test_node_->set_parameters({
     rclcpp::Parameter(std::string(POLYGON_NAME) + ".release_consecutive_points", 0)}),
     rclcpp::exceptions::InvalidParameterValueException);
+}
+
+TEST_F(Tester, testPolygonApproachDynamicParameters)
+{
+  createPolygon("approach", true);
+
+  // Two points 0.2 m ahead of the polygon (0.5 m): collision expected in ~0.4 s at 0.5 m/s
+  nav2_collision_monitor::Velocity vel{0.5, 0.0, 0.0};
+  std::unordered_map<std::string, std::vector<nav2_collision_monitor::Point>> points_map;
+  points_map.insert({OBSERVATION_SOURCE_NAME, {{0.7, -0.01}, {0.7, 0.01}}});
+  std::vector<nav2_collision_monitor::Point> triggering_points;
+  EXPECT_NEAR(
+    polygon_->getCollisionTime(points_map, vel, triggering_points), 0.4, SIMULATION_TIME_STEP);
+
+  // Shrink the approach horizon below the collision time: no collision is expected anymore
+  auto results = test_node_->set_parameters({
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".time_before_collision", 0.2),
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".simulation_time_step", 0.02)});
+  ASSERT_EQ(results.size(), 2u);
+  EXPECT_TRUE(results[0].successful);
+  EXPECT_TRUE(results[1].successful);
+  EXPECT_NEAR(polygon_->getTimeBeforeCollision(), 0.2, EPSILON);
+  EXPECT_NEAR(polygon_->getSimulationTimeStep(), 0.02, EPSILON);
+
+  triggering_points.clear();
+  EXPECT_LT(polygon_->getCollisionTime(points_map, vel, triggering_points), 0.0);
+  EXPECT_TRUE(triggering_points.empty());
+}
+
+TEST_F(Tester, testPolygonApproachRejectsInvalidDynamicParameters)
+{
+  createPolygon("approach", true);
+
+  for (const double value : {0.0, -1.0}) {
+    auto results = test_node_->set_parameters({
+      rclcpp::Parameter(std::string(POLYGON_NAME) + ".time_before_collision", value)});
+    ASSERT_EQ(results.size(), 1u);
+    EXPECT_FALSE(results[0].successful);
+
+    results = test_node_->set_parameters({
+      rclcpp::Parameter(std::string(POLYGON_NAME) + ".simulation_time_step", value)});
+    ASSERT_EQ(results.size(), 1u);
+    EXPECT_FALSE(results[0].successful);
+  }
+
+  // Rejected values must leave both the polygon and the node parameter untouched
+  EXPECT_NEAR(polygon_->getTimeBeforeCollision(), TIME_BEFORE_COLLISION, EPSILON);
+  EXPECT_NEAR(polygon_->getSimulationTimeStep(), SIMULATION_TIME_STEP, EPSILON);
+  EXPECT_NEAR(
+    test_node_->get_parameter(std::string(POLYGON_NAME) + ".time_before_collision").as_double(),
+    TIME_BEFORE_COLLISION, EPSILON);
+  EXPECT_NEAR(
+    test_node_->get_parameter(std::string(POLYGON_NAME) + ".simulation_time_step").as_double(),
+    SIMULATION_TIME_STEP, EPSILON);
+}
+
+TEST_F(Tester, testPolygonNonApproachRejectsApproachDynamicParameters)
+{
+  // Simulate the parameter being declared from overrides for a non-approach polygon
+  test_node_->declare_parameter(std::string(POLYGON_NAME) + ".visualize_approach", false);
+  createPolygon("stop", true);
+  EXPECT_FALSE(polygon_->hasApproachPublisher());
+
+  auto results = test_node_->set_parameters({
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".time_before_collision", 0.5),
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".simulation_time_step", 0.05),
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".visualize_approach", true)});
+  ASSERT_EQ(results.size(), 3u);
+  EXPECT_FALSE(results[0].successful);
+  EXPECT_FALSE(results[1].successful);
+  EXPECT_FALSE(results[2].successful);
+  EXPECT_FALSE(polygon_->getVisualizeApproach());
+}
+
+TEST_F(Tester, testPolygonApproachVisualization)
+{
+  using visualization_msgs::msg::Marker;
+  using visualization_msgs::msg::MarkerArray;
+  using nav2_collision_monitor::Point;
+
+  createPolygon("approach", true);
+  ASSERT_TRUE(polygon_->hasApproachPublisher());
+  EXPECT_FALSE(polygon_->getVisualizeApproach());  // Disabled by default
+
+  MarkerArray::ConstSharedPtr received;
+  auto sub = test_node_->create_subscription<MarkerArray>(
+    std::string(POLYGON_NAME) + "_approach",
+    [&received](MarkerArray::ConstSharedPtr msg) {received = msg;});
+  rclcpp::Time start = test_node_->now();
+  while (polygon_->getApproachSubscriptionCount() == 0 &&
+    test_node_->now() - start <= rclcpp::Duration(1s))
+  {
+    std::this_thread::sleep_for(10ms);
+  }
+  ASSERT_GT(polygon_->getApproachSubscriptionCount(), 0u);
+
+  auto simulateAndPublish = [&](
+    const nav2_collision_monitor::Velocity & vel, const std::vector<Point> & points,
+    const std::chrono::nanoseconds & timeout) {
+      std::unordered_map<std::string, std::vector<Point>> points_map;
+      points_map.insert({OBSERVATION_SOURCE_NAME, points});
+      std::vector<Point> triggering_points;
+      const double collision_time = polygon_->getCollisionTime(points_map, vel, triggering_points);
+      received.reset();
+      polygon_->publish();
+      rclcpp::Time wait_start = test_node_->now();
+      while (!received && test_node_->now() - wait_start <= rclcpp::Duration(timeout)) {
+        executor_->spin_some();
+        std::this_thread::sleep_for(10ms);
+      }
+      return collision_time;
+    };
+  // Each footprint is drawn as 4 edges of 2 points in the LINE_LIST
+  const size_t points_per_step = 4 * 2;
+  const double dt = SIMULATION_TIME_STEP;
+
+  // Nothing is published while visualize_approach is disabled
+  simulateAndPublish({0.5, 0.0, 0.0}, {{0.7, -0.01}, {0.7, 0.01}}, 200ms);
+  EXPECT_EQ(received, nullptr);
+
+  // Switch on dynamically
+  auto results = test_node_->set_parameters({
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".visualize_approach", true)});
+  ASSERT_TRUE(results[0].successful);
+  EXPECT_TRUE(polygon_->getVisualizeApproach());
+
+  // 1. Forward movement with collision at ~0.4s
+  double collision_time =
+    simulateAndPublish({0.5, 0.0, 0.0}, {{0.7, -0.01}, {0.7, 0.01}}, 500ms);
+  EXPECT_NEAR(collision_time, 0.4, dt);
+  ASSERT_NE(received, nullptr);
+  ASSERT_EQ(received->markers.size(), 3u);
+  const Marker & steps = received->markers[0];
+  EXPECT_EQ(steps.header.frame_id, BASE_FRAME_ID);
+  EXPECT_EQ(steps.ns, POLYGON_NAME);
+  EXPECT_EQ(steps.type, Marker::LINE_LIST);
+  EXPECT_EQ(steps.action, Marker::ADD);
+  ASSERT_EQ(steps.points.size(), steps.colors.size());
+  ASSERT_EQ(steps.points.size() % points_per_step, 0u);
+  size_t n_steps = steps.points.size() / points_per_step;
+  // The footprint on step k is shifted by (k + 1) * dt * v and collides on the last step
+  EXPECT_EQ(n_steps, static_cast<size_t>(std::round(collision_time / dt)) + 1);
+  EXPECT_NEAR(steps.points[0].x, 0.5 + 0.5 * dt, EPSILON);
+  EXPECT_NEAR(steps.points[0].y, 0.5, EPSILON);
+  EXPECT_NEAR(steps.colors[0].r, 1.0, EPSILON);  // t = 0 -> red (stop)
+  EXPECT_NEAR(steps.colors[0].g, 0.0, EPSILON);
+  const Marker & collision = received->markers[1];
+  EXPECT_EQ(collision.type, Marker::LINE_STRIP);
+  EXPECT_EQ(collision.action, Marker::ADD);
+  ASSERT_EQ(collision.points.size(), 5u);  // Closed square
+  EXPECT_NEAR(collision.points[0].x, 0.5 + 0.5 * n_steps * dt, EPSILON);
+  EXPECT_NEAR(collision.points[0].x, collision.points[4].x, EPSILON);
+  // ratio = 0.4 -> between red and yellow
+  EXPECT_NEAR(collision.color.r, 1.0, EPSILON);
+  EXPECT_NEAR(collision.color.g, 2.0 * collision_time / TIME_BEFORE_COLLISION, 0.05);
+  const Marker & label = received->markers[2];
+  EXPECT_EQ(label.type, Marker::TEXT_VIEW_FACING);
+  EXPECT_EQ(label.action, Marker::ADD);
+  EXPECT_NE(label.text.find(POLYGON_NAME), std::string::npos);
+  EXPECT_NE(label.text.find("% speed"), std::string::npos);
+
+  // 2. No collision: the whole horizon is drawn, collision markers are removed
+  collision_time = simulateAndPublish({0.5, 0.0, 0.0}, {{5.0, -0.01}, {5.0, 0.01}}, 500ms);
+  EXPECT_LT(collision_time, 0.0);
+  ASSERT_NE(received, nullptr);
+  ASSERT_EQ(received->markers.size(), 3u);
+  n_steps = received->markers[0].points.size() / points_per_step;
+  EXPECT_NEAR(
+    static_cast<double>(n_steps), TIME_BEFORE_COLLISION / dt + 1.0, 1.0);
+  EXPECT_NEAR(received->markers[0].colors.back().g, 1.0, EPSILON);  // t = T -> green
+  EXPECT_NEAR(received->markers[0].colors.back().r, 0.0, 0.05);
+  EXPECT_EQ(received->markers[1].action, Marker::DELETE);
+  EXPECT_EQ(received->markers[2].action, Marker::DELETE);
+
+  // 3. Rotation: the last footprint is rotated by n_steps * dt * tw around the robot
+  collision_time = simulateAndPublish({0.0, 0.0, 1.0}, {}, 500ms);
+  EXPECT_LT(collision_time, 0.0);
+  ASSERT_NE(received, nullptr);
+  const Marker & rot_steps = received->markers[0];
+  n_steps = rot_steps.points.size() / points_per_step;
+  ASSERT_GT(n_steps, 0u);
+  const double theta = n_steps * dt * 1.0;
+  const auto & last_vertex = rot_steps.points[(n_steps - 1) * points_per_step];
+  EXPECT_NEAR(last_vertex.x, 0.5 * std::cos(theta) - 0.5 * std::sin(theta), EPSILON);
+  EXPECT_NEAR(last_vertex.y, 0.5 * std::sin(theta) + 0.5 * std::cos(theta), EPSILON);
+
+  // 4. Points already inside the static polygon: single red footprint at the robot
+  collision_time = simulateAndPublish({0.5, 0.0, 0.0}, {{0.0, -0.01}, {0.0, 0.01}}, 500ms);
+  EXPECT_NEAR(collision_time, 0.0, EPSILON);
+  ASSERT_NE(received, nullptr);
+  EXPECT_EQ(received->markers[0].points.size(), points_per_step);
+  EXPECT_NEAR(received->markers[0].points[0].x, 0.5, EPSILON);
+  EXPECT_EQ(received->markers[1].action, Marker::ADD);
+  EXPECT_NEAR(received->markers[1].color.r, 1.0, EPSILON);
+  EXPECT_NEAR(received->markers[1].color.g, 0.0, EPSILON);
+  EXPECT_NE(received->markers[2].text.find("0% speed"), std::string::npos);
+
+  // Switch off dynamically: nothing is published anymore
+  results = test_node_->set_parameters({
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".visualize_approach", false)});
+  ASSERT_TRUE(results[0].successful);
+  EXPECT_FALSE(polygon_->getVisualizeApproach());
+  simulateAndPublish({0.5, 0.0, 0.0}, {{0.7, -0.01}, {0.7, 0.01}}, 200ms);
+  EXPECT_EQ(received, nullptr);
+}
+
+TEST_F(Tester, testPolygonApproachRejectsInvalidConfiguredParameters)
+{
+  setCommonParameters(POLYGON_NAME, "approach");
+  setPolygonParameters(SQUARE_POLYGON_STR, true);
+  test_node_->set_parameter(
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".time_before_collision", 0.0));
+  polygon_ = std::make_shared<PolygonWrapper>(
+    test_node_->weak_from_this(), POLYGON_NAME,
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+  EXPECT_FALSE(polygon_->configure());
+
+  test_node_->set_parameter(
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".time_before_collision", 1.0));
+  test_node_->set_parameter(
+    rclcpp::Parameter(std::string(POLYGON_NAME) + ".simulation_time_step", 0.0));
+  polygon_ = std::make_shared<PolygonWrapper>(
+    test_node_->weak_from_this(), POLYGON_NAME,
+    tf_buffer_, BASE_FRAME_ID, TRANSFORM_TOLERANCE);
+  EXPECT_FALSE(polygon_->configure());
 }
 
 int main(int argc, char ** argv)

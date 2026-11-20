@@ -15,11 +15,14 @@
 #include "nav2_collision_monitor/polygon.hpp"
 
 #include <algorithm>
+#include <cmath>
+#include <cstdio>
 #include <exception>
 #include <utility>
 
 #include "geometry_msgs/msg/point.hpp"
 #include "geometry_msgs/msg/point32.hpp"
+#include "std_msgs/msg/color_rgba.hpp"
 #include "tf2/transform_datatypes.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
@@ -43,7 +46,9 @@ Polygon::Polygon(
   slowdown_ratio_(0.0), linear_limit_(0.0), angular_limit_(0.0),
   footprint_sub_(nullptr), tf_buffer_(tf_buffer),
   base_frame_id_(base_frame_id), transform_tolerance_(transform_tolerance),
-  node_clock_(nullptr)
+  node_clock_(nullptr), visualize_approach_(false), approach_collision_step_(-1),
+  approach_time_before_collision_(0.0), approach_simulation_time_step_(0.0),
+  approach_updated_(false)
 {
   RCLCPP_INFO(logger_, "[%s]: Creating Polygon", polygon_name_.c_str());
 }
@@ -53,6 +58,7 @@ Polygon::~Polygon()
   RCLCPP_INFO(logger_, "[%s]: Destroying Polygon", polygon_name_.c_str());
   polygon_sub_.reset();
   polygon_pub_.reset();
+  approach_pub_.reset();
   poly_.clear();
   node_clock_.reset();
   auto node = node_.lock();
@@ -109,6 +115,12 @@ bool Polygon::configure()
       polygon_pub_topic);
   }
 
+  if (action_type_ == APPROACH) {
+    // Created regardless of visualize_approach, so that it could be switched on dynamically
+    approach_pub_ = node->create_publisher<visualization_msgs::msg::MarkerArray>(
+      approach_pub_topic_);
+  }
+
   // Add callback for dynamic parameters
   post_set_params_handler_ = node->add_post_set_parameters_callback(
     std::bind(
@@ -129,12 +141,18 @@ void Polygon::activate()
   if (visualize_) {
     polygon_pub_->on_activate();
   }
+  if (approach_pub_) {
+    approach_pub_->on_activate();
+  }
 }
 
 void Polygon::deactivate()
 {
   if (visualize_) {
     polygon_pub_->on_deactivate();
+  }
+  if (approach_pub_) {
+    approach_pub_->on_deactivate();
   }
 }
 
@@ -217,7 +235,14 @@ double Polygon::getAngularLimit() const
 
 double Polygon::getTimeBeforeCollision() const
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
   return time_before_collision_;
+}
+
+bool Polygon::getVisualizeApproach() const
+{
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  return visualize_approach_;
 }
 
 std::vector<std::string> Polygon::getSourcesNames() const
@@ -346,6 +371,17 @@ double Polygon::getCollisionTime(
   const Velocity & velocity,
   std::vector<Point> & out_triggering_points) const
 {
+  // Take a consistent snapshot of the simulation parameters,
+  // as they could be changed dynamically during the simulation
+  double time_before_collision, simulation_time_step;
+  bool record_simulation;
+  {
+    std::lock_guard<std::mutex> lock_reinit(mutex_);
+    time_before_collision = time_before_collision_;
+    simulation_time_step = simulation_time_step_;
+    record_simulation = visualize_approach_;
+  }
+
   // Initial robot pose is {0,0} in base_footprint coordinates
   Pose pose = {0.0, 0.0, 0.0};
   Velocity vel = velocity;
@@ -364,37 +400,66 @@ double Polygon::getCollisionTime(
   // Array of points transformed to the frame concerned with pose on each simulation step
   std::vector<Point> points_transformed = collision_points;
 
-  // Check static polygon
-  if (getPointsInside(collision_points, out_triggering_points) >= min_points_) {
-    return 0.0;
+  // Robot poses passed through the simulation, stored for visualization only
+  std::vector<Pose> simulated_poses;
+  if (record_simulation) {
+    simulated_poses.reserve(
+      static_cast<std::size_t>(time_before_collision / simulation_time_step) + 2);
   }
 
-  // Robot movement simulation
-  for (double time = 0.0; time <= time_before_collision_; time += simulation_time_step_) {
-    // Shift the robot pose towards to the vel during simulation_time_step_ time interval
-    // NOTE: vel is changing during the simulation
-    projectState(simulation_time_step_, pose, vel);
-    // Transform collision_points to the frame concerned with current robot pose
-    points_transformed = collision_points;
-    transformPoints(pose, points_transformed);
-    // If the collision occurred on this stage, return the actual time before a collision
-    // as if robot was moved with given velocity
-    std::vector<std::size_t> triggering_indices;
-    if (getPointsInside(points_transformed, triggering_indices) >= min_points_) {
-      for (std::size_t i : triggering_indices) {
-        out_triggering_points.push_back(collision_points[i]);
+  double collision_time = -1.0;  // No collision by default
+  // Check static polygon
+  if (getPointsInside(collision_points, out_triggering_points) >= min_points_) {
+    collision_time = 0.0;
+    if (record_simulation) {
+      simulated_poses.push_back(pose);
+    }
+  } else {
+    // Robot movement simulation
+    for (double time = 0.0; time <= time_before_collision; time += simulation_time_step) {
+      // Shift the robot pose towards to the vel during simulation_time_step time interval
+      // NOTE: vel is changing during the simulation
+      projectState(simulation_time_step, pose, vel);
+      if (record_simulation) {
+        simulated_poses.push_back(pose);
       }
-      return time;
+      // Transform collision_points to the frame concerned with current robot pose
+      points_transformed = collision_points;
+      transformPoints(pose, points_transformed);
+      // If the collision occurred on this stage, return the actual time before a collision
+      // as if robot was moved with given velocity
+      std::vector<std::size_t> triggering_indices;
+      if (getPointsInside(points_transformed, triggering_indices) >= min_points_) {
+        for (std::size_t i : triggering_indices) {
+          out_triggering_points.push_back(collision_points[i]);
+        }
+        collision_time = time;
+        break;
+      }
     }
   }
 
-  // There is no collision
-  return -1.0;
+  if (record_simulation) {
+    std::vector<Point> poly;
+    getPolygon(poly);
+    std::lock_guard<std::mutex> lock_reinit(mutex_);
+    // Pose at index k corresponds to the k * simulation_time_step returned collision time
+    approach_collision_step_ =
+      collision_time < 0.0 ? -1 : static_cast<int>(simulated_poses.size()) - 1;
+    approach_poses_ = std::move(simulated_poses);
+    approach_poly_ = std::move(poly);
+    approach_time_before_collision_ = time_before_collision;
+    approach_simulation_time_step_ = simulation_time_step;
+    approach_updated_ = true;
+  }
+
+  return collision_time;
 }
 
 void Polygon::publish()
 {
-  if (!visualize_) {
+  const bool visualize_approach = approach_pub_ && getVisualizeApproach();
+  if (!visualize_ && !visualize_approach) {
     return;
   }
 
@@ -402,11 +467,133 @@ void Polygon::publish()
   if (!node) {
     throw std::runtime_error{"Failed to lock node"};
   }
+  const rclcpp::Time stamp = node->now();
 
-  // Actualize the time to current and publish the polygon
-  polygon_.header.stamp = node->now();
-  auto msg = std::make_unique<geometry_msgs::msg::PolygonStamped>(polygon_);
-  polygon_pub_->publish(std::move(msg));
+  if (visualize_) {
+    // Actualize the time to current and publish the polygon
+    polygon_.header.stamp = stamp;
+    auto msg = std::make_unique<geometry_msgs::msg::PolygonStamped>(polygon_);
+    polygon_pub_->publish(std::move(msg));
+  }
+
+  if (visualize_approach) {
+    publishApproachSimulation(stamp);
+  }
+}
+
+void Polygon::publishApproachSimulation(const rclcpp::Time & stamp)
+{
+  std::vector<Pose> poses;
+  std::vector<Point> poly;
+  int collision_step;
+  double time_before_collision, simulation_time_step;
+  {
+    std::lock_guard<std::mutex> lock_reinit(mutex_);
+    if (!visualize_approach_ || !approach_updated_) {
+      return;
+    }
+    approach_updated_ = false;
+    poses.swap(approach_poses_);
+    poly.swap(approach_poly_);
+    collision_step = approach_collision_step_;
+    time_before_collision = approach_time_before_collision_;
+    simulation_time_step = approach_simulation_time_step_;
+  }
+
+  if (poses.empty() || poly.empty() || approach_pub_->get_subscription_count() == 0) {
+    return;
+  }
+
+  // Share of the commanded velocity the robot keeps if collision occurs on the given step:
+  // red (stop) -> yellow -> green (full velocity)
+  auto stepColor = [&](const std::size_t step) {
+      const double ratio = std::clamp(
+        static_cast<double>(step) * simulation_time_step / time_before_collision, 0.0, 1.0);
+      std_msgs::msg::ColorRGBA color;
+      color.r = ratio < 0.5 ? 1.0f : static_cast<float>(2.0 * (1.0 - ratio));
+      color.g = ratio < 0.5 ? static_cast<float>(2.0 * ratio) : 1.0f;
+      color.b = 0.0f;
+      color.a = 1.0f;
+      return color;
+    };
+  // Shape vertex from the simulated robot frame to the base frame: p = R * p' + pose
+  auto toBaseFrame = [](const Pose & pose, const Point & vertex) {
+      geometry_msgs::msg::Point p;
+      const double cos_theta = std::cos(pose.theta);
+      const double sin_theta = std::sin(pose.theta);
+      p.x = pose.x + vertex.x * cos_theta - vertex.y * sin_theta;
+      p.y = pose.y + vertex.x * sin_theta + vertex.y * cos_theta;
+      return p;
+    };
+
+  visualization_msgs::msg::Marker base_marker;
+  base_marker.header.frame_id = base_frame_id_;
+  base_marker.header.stamp = stamp;
+  base_marker.ns = polygon_name_;
+  base_marker.pose.orientation.w = 1.0;
+  // Markers vanish by themselves once the simulation stops being updated
+  base_marker.lifetime = rclcpp::Duration::from_seconds(0.5);
+
+  auto marker_array = std::make_unique<visualization_msgs::msg::MarkerArray>();
+
+  // All simulated footprints in a single marker, colored per step
+  visualization_msgs::msg::Marker steps = base_marker;
+  steps.id = 0;
+  steps.type = visualization_msgs::msg::Marker::LINE_LIST;
+  steps.action = visualization_msgs::msg::Marker::ADD;
+  steps.scale.x = 0.01;
+  steps.points.reserve(poses.size() * poly.size() * 2);
+  steps.colors.reserve(poses.size() * poly.size() * 2);
+  for (std::size_t step = 0; step < poses.size(); ++step) {
+    const std_msgs::msg::ColorRGBA color = stepColor(step);
+    for (std::size_t i = 0; i < poly.size(); ++i) {
+      steps.points.push_back(toBaseFrame(poses[step], poly[i]));
+      steps.points.push_back(toBaseFrame(poses[step], poly[(i + 1) % poly.size()]));
+      steps.colors.push_back(color);
+      steps.colors.push_back(color);
+    }
+  }
+  marker_array->markers.push_back(std::move(steps));
+
+  // Highlighted footprint and label of the step where the collision occurred
+  visualization_msgs::msg::Marker collision = base_marker;
+  collision.id = 1;
+  collision.type = visualization_msgs::msg::Marker::LINE_STRIP;
+  visualization_msgs::msg::Marker label = base_marker;
+  label.id = 2;
+  label.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+  if (collision_step >= 0) {
+    const Pose & pose = poses[collision_step];
+    const std_msgs::msg::ColorRGBA color = stepColor(collision_step);
+    const double collision_time = collision_step * simulation_time_step;
+
+    collision.action = visualization_msgs::msg::Marker::ADD;
+    collision.scale.x = 0.04;
+    collision.color = color;
+    for (const Point & vertex : poly) {
+      collision.points.push_back(toBaseFrame(pose, vertex));
+    }
+    collision.points.push_back(collision.points.front());  // Close the shape
+
+    char text[128];
+    std::snprintf(
+      text, sizeof(text), "%s: %.0f%% speed (t=%.2fs)", polygon_name_.c_str(),
+      100.0 * std::clamp(collision_time / time_before_collision, 0.0, 1.0), collision_time);
+    label.action = visualization_msgs::msg::Marker::ADD;
+    label.text = text;
+    label.pose.position.x = pose.x;
+    label.pose.position.y = pose.y;
+    label.pose.position.z = 0.5;
+    label.scale.z = 0.15;
+    label.color = color;
+  } else {
+    collision.action = visualization_msgs::msg::Marker::DELETE;
+    label.action = visualization_msgs::msg::Marker::DELETE;
+  }
+  marker_array->markers.push_back(std::move(collision));
+  marker_array->markers.push_back(std::move(label));
+
+  approach_pub_->publish(std::move(marker_array));
 }
 
 bool Polygon::getCommonParameters(
@@ -482,6 +669,18 @@ bool Polygon::getCommonParameters(
         polygon_name_ + ".time_before_collision", 2.0);
       simulation_time_step_ = node->declare_or_get_parameter(
         polygon_name_ + ".simulation_time_step", 0.1);
+      visualize_approach_ = node->declare_or_get_parameter(
+        polygon_name_ + ".visualize_approach", false);
+      approach_pub_topic_ = node->declare_or_get_parameter(
+        polygon_name_ + ".approach_pub_topic", polygon_name_ + "_approach");
+
+      if (time_before_collision_ <= 0.0 || simulation_time_step_ <= 0.0) {
+        RCLCPP_ERROR(
+          logger_,
+          "[%s]: time_before_collision and simulation_time_step must be > 0",
+          polygon_name_.c_str());
+        return false;
+      }
     }
 
     visualize_ = node->declare_or_get_parameter(polygon_name_ + ".visualize", false);
@@ -645,10 +844,36 @@ void Polygon::updatePolygon(geometry_msgs::msg::PolygonStamped::ConstSharedPtr m
 }
 
 rcl_interfaces::msg::SetParametersResult Polygon::validateParameterUpdatesCallback(
-  const std::vector<rclcpp::Parameter> & /*parameters*/)
+  const std::vector<rclcpp::Parameter> & parameters)
 {
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
+
+  for (const auto & parameter : parameters) {
+    const auto & param_name = parameter.get_name();
+    if (param_name != polygon_name_ + ".time_before_collision" &&
+      param_name != polygon_name_ + ".simulation_time_step" &&
+      param_name != polygon_name_ + ".visualize_approach")
+    {
+      continue;
+    }
+
+    if (action_type_ != APPROACH) {
+      result.successful = false;
+      result.reason = "Parameter '" + param_name +
+        "' is only applicable to polygons with 'approach' action type";
+      return result;
+    }
+
+    if (parameter.get_type() == rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE &&
+      parameter.as_double() <= 0.0)
+    {
+      result.successful = false;
+      result.reason = "Parameter '" + param_name + "' must be > 0";
+      return result;
+    }
+  }
+
   return result;
 }
 
@@ -667,6 +892,15 @@ void Polygon::updateParametersCallback(
       if (param_name == polygon_name_ + "." + "enabled") {
         enabled_ = parameter.as_bool();
         resetTriggerState();
+      } else if (param_name == polygon_name_ + "." + "visualize_approach") {
+        if (action_type_ == APPROACH) {
+          visualize_approach_ = parameter.as_bool();
+          if (!visualize_approach_) {
+            approach_poses_.clear();
+            approach_poly_.clear();
+            approach_updated_ = false;
+          }
+        }
       }
     }
 
@@ -690,6 +924,16 @@ void Polygon::updateParametersCallback(
         }
         release_consecutive_points_ = value;
         resetTriggerState();
+      }
+    }
+
+    if (param_type == rcl_interfaces::msg::ParameterType::PARAMETER_DOUBLE &&
+      action_type_ == APPROACH)
+    {
+      if (param_name == polygon_name_ + "." + "time_before_collision") {
+        time_before_collision_ = parameter.as_double();
+      } else if (param_name == polygon_name_ + "." + "simulation_time_step") {
+        simulation_time_step_ = parameter.as_double();
       }
     }
   }
