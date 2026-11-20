@@ -35,6 +35,7 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
+#include "nav2_costmap_2d/cost_values.hpp"
 
 using std::hypot;
 
@@ -62,18 +63,19 @@ void CostmapQueue::reset()
 void CostmapQueue::enqueueCell(unsigned int x, unsigned int y)
 {
   unsigned int index = costmap_.getIndex(x, y);
-  enqueueCell(index, x, y, x, y);
+  enqueueCell(index, x, y, x, y, 0.0);
 }
 
 void CostmapQueue::enqueueCell(
   unsigned int index, unsigned int cur_x, unsigned int cur_y,
-  unsigned int src_x, unsigned int src_y)
+  unsigned int src_x, unsigned int src_y, double walked_distance)
 {
   if (seen_[index]) {return;}
 
   // we compute our distance table one cell further than the inflation radius
   // dictates so we can make the check below
-  double distance = distanceLookup(cur_x, cur_y, src_x, src_y);
+  double distance = obstacle_aware_ ?
+    walked_distance : distanceLookup(cur_x, cur_y, src_x, src_y);
   CellData data(distance, index, cur_x, cur_y, src_x, src_y);
   if (validCellToQueue(data)) {
     seen_[index] = true;
@@ -87,25 +89,32 @@ CellData CostmapQueue::getNextCell()
   CellData current_cell = front();
   pop();
 
+  if (obstacle_aware_ &&
+    costmap_.getCost(current_cell.index_) == nav2_costmap_2d::LETHAL_OBSTACLE)
+  {
+    return current_cell;
+  }
+
   unsigned int index = current_cell.index_;
   unsigned int mx = current_cell.x_;
   unsigned int my = current_cell.y_;
   unsigned int sx = current_cell.src_x_;
   unsigned int sy = current_cell.src_y_;
+  double next = current_cell.distance_ + 1.0;
 
   // attempt to put the neighbors of the current cell onto the queue
   unsigned int size_x = costmap_.getSizeInCellsX();
   if (mx > 0) {
-    enqueueCell(index - 1, mx - 1, my, sx, sy);
+    enqueueCell(index - 1, mx - 1, my, sx, sy, next);
   }
   if (my > 0) {
-    enqueueCell(index - size_x, mx, my - 1, sx, sy);
+    enqueueCell(index - size_x, mx, my - 1, sx, sy, next);
   }
   if (mx < size_x - 1) {
-    enqueueCell(index + 1, mx + 1, my, sx, sy);
+    enqueueCell(index + 1, mx + 1, my, sx, sy, next);
   }
   if (my < costmap_.getSizeInCellsY() - 1) {
-    enqueueCell(index + size_x, mx, my + 1, sx, sy);
+    enqueueCell(index + size_x, mx, my + 1, sx, sy, next);
   }
 
   return current_cell;

@@ -41,7 +41,7 @@
 namespace dwb_critics
 {
 bool GoalDistCritic::prepare(
-  const geometry_msgs::msg::Pose &, const nav_2d_msgs::msg::Twist2D &,
+  const geometry_msgs::msg::Pose & pose, const nav_2d_msgs::msg::Twist2D &,
   const geometry_msgs::msg::Pose &,
   const nav_msgs::msg::Path & global_plan)
 {
@@ -57,7 +57,7 @@ bool GoalDistCritic::prepare(
   cell_values_[index] = 0.0;
   queue_->enqueueCell(local_goal_x, local_goal_y);
 
-  propagateManhattanDistances();
+  propagateDistances(pose);
 
   return true;
 }

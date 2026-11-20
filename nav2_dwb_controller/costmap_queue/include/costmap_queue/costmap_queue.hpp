@@ -128,6 +128,11 @@ public:
   void enqueueCell(unsigned int x, unsigned int y);
 
   /**
+   * @brief If true, use distances walked from the source and do not expand lethal cells
+   */
+  void setObstacleAware(bool obstacle_aware) {obstacle_aware_ = obstacle_aware;}
+
+  /**
    * @brief Get the next cell to examine, and enqueue its neighbors as needed
    * @return The next cell
    *
@@ -152,7 +157,7 @@ protected:
    */
   void enqueueCell(
     unsigned int index, unsigned int cur_x, unsigned int cur_y, unsigned int src_x,
-    unsigned int src_y);
+    unsigned int src_y, double walked_distance);
 
   /**
    * @brief Compute the cached distances
@@ -163,6 +168,7 @@ protected:
   std::vector<bool> seen_;
   int max_distance_;
   bool manhattan_;
+  bool obstacle_aware_{false};
 
 protected:
   /**
