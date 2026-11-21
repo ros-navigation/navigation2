@@ -106,6 +106,23 @@
       <output_port name="was_completed">True if smoothing was not interrupted by time limit</output_port>
     </Action>
 
+    <Action ID="ClassifyPath">
+      <input_port name="path">Path to classify</input_port>
+      <input_port name="costmap_topic" default="global_costmap/costmap_raw">Costmap topic</input_port>
+      <input_port name="footprint_topic" default="global_costmap/published_footprint">Footprint topic</input_port>
+      <input_port name="robot_base_frame" default="base_link">Robot base frame</input_port>
+      <input_port name="use_confined_space" default="true">Classify confined space</input_port>
+      <input_port name="inflation_resolution" default="0.05">Footprint inflation per step in metres</input_port>
+      <input_port name="max_constraint_clearance" default="0.1">Footprint inflation at which walls on opposite edges mark confined space</input_port>
+      <input_port name="use_last_mile" default="true">Classify last mile</input_port>
+      <input_port name="last_mile_ratio" default="0.0">Tail of the path length that is last mile</input_port>
+      <input_port name="last_mile_distance" default="2.0">Distance to the goal along the path that is last mile</input_port>
+      <input_port name="use_classification_filter" default="true">Filter classes with hysteresis</input_port>
+      <input_port name="hysteresis_window" default="4">Consecutive poses of a new class needed to confirm it</input_port>
+      <input_port name="publish_classified_path" default="false">Publish raw and classified path markers</input_port>
+      <output_port name="classified_path">Classified poses of the path</output_port>
+    </Action>
+
     <Action ID="FollowPath">
       <input_port name="controller_id" default="FollowPath"/>
       <input_port name="path">Path to follow</input_port>
@@ -160,6 +177,18 @@
         <input_port name="topic_name">Name of the topic to receive controller selection commands</input_port>
         <input_port name="default_controller">Default controller of the controller selector</input_port>
         <output_port name="selected_controller">Name of the selected controller received from the topic subcription</output_port>
+    </Action>
+
+    <Action ID="PathClassControllerSelector">
+        <input_port name="path">Path being followed</input_port>
+        <input_port name="classified_path">Classified poses of the path</input_port>
+        <input_port name="class_controller_map">'class:controller' pairs separated by ';'</input_port>
+        <input_port name="default_controller">Controller used when no class is mapped</input_port>
+        <input_port name="lookahead_arc_dist" default="1.0">Arc length ahead of the robot to check</input_port>
+        <input_port name="max_robot_pose_search_dist" default="1.0">Arc length to search for the closest pose</input_port>
+        <input_port name="global_frame" default="map">Global frame</input_port>
+        <input_port name="robot_base_frame" default="base_link">Robot base frame</input_port>
+        <output_port name="selected_controller">Selected controller</output_port>
     </Action>
 
     <Action ID="SmootherSelector">

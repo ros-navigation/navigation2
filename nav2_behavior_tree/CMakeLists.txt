@@ -17,6 +17,8 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(nav2_costmap_2d REQUIRED)
+find_package(visualization_msgs REQUIRED)
 
 nav2_package()
 
@@ -41,6 +43,8 @@ set(dependencies
   std_msgs
   std_srvs
   nav2_util
+  nav2_costmap_2d
+  visualization_msgs
 )
 
 add_library(${library_name} SHARED
@@ -77,6 +81,9 @@ list(APPEND plugin_libs nav2_drive_on_heading_cancel_bt_node)
 
 add_library(nav2_smooth_path_action_bt_node SHARED plugins/action/smooth_path_action.cpp)
 list(APPEND plugin_libs nav2_smooth_path_action_bt_node)
+
+add_library(nav2_classify_path_action_bt_node SHARED plugins/action/classify_path_action.cpp)
+list(APPEND plugin_libs nav2_classify_path_action_bt_node)
 
 add_library(nav2_follow_path_action_bt_node SHARED plugins/action/follow_path_action.cpp)
 list(APPEND plugin_libs nav2_follow_path_action_bt_node)
@@ -188,6 +195,10 @@ list(APPEND plugin_libs nav2_planner_selector_bt_node)
 
 add_library(nav2_controller_selector_bt_node SHARED plugins/action/controller_selector_node.cpp)
 list(APPEND plugin_libs nav2_controller_selector_bt_node)
+
+add_library(nav2_path_class_controller_selector_bt_node SHARED
+  plugins/action/path_class_controller_selector_node.cpp)
+list(APPEND plugin_libs nav2_path_class_controller_selector_bt_node)
 
 add_library(nav2_smoother_selector_bt_node SHARED plugins/action/smoother_selector_node.cpp)
 list(APPEND plugin_libs nav2_smoother_selector_bt_node)
