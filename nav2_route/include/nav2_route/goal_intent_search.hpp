@@ -20,6 +20,7 @@
 #include <vector>
 #include <queue>
 #include <unordered_set>
+#include <utility>
 #include <memory>
 
 #include "std_msgs/msg/color_rgba.hpp"
@@ -79,19 +80,21 @@ public:
     }
     unsigned int goal_id = costmap_->getIndex(goal_x, goal_y);
 
-    // Convert candidates to costmap space
-    std::vector<unsigned int> candidate_ids;
-    candidate_ids.reserve(candidate_nodes.size());
-    for (const auto & node : candidate_nodes) {
+    // Convert candidates to costmap space, keeping the index into candidate_nodes so that
+    // the result refers to the caller's list even when some candidates are skipped below.
+    std::vector<std::pair<unsigned int, unsigned int>> candidates;
+    candidates.reserve(candidate_nodes.size());
+    for (size_t i = 0; i != candidate_nodes.size(); ++i) {
+      const auto & node = candidate_nodes[i];
       unsigned int node_x, node_y;
       if (!costmap_->worldToMap(node.pose.position.x, node.pose.position.y, node_x, node_y)) {
         // Off the costmap, consider this candidate invalid
         continue;
       }
-      candidate_ids.push_back(costmap_->getIndex(node_x, node_y));
+      candidates.emplace_back(costmap_->getIndex(node_x, node_y), static_cast<unsigned int>(i));
     }
 
-    if (candidate_ids.empty()) {
+    if (candidates.empty()) {
       return false;
     }
 
@@ -107,9 +110,13 @@ public:
       iterations++;
 
       // Check if the current node is a candidate
-      auto iter = std::find(candidate_ids.begin(), candidate_ids.end(), current_id);
-      if (iter != candidate_ids.end()) {
-        closest_node_idx_ = std::distance(candidate_ids.begin(), iter);
+      auto iter = std::find_if(
+        candidates.begin(), candidates.end(),
+        [current_id](const std::pair<unsigned int, unsigned int> & candidate) {
+          return candidate.first == current_id;
+        });
+      if (iter != candidates.end()) {
+        closest_node_idx_ = iter->second;
         return true;
       }
 
@@ -186,8 +193,9 @@ public:
   }
 
   /**
-   * @brief Get the output closest node in candidate indices
-   * @return closest_node The closest candidate node index to the given point by search
+   * @brief Get the output closest node index into the node candidates given to search()
+   * @return closest_node The closest candidate node index to the given point by search,
+   *   skipping candidates that are outside of the costmap
    */
   unsigned int getClosestNodeIdx()
   {
