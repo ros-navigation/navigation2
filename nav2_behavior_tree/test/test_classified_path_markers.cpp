@@ -17,16 +17,16 @@
 #include <vector>
 
 #include "nav2_msgs/msg/classified_pose.hpp"
-#include "nav2_path_classifier/utils.hpp"
+#include "nav2_behavior_tree/utils/classified_path_markers.hpp"
 
-namespace nav2_path_classifier::utils
+namespace nav2_behavior_tree::utils
 {
 
 using nav2_msgs::msg::ClassifiedPose;
 using visualization_msgs::msg::Marker;
 
 /**
- * @brief Check that a color has the expected RGB components.
+ * @brief Check that a color has the expected RGB components
  * @param color Color to check
  * @param r Expected red
  * @param g Expected green
@@ -40,7 +40,7 @@ static void expectRgb(const std_msgs::msg::ColorRGBA & color, float r, float g, 
 }
 
 /**
- * @brief Build a classified path with one pose per class, where pose i is at x = i.
+ * @brief Classified path with one pose per class, where pose i is at x = i
  * @param classes Class of each pose in order
  * @return Classified path
  */
@@ -56,7 +56,7 @@ static std::vector<ClassifiedPose> makePath(const std::vector<uint16_t> & classe
 }
 
 /**
- * @brief Build a marker header in the map frame.
+ * @brief Marker header in the map frame
  * @return Header
  */
 static std_msgs::msg::Header makeHeader()
@@ -66,18 +66,7 @@ static std_msgs::msg::Header makeHeader()
   return header;
 }
 
-TEST(UtilsTest, HsvToRgbCoversEverySector)
-{
-  // Middle of each 60 degree sector at full saturation and brightness
-  expectRgb(hsvToRgb(0.5 / 6.0, 1.0, 1.0), 1.0f, 0.5f, 0.0f);
-  expectRgb(hsvToRgb(1.5 / 6.0, 1.0, 1.0), 0.5f, 1.0f, 0.0f);
-  expectRgb(hsvToRgb(2.5 / 6.0, 1.0, 1.0), 0.0f, 1.0f, 0.5f);
-  expectRgb(hsvToRgb(3.5 / 6.0, 1.0, 1.0), 0.0f, 0.5f, 1.0f);
-  expectRgb(hsvToRgb(4.5 / 6.0, 1.0, 1.0), 0.5f, 0.0f, 1.0f);
-  expectRgb(hsvToRgb(5.5 / 6.0, 1.0, 1.0), 1.0f, 0.0f, 0.5f);
-}
-
-TEST(UtilsTest, ColorForClassUsesPaletteForFirstSixClasses)
+TEST(ClassifiedPathMarkersTest, ColorForClassUsesPaletteForFirstSixClasses)
 {
   expectRgb(colorForClass(0), 0.2f, 0.4f, 1.0f);
   expectRgb(colorForClass(1), 0.2f, 0.8f, 0.2f);
@@ -90,7 +79,7 @@ TEST(UtilsTest, ColorForClassUsesPaletteForFirstSixClasses)
   }
 }
 
-TEST(UtilsTest, ColorForClassIsDeterministicAndDistinct)
+TEST(ClassifiedPathMarkersTest, ColorForClassIsDeterministicAndDistinct)
 {
   std::vector<std_msgs::msg::ColorRGBA> colors;
   for (uint16_t c = 0; c < 100; ++c) {
@@ -108,7 +97,7 @@ TEST(UtilsTest, ColorForClassIsDeterministicAndDistinct)
   }
 }
 
-TEST(UtilsTest, RawPathMarkersEmptyPathOnlyDeletes)
+TEST(ClassifiedPathMarkersTest, RawPathMarkersEmptyPathOnlyDeletes)
 {
   const auto markers = createRawPathMarkers({}, makeHeader());
   ASSERT_EQ(markers.markers.size(), 1u);
@@ -117,7 +106,7 @@ TEST(UtilsTest, RawPathMarkersEmptyPathOnlyDeletes)
   EXPECT_EQ(markers.markers[0].header.frame_id, "map");
 }
 
-TEST(UtilsTest, RawPathMarkersOneSpherePerPose)
+TEST(ClassifiedPathMarkersTest, RawPathMarkersOneSpherePerPose)
 {
   const auto path = makePath({1, 2, 3});
   const auto markers = createRawPathMarkers(path, makeHeader());
@@ -141,7 +130,7 @@ TEST(UtilsTest, RawPathMarkersOneSpherePerPose)
   }
 }
 
-TEST(UtilsTest, FilteredPathMarkersEmptyPathHasEmptyStrip)
+TEST(ClassifiedPathMarkersTest, FilteredPathMarkersEmptyPathHasEmptyStrip)
 {
   const auto markers = createFilteredPathMarkers({}, makeHeader());
   ASSERT_EQ(markers.markers.size(), 2u);
@@ -150,7 +139,7 @@ TEST(UtilsTest, FilteredPathMarkersEmptyPathHasEmptyStrip)
   EXPECT_TRUE(markers.markers[1].colors.empty());
 }
 
-TEST(UtilsTest, FilteredPathMarkersOneColoredStrip)
+TEST(ClassifiedPathMarkersTest, FilteredPathMarkersOneColoredStrip)
 {
   const auto path = makePath({1, 1, 2, 2, 3});
   const auto markers = createFilteredPathMarkers(path, makeHeader());
@@ -176,7 +165,7 @@ TEST(UtilsTest, FilteredPathMarkersOneColoredStrip)
   }
 }
 
-}  // namespace nav2_path_classifier::utils
+}  // namespace nav2_behavior_tree::utils
 
 int main(int argc, char ** argv)
 {

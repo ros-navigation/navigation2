@@ -329,26 +329,6 @@ planner_server:
       use_astar: false
       allow_unknown: true
 
-path_classifier_server:
-  ros__parameters:
-    use_sim_time: True
-    default_class_type: 1                                  # FREE_SPACE
-    pose_classifier_plugins: ["LastMile", "Constraint"]
-    LastMile:
-      plugin: "nav2_path_classifier/LastMileClassifier"
-      class_type: 3                                        # LAST_MILE
-      last_mile_ratio: 0.2                                 # tail of the path length that is last mile
-      claim_full_path_threshold: 0.75                      # paths shorter than this are all last mile
-    Constraint:
-      plugin: "nav2_path_classifier/ConfinedSpaceClassifier"
-      class_type: 2                                        # CONFINED_SPACE
-      inflation_resolution: 0.05                           # keep below the thinnest wall in the environment
-      max_constraint_clearance: 0.5                        # keep below global costmap inflation_radius
-    use_classification_filter: true
-    classification_filter:
-      hysteresis_window: 4
-    publish_classified_path: true
-
 smoother_server:
   ros__parameters:
     use_sim_time: True

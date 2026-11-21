@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef NAV2_PATH_CLASSIFIER__UTILS_HPP_
-#define NAV2_PATH_CLASSIFIER__UTILS_HPP_
+#ifndef NAV2_BEHAVIOR_TREE__UTILS__CLASSIFIED_PATH_MARKERS_HPP_
+#define NAV2_BEHAVIOR_TREE__UTILS__CLASSIFIED_PATH_MARKERS_HPP_
 
 #include <array>
-#include <cmath>
 #include <cstdint>
+#include <random>
 #include <vector>
 
 #include "nav2_msgs/msg/classified_pose.hpp"
@@ -26,45 +26,11 @@
 #include "visualization_msgs/msg/marker.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
-namespace nav2_path_classifier::utils
+namespace nav2_behavior_tree::utils
 {
 
 /**
- * @brief Convert an HSV color to RGB.
- * @param hue Hue in [0, 1)
- * @param saturation Saturation in [0, 1]
- * @param value Brightness in [0, 1]
- * @return Equivalent RGB color with components in [0, 1]
- */
-inline std_msgs::msg::ColorRGBA hsvToRgb(double hue, double saturation, double value)
-{
-  const double h6 = hue * 6.0;
-  const int sector = static_cast<int>(h6);
-  const double f = h6 - sector;
-  const double p = value * (1.0 - saturation);
-  const double q = value * (1.0 - saturation * f);
-  const double t = value * (1.0 - saturation * (1.0 - f));
-
-  double r, g, b;
-  switch (sector) {
-    case 0: r = value; g = t; b = p; break;
-    case 1: r = q; g = value; b = p; break;
-    case 2: r = p; g = value; b = t; break;
-    case 3: r = p; g = q; b = value; break;
-    case 4: r = t; g = p; b = value; break;
-    default: r = value; g = p; b = q; break;  // sector == 5
-  }
-
-  std_msgs::msg::ColorRGBA color;
-  color.r = static_cast<float>(r);
-  color.g = static_cast<float>(g);
-  color.b = static_cast<float>(b);
-  color.a = 1.0f;
-  return color;
-}
-
-/**
- * @brief Get the marker color for a given path class_type
+ * @brief Marker color for a path class, fixed per class across calls and runs
  * @param class_type Class identifier to map to a color
  * @return Color for the class
  */
@@ -79,28 +45,27 @@ inline std_msgs::msg::ColorRGBA colorForClass(uint16_t class_type)
     {{0.2f, 0.8f, 0.8f}}    // cyan
   }};
 
+  std_msgs::msg::ColorRGBA color;
+  color.a = 1.0f;
   if (class_type < kClassPalette.size()) {
     const auto & c = kClassPalette[class_type];
-    std_msgs::msg::ColorRGBA color;
     color.r = c[0];
     color.g = c[1];
     color.b = c[2];
-    color.a = 1.0f;
     return color;
   }
 
-  // Beyond the curated palette: step the hue by the golden ratio conjugate so
-  // colors stay spread across the full hue circle no matter how many classes exist,
-  // with no risk of repeating.
-  constexpr double kGoldenRatioConjugate = 0.6180339887498949;
-  constexpr double kSaturation = 0.85;
-  constexpr double kValue = 0.95;
-  const double hue = std::fmod(class_type * kGoldenRatioConjugate, 1.0);
-  return hsvToRgb(hue, kSaturation, kValue);
+  // Raw engine output seeded by the class, as the standard fixes it on every platform
+  std::mt19937 gen(class_type);
+  const uint32_t bits = gen();
+  color.r = static_cast<float>((bits >> 16) & 0xFF) / 255.0f;
+  color.g = static_cast<float>((bits >> 8) & 0xFF) / 255.0f;
+  color.b = static_cast<float>(bits & 0xFF) / 255.0f;
+  return color;
 }
 
 /**
- * @brief Build per-pose spheres colored by each pose's raw class.
+ * @brief Per-pose spheres colored by each pose's raw class
  * @param classified_path Classified poses in path order, before filtering
  * @param header Header for the markers
  * @return Marker array to publish
@@ -138,7 +103,7 @@ inline visualization_msgs::msg::MarkerArray createRawPathMarkers(
 }
 
 /**
- * @brief Build a line strip of the path colored by each pose's filtered class.
+ * @brief Line strip of the path colored by each pose's filtered class
  * @param classified_path Classified poses in path order, after filtering
  * @param header Header for the markers
  * @return Marker array to publish
@@ -175,6 +140,6 @@ inline visualization_msgs::msg::MarkerArray createFilteredPathMarkers(
   return markers;
 }
 
-}  // namespace nav2_path_classifier::utils
+}  // namespace nav2_behavior_tree::utils
 
-#endif  // NAV2_PATH_CLASSIFIER__UTILS_HPP_
+#endif  // NAV2_BEHAVIOR_TREE__UTILS__CLASSIFIED_PATH_MARKERS_HPP_

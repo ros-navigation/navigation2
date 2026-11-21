@@ -41,7 +41,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SetRouteGraph.srv"
   "action/AssistedTeleop.action"
   "action/BackUp.action"
-  "action/ClassifyPath.action"
   "action/ComputePathToPose.action"
   "action/ComputePathThroughPoses.action"
   "action/ComputeRoute.action"

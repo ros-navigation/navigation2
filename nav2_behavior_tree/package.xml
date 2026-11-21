@@ -29,6 +29,8 @@
   <build_depend>std_msgs</build_depend>
   <build_depend>std_srvs</build_depend>
   <build_depend>nav2_util</build_depend>
+  <build_depend>nav2_costmap_2d</build_depend>
+  <build_depend>visualization_msgs</build_depend>
   <build_depend>lifecycle_msgs</build_depend>
   <build_depend>nav2_common</build_depend>
 
@@ -46,6 +48,8 @@
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>
   <exec_depend>nav2_util</exec_depend>
+  <exec_depend>nav2_costmap_2d</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
   <exec_depend>lifecycle_msgs</exec_depend>
 
   <test_depend>ament_lint_common</test_depend>

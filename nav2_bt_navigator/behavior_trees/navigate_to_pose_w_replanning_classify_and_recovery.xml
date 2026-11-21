@@ -13,6 +13,12 @@
                                  planner_id="GridBased"
                                  path="{path}"/>
               <ClassifyPath path="{path}"
+                            last_mile_ratio="0.0"
+                            last_mile_distance="0.75"
+                            inflation_resolution="0.05"
+                            max_constraint_clearance="0.5"
+                            hysteresis_window="4"
+                            publish_classified_path="true"
                             classified_path="{classified_path}"/>
             </Sequence>
             <ClearEntireCostmap name="ClearGlobalCostmap-Context"
