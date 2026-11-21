@@ -160,6 +160,52 @@ TEST(GoalIntentSearchTest, test_breadth_first_search)
   EXPECT_FALSE(bfs.search(target_node, candidate_nodes));
 }
 
+TEST(GoalIntentSearchTest, test_breadth_first_search_skipped_candidate_index)
+{
+  // Candidates outside of the costmap are skipped while searching, but the returned index
+  // must still refer to the candidate list the caller passed in.
+  auto costmap =
+    std::make_shared<nav2_costmap_2d::Costmap2D>(100, 100, 0.1, 0.0, 0.0, 0);
+  for (unsigned int i = 40; i <= 60; ++i) {
+    for (unsigned int j = 40; j <= 60; ++j) {
+      costmap->setCost(i, j, 254);
+    }
+  }
+  for (unsigned int i = 0; i < 40; ++i) {
+    for (unsigned int j = 0; j < 100; ++j) {
+      costmap->setCost(i, j, 100);
+    }
+  }
+
+  geometry_msgs::msg::PoseStamped target_node;
+  target_node.header.frame_id = "map";
+  target_node.pose.position.x = 1.0;
+  target_node.pose.position.y = 1.0;
+
+  geometry_msgs::msg::PoseStamped node;
+  node.header.frame_id = "map";
+
+  std::vector<geometry_msgs::msg::PoseStamped> candidate_nodes;
+  node.pose.position.x = 15.0;  // Outside of the costmap, skipped by the search
+  node.pose.position.y = 5.0;
+  candidate_nodes.push_back(node);
+  node.pose.position.x = 9.0;
+  node.pose.position.y = 9.0;
+  candidate_nodes.push_back(node);
+  node.pose.position.x = 5.0;
+  node.pose.position.y = 5.0;  // In collision, not the closest valid node
+  candidate_nodes.push_back(node);
+  node.pose.position.x = 1.0;
+  node.pose.position.y = 9.0;
+  candidate_nodes.push_back(node);
+
+  GoalIntentSearch::BreadthFirstSearch bfs(costmap);
+  EXPECT_TRUE(bfs.search(target_node, candidate_nodes));
+  EXPECT_EQ(bfs.getClosestNodeIdx(), 3u);
+  EXPECT_DOUBLE_EQ(candidate_nodes[bfs.getClosestNodeIdx()].pose.position.x, 1.0);
+  EXPECT_DOUBLE_EQ(candidate_nodes[bfs.getClosestNodeIdx()].pose.position.y, 9.0);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
