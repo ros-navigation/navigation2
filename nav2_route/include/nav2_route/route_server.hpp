@@ -21,6 +21,7 @@
 #include <vector>
 #include <unordered_map>
 #include <mutex>
+#include <shared_mutex>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -241,6 +242,7 @@ protected:
 
   // State Data
   Graph graph_;
+  std::shared_mutex graph_mutex_;  // guards graph_ / id_to_graph_map_ against replacement
   GraphToIDMap id_to_graph_map_;
   std::string route_frame_, base_frame_;
   double max_planning_time_;
