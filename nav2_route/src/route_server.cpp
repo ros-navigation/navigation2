@@ -246,6 +246,8 @@ void
 RouteServer::processRouteRequest(
   typename nav2::SimpleActionServer<ActionT>::SharedPtr & action_server)
 {
+  // Hold the graph for the whole request: a route keeps raw node pointers in it.
+  std::shared_lock<std::shared_mutex> graph_lock(graph_mutex_);
   auto goal = action_server->get_current_goal();
   auto result = std::make_shared<typename ActionT::Result>();
   ReroutingState rerouting_info;
@@ -361,6 +363,14 @@ void RouteServer::setRouteGraph(
   const std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Request> request,
   std::shared_ptr<nav2_msgs::srv::SetRouteGraph::Response> response)
 {
+  std::unique_lock<std::shared_mutex> graph_lock(graph_mutex_, std::try_to_lock);
+  if (!graph_lock.owns_lock()) {
+    RCLCPP_WARN(
+      get_logger(), "Cannot replace the route graph while a route request is running.");
+    response->success = false;
+    return;
+  }
+
   RCLCPP_INFO(get_logger(), "Setting new route graph: %s.", request->graph_filepath.c_str());
   try {
     // Keep the active graph until its replacement loads successfully.
