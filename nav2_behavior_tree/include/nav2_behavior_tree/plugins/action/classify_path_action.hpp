@@ -81,7 +81,7 @@ public:
       BT::InputPort<int>(
         "hysteresis_window", 4, "Consecutive poses of a new class needed to confirm it"),
       BT::InputPort<bool>(
-        "publish_classified_path", false, "Publish raw and filtered class markers"),
+        "publish_classified_path", false, "Publish raw and classified path markers"),
       BT::OutputPort<std::vector<nav2_msgs::msg::ClassifiedPose>>(
         "classified_path", "Classified poses of the path"),
     };
@@ -161,7 +161,7 @@ protected:
   geometry_msgs::msg::PolygonStamped::SharedPtr footprint_msg_;
 
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr raw_markers_pub_;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr filtered_markers_pub_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr classified_markers_pub_;
 
   std::shared_ptr<nav2_costmap_2d::Costmap2D> costmap_;
   std::string costmap_frame_;

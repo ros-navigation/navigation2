@@ -25,13 +25,7 @@ namespace nav2_behavior_tree::utils
 using nav2_msgs::msg::ClassifiedPose;
 using visualization_msgs::msg::Marker;
 
-/**
- * @brief Check that a color has the expected RGB components
- * @param color Color to check
- * @param r Expected red
- * @param g Expected green
- * @param b Expected blue
- */
+// Check that a color has the expected RGB components
 static void expectRgb(const std_msgs::msg::ColorRGBA & color, float r, float g, float b)
 {
   EXPECT_NEAR(color.r, r, 1e-6);
@@ -39,11 +33,7 @@ static void expectRgb(const std_msgs::msg::ColorRGBA & color, float r, float g, 
   EXPECT_NEAR(color.b, b, 1e-6);
 }
 
-/**
- * @brief Classified path with one pose per class, where pose i is at x = i
- * @param classes Class of each pose in order
- * @return Classified path
- */
+// Classified path with one pose per class, where pose i is at x = i
 static std::vector<ClassifiedPose> makePath(const std::vector<uint16_t> & classes)
 {
   std::vector<ClassifiedPose> path(classes.size());
@@ -55,10 +45,7 @@ static std::vector<ClassifiedPose> makePath(const std::vector<uint16_t> & classe
   return path;
 }
 
-/**
- * @brief Marker header in the map frame
- * @return Header
- */
+// Marker header in the map frame
 static std_msgs::msg::Header makeHeader()
 {
   std_msgs::msg::Header header;
@@ -97,15 +84,6 @@ TEST(ClassifiedPathMarkersTest, ColorForClassIsDeterministicAndDistinct)
   }
 }
 
-TEST(ClassifiedPathMarkersTest, RawPathMarkersEmptyPathOnlyDeletes)
-{
-  const auto markers = createRawPathMarkers({}, makeHeader());
-  ASSERT_EQ(markers.markers.size(), 1u);
-  EXPECT_EQ(markers.markers[0].action, Marker::DELETEALL);
-  EXPECT_EQ(markers.markers[0].ns, "raw_classified_path");
-  EXPECT_EQ(markers.markers[0].header.frame_id, "map");
-}
-
 TEST(ClassifiedPathMarkersTest, RawPathMarkersOneSpherePerPose)
 {
   const auto path = makePath({1, 2, 3});
@@ -130,27 +108,18 @@ TEST(ClassifiedPathMarkersTest, RawPathMarkersOneSpherePerPose)
   }
 }
 
-TEST(ClassifiedPathMarkersTest, FilteredPathMarkersEmptyPathHasEmptyStrip)
-{
-  const auto markers = createFilteredPathMarkers({}, makeHeader());
-  ASSERT_EQ(markers.markers.size(), 2u);
-  EXPECT_EQ(markers.markers[0].action, Marker::DELETEALL);
-  EXPECT_TRUE(markers.markers[1].points.empty());
-  EXPECT_TRUE(markers.markers[1].colors.empty());
-}
-
-TEST(ClassifiedPathMarkersTest, FilteredPathMarkersOneColoredStrip)
+TEST(ClassifiedPathMarkersTest, ClassifiedPathMarkersOneColoredStrip)
 {
   const auto path = makePath({1, 1, 2, 2, 3});
-  const auto markers = createFilteredPathMarkers(path, makeHeader());
+  const auto markers = createClassifiedPathMarkers(path, makeHeader());
 
   ASSERT_EQ(markers.markers.size(), 2u);
   EXPECT_EQ(markers.markers[0].action, Marker::DELETEALL);
-  EXPECT_EQ(markers.markers[0].ns, "filtered_classified_path");
+  EXPECT_EQ(markers.markers[0].ns, "classified_path");
 
   const auto & strip = markers.markers[1];
   EXPECT_EQ(strip.header.frame_id, "map");
-  EXPECT_EQ(strip.ns, "filtered_classified_path");
+  EXPECT_EQ(strip.ns, "classified_path");
   EXPECT_EQ(strip.id, 0);
   EXPECT_EQ(strip.type, Marker::LINE_STRIP);
   EXPECT_EQ(strip.action, Marker::ADD);

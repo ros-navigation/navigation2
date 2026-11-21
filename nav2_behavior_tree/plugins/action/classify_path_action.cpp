@@ -96,8 +96,8 @@ ClassifyPath::ClassifyPath(
     raw_markers_pub_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
       "raw_classified_path_markers", 1);
     if (use_classification_filter_) {
-      filtered_markers_pub_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
-        "filtered_classified_path_markers", 1);
+      classified_markers_pub_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
+        "classified_path_markers", 1);
     }
   }
 }
@@ -154,9 +154,9 @@ BT::NodeStatus ClassifyPath::tick()
 
   if (use_classification_filter_) {
     filterClasses(classified_path, hysteresis_window_);
-    if (filtered_markers_pub_) {
-      filtered_markers_pub_->publish(
-        utils::createFilteredPathMarkers(classified_path, path.header));
+    if (classified_markers_pub_) {
+      classified_markers_pub_->publish(
+        utils::createClassifiedPathMarkers(classified_path, path.header));
     }
   }
 

@@ -103,12 +103,12 @@ inline visualization_msgs::msg::MarkerArray createRawPathMarkers(
 }
 
 /**
- * @brief Line strip of the path colored by each pose's filtered class
+ * @brief Line strip of the path colored by each pose's class
  * @param classified_path Classified poses in path order, after filtering
  * @param header Header for the markers
  * @return Marker array to publish
  */
-inline visualization_msgs::msg::MarkerArray createFilteredPathMarkers(
+inline visualization_msgs::msg::MarkerArray createClassifiedPathMarkers(
   const std::vector<nav2_msgs::msg::ClassifiedPose> & classified_path,
   const std_msgs::msg::Header & header)
 {
@@ -118,12 +118,12 @@ inline visualization_msgs::msg::MarkerArray createFilteredPathMarkers(
   visualization_msgs::msg::Marker del;
   del.action = visualization_msgs::msg::Marker::DELETEALL;
   del.header = header;
-  del.ns = "filtered_classified_path";
+  del.ns = "classified_path";
   markers.markers.push_back(del);
 
   visualization_msgs::msg::Marker m;
   m.header = header;
-  m.ns = "filtered_classified_path";
+  m.ns = "classified_path";
   m.id = 0;
   m.type = visualization_msgs::msg::Marker::LINE_STRIP;
   m.action = visualization_msgs::msg::Marker::ADD;

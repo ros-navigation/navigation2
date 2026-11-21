@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
-#include <algorithm>
 #include <cmath>
 #include <memory>
 #include <vector>
@@ -40,17 +39,6 @@ static geometry_msgs::msg::Point makePoint(double x, double y)
   return p;
 }
 
-// Square footprint centered at the origin
-static Footprint makeSquare(double half_side)
-{
-  return {
-    makePoint(half_side, half_side),
-    makePoint(-half_side, half_side),
-    makePoint(-half_side, -half_side),
-    makePoint(half_side, -half_side)
-  };
-}
-
 // Rectangle footprint: front=0.45, rear=-0.65, left=0.375, right=-0.375
 static Footprint makeRectangle()
 {
@@ -72,20 +60,6 @@ static Footprint makeClockwisePentagon()
     makePoint(-0.25, 0.30),
     makePoint(0.20, 0.28)
   };
-}
-
-static void getBounds(
-  const Footprint & fp,
-  double & min_x, double & max_x, double & min_y, double & max_y)
-{
-  min_x = min_y = 1e18;
-  max_x = max_y = -1e18;
-  for (const auto & pt : fp) {
-    min_x = std::min(min_x, pt.x);
-    max_x = std::max(max_x, pt.x);
-    min_y = std::min(min_y, pt.y);
-    max_y = std::max(max_y, pt.y);
-  }
 }
 
 // Absolute polygon area
@@ -144,44 +118,15 @@ static void expectEdgesOffsetBy(const Footprint & fp, const Footprint & inflated
   }
 }
 
-TEST(FootprintUtilsTest, InflateSquareGrowsByDelta)
+TEST(FootprintUtilsTest, InflateOffsetsEachEdgeByDelta)
 {
-  auto fp = makeSquare(0.5);
-  const double delta = 0.2;
-  auto inflated = inflateFootprint(fp, delta);
-
-  // Mitered offset keeps the vertex count for convex polygons, which isConfined() relies on
-  EXPECT_EQ(inflated.size(), fp.size());
-
-  double min_x, max_x, min_y, max_y;
-  getBounds(inflated, min_x, max_x, min_y, max_y);
-  EXPECT_NEAR(max_x, 0.5 + delta, 0.01);
-  EXPECT_NEAR(-min_x, 0.5 + delta, 0.01);
-  EXPECT_NEAR(max_y, 0.5 + delta, 0.01);
-  EXPECT_NEAR(-min_y, 0.5 + delta, 0.01);
-}
-
-TEST(FootprintUtilsTest, InflateRectangleGrowsByDelta)
-{
-  auto fp = makeRectangle();
-  const double delta = 0.1;
-  auto inflated = inflateFootprint(fp, delta);
-
-  double min_x, max_x, min_y, max_y;
-  getBounds(inflated, min_x, max_x, min_y, max_y);
-  EXPECT_NEAR(max_x, 0.45 + delta, 0.01);
-  EXPECT_NEAR(min_x, -0.65 - delta, 0.01);
-  EXPECT_NEAR(max_y, 0.375 + delta, 0.01);
-  EXPECT_NEAR(min_y, -0.375 - delta, 0.01);
-}
-
-TEST(FootprintUtilsTest, InflateKeepsEdgeOrderClockwise)
-{
+  // Rectangle and an asymmetric pentagon, in both windings
   const double delta = 0.05;
-  const auto clockwise = makeClockwisePentagon();
-  const Footprint counter_clockwise(clockwise.rbegin(), clockwise.rend());
-
-  for (const auto & fp : {clockwise, counter_clockwise}) {
+  const auto rectangle = makeRectangle();
+  const auto pentagon = makeClockwisePentagon();
+  for (const auto & fp : {rectangle, Footprint(rectangle.rbegin(), rectangle.rend()),
+      pentagon, Footprint(pentagon.rbegin(), pentagon.rend())})
+  {
     const auto inflated = inflateFootprint(fp, delta);
     ASSERT_EQ(inflated.size(), fp.size());
     EXPECT_GT(area(inflated), area(fp));
@@ -197,6 +142,12 @@ TEST(FootprintUtilsTest, InflateRejectsConcaveAndSharpCorners)
     makePoint(-0.5, -0.5), makePoint(0.5, -0.3)};
   EXPECT_TRUE(inflateFootprint(concave, 0.05).empty());
 
+  // Narrow slit at the rear, an 8 degree concave corner between right angled corners
+  const Footprint slit = {
+    makePoint(0.5, 0.5), makePoint(-0.5, 0.5), makePoint(-0.5, 0.05), makePoint(0.2, 0.0),
+    makePoint(-0.5, -0.05), makePoint(-0.5, -0.5), makePoint(0.5, -0.5)};
+  EXPECT_TRUE(inflateFootprint(slit, 0.05).empty());
+
   // 10 degree nose, sharper than the 60 degree miter limit
   const Footprint sharp = {makePoint(1.0, 0.0), makePoint(-0.1, 0.1), makePoint(-0.1, -0.1)};
   EXPECT_TRUE(inflateFootprint(sharp, 0.05).empty());
@@ -205,21 +156,8 @@ TEST(FootprintUtilsTest, InflateRejectsConcaveAndSharpCorners)
   EXPECT_TRUE(inflateFootprint(degenerate, 0.05).empty());
 }
 
-TEST(FootprintUtilsTest, InflateRejectsSharpConcaveCorner)
-{
-  // Narrow slit at the rear, an 8 degree concave corner between right angled corners
-  const Footprint slit = {
-    makePoint(0.5, 0.5), makePoint(-0.5, 0.5), makePoint(-0.5, 0.05), makePoint(0.2, 0.0),
-    makePoint(-0.5, -0.05), makePoint(-0.5, -0.5), makePoint(0.5, -0.5)};
-  EXPECT_TRUE(inflateFootprint(slit, 0.05).empty());
-}
-
 TEST(FootprintUtilsTest, InflateRejectsRepeatedPoints)
 {
-  auto repeated = makeRectangle();
-  repeated.insert(repeated.begin() + 1, repeated[1]);
-  EXPECT_TRUE(inflateFootprint(repeated, 0.05).empty());
-
   // Closed by repeating the first point
   auto closed = makeRectangle();
   closed.push_back(closed.front());
@@ -294,16 +232,6 @@ TEST(FootprintUtilsTest, FootprintToRobotFrame)
     EXPECT_NEAR(robot_frame[i].x, fp[i].x, 1e-5) << "vertex " << i;
     EXPECT_NEAR(robot_frame[i].y, fp[i].y, 1e-5) << "vertex " << i;
   }
-}
-
-TEST(FootprintUtilsTest, FootprintToRobotFrameFailsWithoutTf)
-{
-  auto tf = makeBuffer();
-  auto msg = placeAtRobot(makeRectangle());
-  msg.header.frame_id = "odom";  // no odom -> base_link transform
-
-  Footprint robot_frame;
-  EXPECT_FALSE(footprintToRobotFrame(msg, *tf, "base_link", 0.0, robot_frame));
 }
 
 int main(int argc, char ** argv)

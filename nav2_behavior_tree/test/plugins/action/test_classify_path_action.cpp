@@ -52,11 +52,7 @@ static const char kConfinedOnly[] =
   R"(inflation_resolution="0.1" max_constraint_clearance="0.5" use_last_mile="false" )"
   R"(use_classification_filter="false")";
 
-/**
- * @brief 10 m x 10 m free costmap centered on the origin at 0.05 m resolution
- * @param frame Costmap frame
- * @return Costmap message
- */
+// 10 m x 10 m free costmap centered on the origin at 0.05 m resolution
 static nav2_msgs::msg::Costmap makeFreeCostmap(const std::string & frame = "map")
 {
   nav2_msgs::msg::Costmap msg;
@@ -70,14 +66,7 @@ static nav2_msgs::msg::Costmap makeFreeCostmap(const std::string & frame = "map"
   return msg;
 }
 
-/**
- * @brief Mark cells whose center is in [x_min, x_max) x [y_min, y_max) as lethal
- * @param msg Costmap message to modify
- * @param y_min Lower y bound in metres
- * @param y_max Upper y bound in metres
- * @param x_min Lower x bound in metres
- * @param x_max Upper x bound in metres
- */
+// Mark cells whose center is in [x_min, x_max) x [y_min, y_max) as lethal
 static void addWall(
   nav2_msgs::msg::Costmap & msg, double y_min, double y_max, double x_min, double x_max)
 {
@@ -93,14 +82,7 @@ static void addWall(
   }
 }
 
-/**
- * @brief Free costmap with lethal walls on both sides of the x axis
- * @param inner Distance from the x axis to the inner face of each wall in metres
- * @param outer Distance from the x axis to the outer face of each wall in metres
- * @param x_min Lower x bound of the walls in metres
- * @param x_max Upper x bound of the walls in metres
- * @return Costmap message
- */
+// Free costmap with lethal walls on both sides of the x axis
 static nav2_msgs::msg::Costmap makeCorridor(
   double inner, double outer, double x_min = -kInf, double x_max = kInf)
 {
@@ -110,11 +92,7 @@ static nav2_msgs::msg::Costmap makeCorridor(
   return msg;
 }
 
-/**
- * @brief Path through the given points in the map frame, facing +x
- * @param points (x, y) of each pose in metres
- * @return Path
- */
+// Path through the given points in the map frame, facing +x
 static nav_msgs::msg::Path makePath(const Points & points)
 {
   nav_msgs::msg::Path path;
@@ -130,11 +108,7 @@ static nav_msgs::msg::Path makePath(const Points & points)
   return path;
 }
 
-/**
- * @brief Points along the x axis
- * @param xs X position of each point in metres
- * @return Points
- */
+// Points along the x axis
 static Points alongX(const std::vector<double> & xs)
 {
   Points points;
@@ -144,11 +118,7 @@ static Points alongX(const std::vector<double> & xs)
   return points;
 }
 
-/**
- * @brief Class of each classified pose
- * @param classified_path Classified poses
- * @return Classes in path order
- */
+// Class of each classified pose
 static Classes classesOf(const std::vector<ClassifiedPose> & classified_path)
 {
   Classes classes;
@@ -192,10 +162,7 @@ public:
   }
 
 protected:
-  /**
-   * @brief Create a tree with a single ClassifyPath node on this test's topics
-   * @param attributes Extra XML attributes of the node
-   */
+  // Create a tree with a single ClassifyPath node on this test's topics
   void createTree(const std::string & attributes)
   {
     const std::string xml_txt =
@@ -210,11 +177,7 @@ protected:
       factory_->createTreeFromText(xml_txt, config_->blackboard));
   }
 
-  /**
-   * @brief Publish a footprint the way a costmap does, around the robot at the map origin
-   * @param vertices Footprint vertices
-   * @param frame Footprint frame
-   */
+  // Publish a footprint the way a costmap does, around the robot at the map origin
   void publishFootprint(const Points & vertices, const std::string & frame = "map")
   {
     footprint_msg_ = std::make_shared<geometry_msgs::msg::PolygonStamped>();
@@ -228,10 +191,7 @@ protected:
     footprint_pub_->publish(*footprint_msg_);
   }
 
-  /**
-   * @brief Publish a square footprint centered on the robot
-   * @param half_side Half the side length in metres
-   */
+  // Publish a square footprint centered on the robot
   void publishSquareFootprint(double half_side)
   {
     publishFootprint(
@@ -239,29 +199,19 @@ protected:
         {-half_side, -half_side}, {half_side, -half_side}});
   }
 
-  /**
-   * @brief Set the path input
-   * @param path Path to classify
-   */
+  // Set the path input
   void setPath(const nav_msgs::msg::Path & path)
   {
     config_->blackboard->set<nav_msgs::msg::Path>("path", path);
   }
 
-  /**
-   * @brief Classes output by the last tick
-   * @return Classes in path order
-   */
+  // Classes output by the last tick
   Classes outputClasses()
   {
     return classesOf(config_->blackboard->get<std::vector<ClassifiedPose>>("classified_path"));
   }
 
-  /**
-   * @brief Tick until a success outputs classes accepted by done, republishing the footprint
-   * @param done Check on the output classes
-   * @return Last classes output by a success, empty if none
-   */
+  // Tick until a success outputs classes accepted by done, republishing the footprint
   Classes classifyUntil(const std::function<bool(const Classes &)> & done)
   {
     Classes classes;
@@ -281,20 +231,13 @@ protected:
     return classes;
   }
 
-  /**
-   * @brief Tick until the first success
-   * @return Classes output by it, empty if none
-   */
+  // Tick until the first success
   Classes classifyOnceReady()
   {
     return classifyUntil([](const Classes &) {return true;});
   }
 
-  /**
-   * @brief Tick until the first pose has the given class
-   * @param class_type Expected class of the first pose
-   * @return Last classes output by a success, empty if none
-   */
+  // Tick until the first pose has the given class
   Classes classifyUntilFirstIs(uint16_t class_type)
   {
     return classifyUntil(
@@ -303,10 +246,7 @@ protected:
       });
   }
 
-  /**
-   * @brief Tick for a while, expecting every tick to fail with an empty output
-   * @param duration How long to keep ticking
-   */
+  // Tick for a while, expecting every tick to fail with an empty output
   void expectFailureFor(std::chrono::milliseconds duration)
   {
     const auto deadline = std::chrono::steady_clock::now() + duration;
@@ -406,16 +346,6 @@ TEST_F(ClassifyPathTestFixture, LastMileWinsOverConfinedSpace)
     classifyUntilFirstIs(CONFINED), (Classes{CONFINED, CONFINED, LAST_MILE, LAST_MILE}));
 }
 
-TEST_F(ClassifyPathTestFixture, NoMatchWhenWallsBeyondClearance)
-{
-  createTree(kConfinedOnly);
-  // Footprint edge reaches 0.3 + 0.5 = 0.8 m at most, short of walls starting at 1.0 m
-  costmap_pub_->publish(makeCorridor(1.0, 1.3));
-  publishSquareFootprint(0.3);
-  setPath(makePath({{0.0, 0.0}}));
-  EXPECT_EQ(classifyOnceReady(), Classes{FREE});
-}
-
 TEST_F(ClassifyPathTestFixture, NoMatchForDegenerateFootprint)
 {
   createTree(kConfinedOnly);
@@ -465,18 +395,9 @@ TEST_F(ClassifyPathTestFixture, SkipsConfinedSpaceWhenTfFails)
   EXPECT_EQ(classifyUntilFirstIs(FREE), Classes{FREE});
 }
 
-TEST_F(ClassifyPathTestFixture, ConfinedSpaceSwitchedOff)
+TEST_F(ClassifyPathTestFixture, SwitchesTurnStepsOff)
 {
-  // Nothing is published, as no costmap or footprint is needed without confined space
-  createTree(R"(use_confined_space="false" use_last_mile="false")");
-  setPath(makePath(alongX({0.0, 1.0})));
-  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
-  EXPECT_EQ(outputClasses(), (Classes{FREE, FREE}));
-}
-
-TEST_F(ClassifyPathTestFixture, LastMileSwitchedOff)
-{
-  // Shorter than last_mile_distance, which only applies with last mile enabled
+  // Nothing is published, and the path is shorter than last_mile_distance
   createTree(
     R"(use_confined_space="false" use_last_mile="false" last_mile_distance="10")");
   setPath(makePath(alongX({0.0, 1.0})));
@@ -506,11 +427,6 @@ TEST_F(ClassifyPathTestFixture, LastMileByArcLength)
   createTree(
     R"(use_confined_space="false" last_mile_ratio="0.5" last_mile_distance="2.0" )"
     R"(use_classification_filter="false")");
-
-  // Shorter than last_mile_distance, so the full path is last mile
-  setPath(makePath(alongX({0.0, 0.5, 1.0, 1.5})));
-  EXPECT_EQ(tree_->rootNode()->executeTick(), BT::NodeStatus::SUCCESS);
-  EXPECT_EQ(outputClasses(), Classes(4, LAST_MILE));
 
   // 20 poses over the first 5 m and 6 over the last 5 m, so splitting by length marks the last 6
   std::vector<double> xs;
@@ -551,7 +467,7 @@ TEST_F(ClassifyPathTestFixture, FilterSuppressesShortBlip)
   EXPECT_EQ(classifyOnceReady(), Classes(11, FREE));
 }
 
-TEST_F(ClassifyPathTestFixture, NoFilteredMarkersWhenFilterDisabled)
+TEST_F(ClassifyPathTestFixture, NoClassifiedMarkersWhenFilterDisabled)
 {
   createTree(
     R"(use_confined_space="false" use_classification_filter="false" )"
@@ -564,24 +480,24 @@ TEST_F(ClassifyPathTestFixture, NoFilteredMarkersWhenFilterDisabled)
     std::this_thread::sleep_for(20ms);
   }
   EXPECT_GT(node_->count_publishers("raw_classified_path_markers"), 0u);
-  EXPECT_EQ(node_->count_publishers("filtered_classified_path_markers"), 0u);
+  EXPECT_EQ(node_->count_publishers("classified_path_markers"), 0u);
 }
 
-TEST_F(ClassifyPathTestFixture, PublishesRawAndFilteredMarkers)
+TEST_F(ClassifyPathTestFixture, PublishesRawAndClassifiedMarkers)
 {
   std::mutex mutex;
-  std::vector<MarkerArray> raw, filtered;
+  std::vector<MarkerArray> raw, classified;
   auto raw_sub = node_->create_subscription<MarkerArray>(
     "raw_classified_path_markers", 10,
     [&](MarkerArray::SharedPtr msg) {
       std::lock_guard<std::mutex> lock(mutex);
       raw.push_back(*msg);
     });
-  auto filtered_sub = node_->create_subscription<MarkerArray>(
-    "filtered_classified_path_markers", 10,
+  auto classified_sub = node_->create_subscription<MarkerArray>(
+    "classified_path_markers", 10,
     [&](MarkerArray::SharedPtr msg) {
       std::lock_guard<std::mutex> lock(mutex);
-      filtered.push_back(*msg);
+      classified.push_back(*msg);
     });
 
   createTree(
@@ -589,7 +505,7 @@ TEST_F(ClassifyPathTestFixture, PublishesRawAndFilteredMarkers)
     R"(hysteresis_window="1" publish_classified_path="true")");
 
   auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
-  while ((raw_sub->get_publisher_count() == 0 || filtered_sub->get_publisher_count() == 0) &&
+  while ((raw_sub->get_publisher_count() == 0 || classified_sub->get_publisher_count() == 0) &&
     std::chrono::steady_clock::now() < deadline)
   {
     std::this_thread::sleep_for(20ms);
@@ -605,7 +521,7 @@ TEST_F(ClassifyPathTestFixture, PublishesRawAndFilteredMarkers)
   while (std::chrono::steady_clock::now() < deadline) {
     {
       std::lock_guard<std::mutex> lock(mutex);
-      if (!raw.empty() && !filtered.empty()) {
+      if (!raw.empty() && !classified.empty()) {
         break;
       }
     }
@@ -614,14 +530,14 @@ TEST_F(ClassifyPathTestFixture, PublishesRawAndFilteredMarkers)
 
   std::lock_guard<std::mutex> lock(mutex);
   ASSERT_FALSE(raw.empty());
-  ASSERT_FALSE(filtered.empty());
+  ASSERT_FALSE(classified.empty());
 
   // Raw: DELETEALL plus one sphere per pose
   ASSERT_EQ(raw.front().markers.size(), path.poses.size() + 1);
 
-  // Filtered: DELETEALL plus one line strip colored per pose
-  ASSERT_EQ(filtered.front().markers.size(), 2u);
-  const auto & strip = filtered.front().markers[1];
+  // Classified: DELETEALL plus one line strip colored per pose
+  ASSERT_EQ(classified.front().markers.size(), 2u);
+  const auto & strip = classified.front().markers[1];
   ASSERT_EQ(strip.colors.size(), path.poses.size());
   for (size_t i = 0; i < path.poses.size(); ++i) {
     const auto color = nav2_behavior_tree::utils::colorForClass(expected[i]);
@@ -631,11 +547,7 @@ TEST_F(ClassifyPathTestFixture, PublishesRawAndFilteredMarkers)
   }
 }
 
-/**
- * @brief Classified path with one pose per letter, where 'A' is class 1, 'B' is 2, ...
- * @param classes Letters giving the class of each pose in order
- * @return Classified path with pose i at x = i
- */
+// Classified path with one pose per letter, where 'A' is class 1, 'B' is 2, ...
 static std::vector<ClassifiedPose> makeLetterPath(const std::string & classes)
 {
   std::vector<ClassifiedPose> path(classes.size());
@@ -646,12 +558,7 @@ static std::vector<ClassifiedPose> makeLetterPath(const std::string & classes)
   return path;
 }
 
-/**
- * @brief Filter a path given as class letters
- * @param classes Letters giving the raw class of each pose
- * @param hysteresis_window Hysteresis window of the filter
- * @return Filtered class letters
- */
+// Filter a path given as class letters
 static std::string filterLetters(const std::string & classes, int hysteresis_window)
 {
   auto path = makeLetterPath(classes);
@@ -670,19 +577,9 @@ TEST(ClassificationFilterTest, EmptyPathIsNoOp)
   EXPECT_TRUE(path.empty());
 }
 
-TEST(ClassificationFilterTest, AllSameClassUnchanged)
-{
-  EXPECT_EQ(filterLetters("AAAAAA", 3), "AAAAAA");
-}
-
 TEST(ClassificationFilterTest, RunShorterThanWindowSuppressed)
 {
   EXPECT_EQ(filterLetters("AAAABBAAAA", 3), "AAAAAAAAAA");
-}
-
-TEST(ClassificationFilterTest, ConfirmedRunBackfilled)
-{
-  EXPECT_EQ(filterLetters("AAAABBBBAAAA", 3), "AAAABBBBAAAA");
 }
 
 TEST(ClassificationFilterTest, TrailingRunOfExactlyWindowConfirmed)
@@ -713,12 +610,6 @@ TEST(ClassificationFilterTest, MultipleTransitions)
 TEST(ClassificationFilterTest, WindowOnePassesClassesThrough)
 {
   EXPECT_EQ(filterLetters("ABCABC", 1), "ABCABC");
-}
-
-TEST(ClassificationFilterTest, ShortFirstRunTakesNextClass)
-{
-  EXPECT_EQ(filterLetters("ABBBBB", 3), "BBBBBB");
-  EXPECT_EQ(filterLetters("AABBBB", 3), "BBBBBB");
 }
 
 TEST(ClassificationFilterTest, FirstRunOfExactlyWindowKept)

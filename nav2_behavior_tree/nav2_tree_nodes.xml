@@ -119,7 +119,7 @@
       <input_port name="last_mile_distance" default="2.0">Distance to the goal along the path that is last mile</input_port>
       <input_port name="use_classification_filter" default="true">Filter classes with hysteresis</input_port>
       <input_port name="hysteresis_window" default="4">Consecutive poses of a new class needed to confirm it</input_port>
-      <input_port name="publish_classified_path" default="false">Publish raw and filtered class markers</input_port>
+      <input_port name="publish_classified_path" default="false">Publish raw and classified path markers</input_port>
       <output_port name="classified_path">Classified poses of the path</output_port>
     </Action>
 
