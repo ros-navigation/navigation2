@@ -111,7 +111,7 @@ TEST(DockingServerTests, GetCommandTransformsPoseToFixedFrame)
     "test_plugin.plugin", "opennav_docking::TestFailureDock");
   node->on_configure(rclcpp_lifecycle::State());
   // Undocking controller selection
-  node->selectController(nullptr, "test_plugin");
+  node->selectController("", "test_plugin");
 
   geometry_msgs::msg::TransformStamped base_transform;
   base_transform.header.frame_id = "odom";
@@ -779,15 +779,9 @@ TEST(DockingServerTests, ControllerSelectRejectsUnknownController)
   EXPECT_EQ(controller_id, "default_graceful_controller");
   EXPECT_FALSE(node->findControllerId("not_loaded", controller_id));
 
-  auto plugin = node->getDockPlugin("test_plugin");
-  ASSERT_NE(plugin, nullptr);
-
-  // Dock instance with an not loaded controller
-  Dock dock;
-  dock.type = "test_plugin";
-  dock.plugin = plugin;
-  dock.controller_name = "not_loaded";
-  EXPECT_THROW(node->selectController(&dock), opennav_docking_core::DockNotValid);
+  // Controller not loaded
+  EXPECT_THROW(
+    node->selectController("not_loaded", "test_plugin"), opennav_docking_core::DockNotValid);
 
   // Failed selection leaves no controller selected
   EXPECT_TRUE(node->getCurrentController().empty());

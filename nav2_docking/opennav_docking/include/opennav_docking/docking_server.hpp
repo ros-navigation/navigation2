@@ -247,11 +247,13 @@ protected:
   /**
    * @brief Select the controller for a docking or undocking request.
    *
-   * @param dock Dock instance (nullptr when undocking)
-   * @param dock_type Dock type for undocking. In order to use the controller it docked with while undocking
+   * @param requested_controller_name Controller to use. If empty, the dock type's
+   * controller is used. If it is also empty, the default controller
+   * @param dock_type Dock type
    * @throw DockNotValid if the name does not resolve to a loaded controller
    */
-  void selectController(const Dock * dock, const std::string & dock_type = "");
+  void selectController(
+    const std::string & requested_controller_name, const std::string & dock_type);
 
   // Parameter handler
   std::unique_ptr<opennav_docking::ParameterHandler> param_handler_;

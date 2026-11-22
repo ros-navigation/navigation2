@@ -252,25 +252,19 @@ bool DockingServer::findControllerId(
   return true;
 }
 
-void DockingServer::selectController(const Dock * dock, const std::string & dock_type)
+void DockingServer::selectController(
+  const std::string & requested_controller_name, const std::string & dock_type)
 {
-  std::string name;
-  if (dock) {
-    // docking
-    name = dock->controller_name.empty() ?
-      dock_db_->getTypeControllerName(dock->type) : dock->controller_name;
-  } else {
-    // undocking
-    name = (!curr_dock_controller_.empty() && dock_type == curr_dock_type_) ?
-      curr_dock_controller_ : dock_db_->getTypeControllerName(dock_type);
+  std::string controller_name = requested_controller_name;
+  if (controller_name.empty()) {
+    controller_name = dock_db_->getTypeControllerName(dock_type);
   }
 
   // Empty name selects default controller
   std::string controller_id;
-  if (!findControllerId(name, controller_id)) {
+  if (!findControllerId(controller_name, controller_id)) {
     throw opennav_docking_core::DockNotValid(
-            std::string(dock ? "Dock" : "Undocking") + " names controller '" + name +
-            "', which is not loaded");
+            "Controller '" + controller_name + "' is not loaded");
   }
   controller_ = controllers_.at(controller_id);
 }
@@ -349,7 +343,7 @@ void DockingServer::dockRobot()
     }
 
     // Pick the controller this dock drives with before any motion is commanded.
-    selectController(dock);
+    selectController(dock->controller_name, dock->type);
 
     // Check if robot is docked or charging before proceeding, only applicable to charging docks
     if (dock->plugin->isCharger() && (dock->plugin->isDocked() || dock->plugin->isCharging())) {
@@ -851,7 +845,13 @@ void DockingServer::undockRobot()
       get_logger(),
       "Attempting to undock robot of dock type %s.", dock->getName().c_str());
 
-    selectController(nullptr, dock_type);
+    // Undock with the controller the robot docked with if it is still at the same dock type,
+    // else with the dock type's controller.
+    std::string controller_name;
+    if (dock_type == curr_dock_type_) {
+      controller_name = curr_dock_controller_;
+    }
+    selectController(controller_name, dock_type);
 
     // Check if the robot is docked before proceeding
     if (dock->isCharger() && (!dock->isDocked() && !dock->isCharging())) {
