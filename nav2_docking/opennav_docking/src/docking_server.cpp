@@ -614,7 +614,7 @@ bool DockingServer::approachDock(
     }
 
     // Transform the dock pose into the fixed frame
-    const geometry_msgs::msg::PoseStamped fixed_dock_pose = utils::transformPoseToFrame(
+    geometry_msgs::msg::PoseStamped target_pose = utils::transformPoseToFrame(
       *tf2_buffer_, dock_pose, params_->fixed_frame, now(), params_->transform_staleness_threshold);
 
     // The control law can get jittery when close to the end when atan2's can explode.
@@ -622,28 +622,21 @@ bool DockingServer::approachDock(
     // dock so that the robot never gets to the end of the spiral before its in contact
     // with the dock to stop the docking procedure.
     const double backward_projection = 0.25;
-    const geometry_msgs::msg::PoseStamped robot_pose =
-      getRobotPoseInFrame(params_->fixed_frame);
-    geometry_msgs::msg::PoseStamped target_pose = fixed_dock_pose;
-    target_pose.pose = utils::approachLineTarget(
-      fixed_dock_pose.pose, robot_pose.pose, params_->approach_lookahead_dist,
-      backward_projection);
-    geometry_msgs::msg::PoseStamped base_dock_pose = fixed_dock_pose;
+    const double yaw = tf2::getYaw(target_pose.pose.orientation);
+    target_pose.pose.position.x += cos(yaw) * backward_projection;
+    target_pose.pose.position.y += sin(yaw) * backward_projection;
+    const auto robot_pose = getRobotPoseInFrame(params_->fixed_frame);
     const auto base_to_fixed_transform = nav2_util::poseToTransformStamped(
       robot_pose, params_->base_frame);
     // Transforming the target pose from the fixed frame into the robot's base frame,
     // using the inverse of the robot pose transform that is also passed to the controller.
-    const auto fixed_to_base_transform = nav2_util::invertTransform(base_to_fixed_transform);
-    tf2::doTransform(target_pose, target_pose, fixed_to_base_transform);
-    tf2::doTransform(base_dock_pose, base_dock_pose, fixed_to_base_transform);
+    tf2::doTransform(target_pose, target_pose, nav2_util::invertTransform(base_to_fixed_transform));
 
     // Make sure that the target pose is pointing at the robot when moving backwards
     // This is to ensure that the robot doesn't try to dock from the wrong side
     if (backward) {
       target_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
         tf2::getYaw(target_pose.pose.orientation) + M_PI);
-      base_dock_pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(
-        tf2::getYaw(base_dock_pose.pose.orientation) + M_PI);
     }
 
     // Compute and publish controls
@@ -651,7 +644,6 @@ bool DockingServer::approachDock(
     command->header.stamp = now();
     DockingOptions options;
     options.backward = backward;
-    options.dock_pose = base_dock_pose.pose;
     if (!controller_->computeVelocityCommands(
         robot_pose, odom_sub_->getRawTwist(), target_pose.pose, options, dt, command->twist))
     {

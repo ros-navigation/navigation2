@@ -19,7 +19,6 @@
 
 #include <memory>
 #include <mutex>
-#include <optional>
 #include <string>
 #include <vector>
 
@@ -49,9 +48,6 @@ struct DockingOptions
 
   /// @brief If true robot is docking.
   bool is_docking{true};
-
-  /// @brief Dock pose in robot's base frame.
-  std::optional<geometry_msgs::msg::Pose> dock_pose;
 };
 
 /**
