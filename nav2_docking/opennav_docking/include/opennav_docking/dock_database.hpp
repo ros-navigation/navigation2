@@ -51,11 +51,13 @@ public:
    * @param parent Weakptr to the node to use to get interances and parameters
    * @param tf TF buffer
    * @param valid_controller_ids Controller names the server loaded
+   * @param default_controller_id Controller used when dock or its type do not assign one
    * @return If successful
    */
   bool initialize(
     const nav2::LifecycleNode::WeakPtr & parent, nav2::TransformBuffer::SharedPtr tf,
-    const std::vector<std::string> & valid_controller_ids = {});
+    const std::vector<std::string> & valid_controller_ids = {},
+    const std::string & default_controller_id = "");
 
   /**
    * @brief A destructor for opennav_docking::DockDatabase
@@ -87,11 +89,13 @@ public:
   ChargingDock::Ptr findDockPlugin(const std::string & type);
 
   /**
-   * @brief Get the controller name configured for a dock type
-   * @param type Dock type. When empty it selects default controller when a only one loaded
-   * @return Controller name or "" if the type name not found
+   * @brief Get the controller to use
+   * @param requested_controller_name Controller name requested
+   * @param type Dock type whose controller used when requested is empty
+   * @return Controller name: requested one, else dock type's, else the default
    */
-  std::string getTypeControllerName(const std::string & type) const;
+  std::string getControllerName(
+    const std::string & requested_controller_name, const std::string & type) const;
 
   /**
    * @brief Get the number of docks in the database
@@ -125,10 +129,15 @@ protected:
    * @brief Check every controller name in the database against the loaded controllers.
    *
    * @param docks Dock instances to check, against the already-loaded dock plugins
-   * @return True if every non-empty name is a loaded controller, or if no controller ids
-   *         were supplied
+   * @return True if every dock controller and every non-empty dock type controller is loaded
    */
   bool validateControllersExist(const DockMap & docks) const;
+
+  /**
+   * @brief Give every dock without a controller its type's controller, else the default
+   * @param docks Dock instances to update
+   */
+  void assignControllers(DockMap & docks) const;
 
   /**
    * @brief Find a dock instance in the database from ID
@@ -153,6 +162,7 @@ protected:
   std::unordered_map<std::string, std::string> type_controllers_;
   DockMap dock_instances_;
   std::vector<std::string> valid_controller_ids_;
+  std::string default_controller_id_;
   pluginlib::ClassLoader<opennav_docking_core::ChargingDock> dock_loader_;
   nav2::ServiceServer<nav2_msgs::srv::ReloadDockDatabase>::SharedPtr reload_db_service_;
 };

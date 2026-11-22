@@ -150,6 +150,7 @@ inline bool parseDockFile(
       curr_dock.id = dock_attribs["id"].as<std::string>();
     }
 
+    // If not given, DockDatabase assigns the dock type's or the default controller
     if (dock_attribs["controller"]) {
       curr_dock.controller_name = dock_attribs["controller"].as<std::string>();
     }
@@ -200,6 +201,7 @@ inline bool parseDockParams(
     curr_dock.pose.orientation = orientationAroundZAxis(pose_arr[2]);
 
     curr_dock.id = node->declare_or_get_parameter(dock_name + ".id", std::string(""));
+    // If empty, DockDatabase assigns the dock type's or the default controller
     curr_dock.controller_name =
       node->declare_or_get_parameter(dock_name + ".controller", std::string(""));
 

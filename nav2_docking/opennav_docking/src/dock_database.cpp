@@ -38,10 +38,12 @@ DockDatabase::~DockDatabase()
 bool DockDatabase::initialize(
   const nav2::LifecycleNode::WeakPtr & parent,
   nav2::TransformBuffer::SharedPtr tf,
-  const std::vector<std::string> & valid_controller_ids)
+  const std::vector<std::string> & valid_controller_ids,
+  const std::string & default_controller_id)
 {
   node_ = parent;
   valid_controller_ids_ = valid_controller_ids;
+  default_controller_id_ = default_controller_id;
   auto node = node_.lock();
 
   if (!getDockPlugins(node, tf)) {
@@ -58,6 +60,7 @@ bool DockDatabase::initialize(
     return false;
   }
 
+  assignControllers(dock_instances_);
   if (!validateControllersExist(dock_instances_)) {
     return false;
   }
@@ -121,7 +124,7 @@ bool DockDatabase::validateControllersExist(const DockMap & docks) const
 
   for (const auto & entry : docks) {
     const std::string & name = entry.second.controller_name;
-    if (!name.empty() && !isControllerLoaded(name)) {
+    if (!isControllerLoaded(name)) {
       RCLCPP_ERROR(
         node->get_logger(),
         "Dock '%s' names controller '%s', which is not loaded.",
@@ -146,16 +149,17 @@ void DockDatabase::reloadDbCb(
 
   auto node = node_.lock();
   DockMap dock_instances;
-  if (utils::parseDockFile(request->filepath, node, dock_instances) &&
-    validateControllersExist(dock_instances))
-  {
-    dock_instances_ = dock_instances;
-    response->success = true;
-    RCLCPP_INFO(
-      node->get_logger(),
-      "Dock database reloaded from file %s.", request->filepath.c_str());
-    mutex_.unlock();
-    return;
+  if (utils::parseDockFile(request->filepath, node, dock_instances)) {
+    assignControllers(dock_instances);
+    if (validateControllersExist(dock_instances)) {
+      dock_instances_ = dock_instances;
+      response->success = true;
+      RCLCPP_INFO(
+        node->get_logger(),
+        "Dock database reloaded from file %s.", request->filepath.c_str());
+      mutex_.unlock();
+      return;
+    }
   }
   response->success = false;
   mutex_.unlock();
@@ -201,18 +205,37 @@ ChargingDock::Ptr DockDatabase::findDockPlugin(const std::string & type)
   return nullptr;
 }
 
-std::string DockDatabase::getTypeControllerName(const std::string & type) const
+std::string DockDatabase::getControllerName(
+  const std::string & requested_controller_name, const std::string & type) const
 {
-  // If only one dock type and type not set, use the default dock's
-  if (type.empty() && type_controllers_.size() == 1) {
-    return type_controllers_.begin()->second;
+  if (!requested_controller_name.empty()) {
+    return requested_controller_name;
   }
 
-  auto it = type_controllers_.find(type);
-  if (it != type_controllers_.end()) {
+  // If only one dock type and type not set, use that type's controller
+  auto it = (type.empty() && type_controllers_.size() == 1) ?
+    type_controllers_.begin() : type_controllers_.find(type);
+  if (it != type_controllers_.end() && !it->second.empty()) {
     return it->second;
   }
-  return "";
+
+  auto node = node_.lock();
+  if (node) {
+    RCLCPP_WARN_ONCE(
+      node->get_logger(),
+      "No controller is specified for dock type '%s' or its docks. "
+      "Using the default graceful controller %s.",
+      type.c_str(), default_controller_id_.c_str());
+  }
+  return default_controller_id_;
+}
+
+void DockDatabase::assignControllers(DockMap & docks) const
+{
+  for (auto & entry : docks) {
+    Dock & dock = entry.second;
+    dock.controller_name = getControllerName(dock.controller_name, dock.type);
+  }
 }
 
 bool DockDatabase::getDockPlugins(
@@ -242,8 +265,8 @@ bool DockDatabase::getDockPlugins(
         node->get_logger(), "Created charging dock plugin %s of type %s",
         docks_plugins[i].c_str(), plugin_type.c_str());
       dock->configure(node, docks_plugins[i], tf);
-      // Type-level controller selection. Empty means "no preference"; an individual dock
-      // instance may still override this, and the server falls back to its default.
+      // Type-level controller selection. An individual dock instance may override this;
+      // when both are empty the server's default controller is used.
       type_controllers_[docks_plugins[i]] =
         node->declare_or_get_parameter(docks_plugins[i] + ".controller", std::string(""));
       dock_plugins_.insert({docks_plugins[i], dock});

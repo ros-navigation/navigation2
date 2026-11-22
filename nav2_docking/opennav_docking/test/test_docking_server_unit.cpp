@@ -74,7 +74,6 @@ public:
   std::string getCurrentController() {return controller_ ? controller_->getName() : "";}
   ChargingDock::Ptr getDockPlugin(const std::string & type) {return dock_db_->findDockPlugin(type);}
 
-  using DockingServer::findControllerId;
   using DockingServer::selectController;
 };
 
@@ -736,6 +735,21 @@ TEST(DockingServerTests, ControllerDuplicateNameFailsConfigure)
   node->shutdown();
 }
 
+TEST(DockingServerTests, controllerReservedNameFails)
+{
+  auto node = std::make_shared<DockingServerControllerShim>();
+  declareTestDock(node);
+  node->declare_parameter(
+    "controllers", std::vector<std::string>{"c1", "default_graceful_controller"});
+  node->declare_parameter("c1.plugin", "opennav_docking::GracefulController");
+  node->declare_parameter(
+    "default_graceful_controller.plugin", "opennav_docking::PIDController");
+
+  EXPECT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::FAILURE);
+  EXPECT_TRUE(node->getControllers().empty());
+  node->shutdown();
+}
+
 TEST(DockingServerTests, controllerEmptyListFails)
 {
   auto node = std::make_shared<DockingServerControllerShim>();
@@ -771,20 +785,20 @@ TEST(DockingServerTests, ControllerSelectRejectsUnknownController)
 
   ASSERT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::SUCCESS);
 
-  std::string controller_id;
-  EXPECT_TRUE(node->findControllerId("c2", controller_id));
-  EXPECT_EQ(controller_id, "c2");
-  // No name selects the default graceful controller
-  EXPECT_TRUE(node->findControllerId("", controller_id));
-  EXPECT_EQ(controller_id, "default_graceful_controller");
-  EXPECT_FALSE(node->findControllerId("not_loaded", controller_id));
-
   // Controller not loaded
   EXPECT_THROW(
     node->selectController("not_loaded", "test_plugin"), opennav_docking_core::DockNotValid);
 
   // Failed selection leaves no controller selected
   EXPECT_TRUE(node->getCurrentController().empty());
+
+  // Requested controller
+  node->selectController("c2", "test_plugin");
+  EXPECT_EQ(node->getCurrentController(), "c2");
+
+  // No requested controller selects the dock type's controller
+  node->selectController("", "test_plugin");
+  EXPECT_EQ(node->getCurrentController(), "c1");
 
   node->on_cleanup(rclcpp_lifecycle::State());
   node->shutdown();

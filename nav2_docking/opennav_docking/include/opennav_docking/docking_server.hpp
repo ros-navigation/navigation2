@@ -236,15 +236,6 @@ protected:
     const nav2::LifecycleNode::SharedPtr & node, std::vector<std::string> & controller_ids);
 
   /**
-   * @brief Resolve a requested controller name against the loaded controllers.
-   *
-   * @param c_name Requested controller name, or "" for "no preference"
-   * @param controller_id Set to the resolved name on success
-   * @return True if the name resolved to a loaded controller
-   */
-  bool findControllerId(const std::string & c_name, std::string & controller_id);
-
-  /**
    * @brief Select the controller for a docking or undocking request.
    *
    * @param requested_controller_name Controller to use. If empty, the dock type's

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <algorithm>
-#include <cstdlib>
 
 #include "angles/angles.h"
 #include "nav2_ros_common/rate.hpp"
@@ -73,7 +72,7 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   }
   navigator_ = std::make_unique<Navigator>(node);
   dock_db_ = std::make_unique<DockDatabase>(param_handler_->getMutex());
-  if (!dock_db_->initialize(node, tf2_buffer_, controller_ids)) {
+  if (!dock_db_->initialize(node, tf2_buffer_, controller_ids, default_controller_id_)) {
     on_cleanup(state);
     return nav2::CallbackReturn::FAILURE;
   }
@@ -175,19 +174,23 @@ bool DockingServer::loadControllerPlugins(
     return false;
   }
 
+  const std::string reserved_controller_id = "default_graceful_controller";
+  if (std::find(controller_ids.begin(), controller_ids.end(), reserved_controller_id) !=
+    controller_ids.end())
+  {
+    RCLCPP_ERROR(
+      node->get_logger(), "Controller name '%s' is reserved. Please rename it in `controllers`.",
+      reserved_controller_id.c_str());
+    return false;
+  }
+
   // Docks naming no controller use a graceful controller
   if (controller_ids == default_controller_ids &&
     nav2::get_plugin_type_param(node, default_controller_ids.front()) == graceful_type)
   {
     default_controller_id_ = default_controller_ids.front();
   } else {
-    const std::string default_controller_name = "default_graceful_controller";
-    default_controller_id_ = default_controller_name;
-    while (std::find(controller_ids.begin(), controller_ids.end(), default_controller_id_) !=
-      controller_ids.end())
-    {
-      default_controller_id_ = default_controller_name + std::to_string(std::rand());
-    }
+    default_controller_id_ = reserved_controller_id;
     controller_ids.push_back(default_controller_id_);
     nav2::declare_parameter_if_not_declared(
       node, default_controller_id_ + ".plugin", rclcpp::ParameterValue(graceful_type));
@@ -228,45 +231,22 @@ bool DockingServer::loadControllerPlugins(
   return true;
 }
 
-bool DockingServer::findControllerId(
-  const std::string & c_name, std::string & controller_id)
-{
-  if (controllers_.find(c_name) == controllers_.end()) {
-    if (c_name.empty()) {
-      RCLCPP_WARN_ONCE(
-        get_logger(),
-        "No controller was specified in the dock configuration. "
-        "Server will use the graceful controller %s. ", default_controller_id_.c_str());
-      controller_id = default_controller_id_;
-    } else {
-      RCLCPP_ERROR(
-        get_logger(), "Dock requested controller '%s', which does not exist. "
-        "Available controllers are: %s.", c_name.c_str(), controller_ids_concat_.c_str());
-      return false;
-    }
-  } else {
-    RCLCPP_DEBUG(get_logger(), "Selected controller: %s.", c_name.c_str());
-    controller_id = c_name;
-  }
-
-  return true;
-}
-
 void DockingServer::selectController(
   const std::string & requested_controller_name, const std::string & dock_type)
 {
-  std::string controller_name = requested_controller_name;
-  if (controller_name.empty()) {
-    controller_name = dock_db_->getTypeControllerName(dock_type);
-  }
+  const std::string controller_name =
+    dock_db_->getControllerName(requested_controller_name, dock_type);
 
-  // Empty name selects default controller
-  std::string controller_id;
-  if (!findControllerId(controller_name, controller_id)) {
+  auto it = controllers_.find(controller_name);
+  if (it == controllers_.end()) {
+    RCLCPP_ERROR(
+      get_logger(), "Dock requested controller '%s', which does not exist. "
+      "Available controllers are: %s.", controller_name.c_str(), controller_ids_concat_.c_str());
     throw opennav_docking_core::DockNotValid(
             "Controller '" + controller_name + "' is not loaded");
   }
-  controller_ = controllers_.at(controller_id);
+  RCLCPP_DEBUG(get_logger(), "Selected controller: %s.", controller_name.c_str());
+  controller_ = it->second;
 }
 
 template<typename ActionT>
@@ -533,6 +513,7 @@ Dock * DockingServer::generateGoalDock(std::shared_ptr<const DockRobot::Goal> go
   dock->pose = goal->dock_pose.pose;
   dock->type = goal->dock_type;
   dock->plugin = plugin;
+  dock->controller_name = dock_db_->getControllerName("", dock->type);
   return dock;
 }
 

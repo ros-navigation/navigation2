@@ -219,7 +219,7 @@ For debugging purposes, there are several publishers which can be used with RVIZ
 | dock_database  |  The filepath to the dock database to use for this environment | string |  N/A  |
 | docks  |  Instead of `dock_database`, the set of docks specified in the params file itself | vector<string> | N/A     |
 | navigator_bt_xml  | BT XML to use for Navigator, if non-default | string | ""     |
-| controllers  | The set of controller plugin instances to load. Each entry names a parameter namespace and requires a `<name>.plugin` type. | vector<string> | ["controller"]     |
+| controllers  | The set of controller plugin instances to load. Each entry names a parameter namespace and requires a `<name>.plugin` type. `default_graceful_controller` is reserved for the default graceful controller. | vector<string> | ["controller"]     |
 | \<dock plugin\>.controller  | Name of the controller for every dock of this type. Must be in `controllers` list. Optional; if unset, docks of this type use the default graceful controller. | string | ""     |
 | \<dock\>.controller  | Name of the controller this dock instance drives with, overriding the one given by dock type. Always optional. | string | ""     |
 | controller.k_phi  | Ratio of the rate of change in phi to the rate of change in r. Controls the convergence of the slow subsystem  | double | 3.0  |
