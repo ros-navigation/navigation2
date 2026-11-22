@@ -179,10 +179,10 @@ double PIDController::advance(ControllerState & channel, double error, double dt
 
 
 void PIDController::poseError(
-  const geometry_msgs::msg::Pose & target, bool reverse, double & side,
+  const geometry_msgs::msg::Pose & target, bool backward, double & side,
   double & e_x, double & alpha) const
 {
-  const double sign = reverse ? -1.0 : 1.0;
+  const double sign = backward ? -1.0 : 1.0;
   e_x = sign * target.position.x;
   const double e_y = sign * target.position.y;
   const double target_yaw = tf2::getYaw(target.orientation);
@@ -202,10 +202,10 @@ void PIDController::poseError(
 }
 
 geometry_msgs::msg::Twist PIDController::computeCommand(
-  const geometry_msgs::msg::Pose & target, bool reverse, double dt)
+  const geometry_msgs::msg::Pose & target, bool backward, double dt)
 {
   double e_x = 0.0, alpha = 0.0;
-  poseError(target, reverse, side_, e_x, alpha);
+  poseError(target, backward, side_, e_x, alpha);
 
   const double v_raw = advance(x_, e_x, dt);
   const double w_raw = advance(y_, alpha, dt);
@@ -214,14 +214,14 @@ geometry_msgs::msg::Twist PIDController::computeCommand(
   const double w = std::clamp(w_raw, -v_angular_max_, v_angular_max_);
 
   geometry_msgs::msg::Twist cmd;
-  cmd.linear.x = (reverse ? -1.0 : 1.0) * v;
+  cmd.linear.x = (backward ? -1.0 : 1.0) * v;
   cmd.angular.z = w;
   return cmd;
 }
 
 geometry_msgs::msg::Pose PIDController::predictNextPose(
   double dt, const geometry_msgs::msg::Pose & target,
-  const geometry_msgs::msg::Pose & current, bool reverse)
+  const geometry_msgs::msg::Pose & current, bool backward)
 {
   const double dx = target.position.x - current.position.x;
   const double dy = target.position.y - current.position.y;
@@ -236,13 +236,13 @@ geometry_msgs::msg::Pose PIDController::predictNextPose(
     angles::shortest_angular_distance(yaw, tf2::getYaw(target.orientation)));
 
   double side = side_, e_x = 0.0, alpha = 0.0;
-  poseError(relative, reverse, side, e_x, alpha);
+  poseError(relative, backward, side, e_x, alpha);
 
   const double v_raw = evaluate(x_, e_x, x_.integral, x_.derivative);
   const double w_raw = evaluate(y_, alpha, y_.integral, y_.derivative);
 
   const double v =
-    (reverse ? -1.0 : 1.0) * std::clamp(v_raw, -v_linear_max_, v_linear_max_);
+    (backward ? -1.0 : 1.0) * std::clamp(v_raw, -v_linear_max_, v_linear_max_);
   const double w = std::clamp(w_raw, -v_angular_max_, v_angular_max_);
 
   geometry_msgs::msg::Pose next = current;

@@ -162,16 +162,16 @@ void GracefulController::updateParametersCallback(
 }
 
 geometry_msgs::msg::Twist GracefulController::computeCommand(
-  const geometry_msgs::msg::Pose & target, bool reverse, double /*dt*/)
+  const geometry_msgs::msg::Pose & target, bool backward, double /*dt*/)
 {
-  return control_law_->calculateRegularVelocity(target, reverse);
+  return control_law_->calculateRegularVelocity(target, backward);
 }
 
 geometry_msgs::msg::Pose GracefulController::predictNextPose(
   double dt, const geometry_msgs::msg::Pose & target,
-  const geometry_msgs::msg::Pose & current, bool reverse)
+  const geometry_msgs::msg::Pose & current, bool backward)
 {
-  return control_law_->calculateNextPose(dt, target, current, reverse);
+  return control_law_->calculateNextPose(dt, target, current, backward);
 }
 
 }  // namespace opennav_docking

@@ -141,7 +141,7 @@ TEST(GracefulControllerTests, ReverseDrivesBackwards)
   auto controller = makeController(node, tf, "c");
 
   opennav_docking::DockingOptions options;
-  options.reverse = true;
+  options.backward = true;
   geometry_msgs::msg::PoseStamped robot_pose;
   geometry_msgs::msg::Twist cmd;
   EXPECT_TRUE(controller->computeVelocityCommands(

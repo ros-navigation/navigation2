@@ -64,12 +64,12 @@ public:
    * @brief Apply the PID law to produce a velocity command.
    *
    * @param target Target pose, in robot centric coordinates.
-   * @param reverse If true, robot will drive backwards to the goal.
+   * @param backward If true, robot will drive backwards to the goal.
    * @param dt Control loop sampling period.
    * @returns Command velocity.
    */
   geometry_msgs::msg::Twist computeCommand(
-    const geometry_msgs::msg::Pose & target, bool reverse, double dt) override;
+    const geometry_msgs::msg::Pose & target, bool backward, double dt) override;
 
   /**
    * @brief Simulate one step of the PID law for collision checking.
@@ -77,12 +77,12 @@ public:
    * @param dt Simulation time step [s].
    * @param target Target pose, in robot centric coordinates.
    * @param current Current pose along the projection, in robot centric coordinates.
-   * @param reverse If true, robot will drive backwards to the goal.
+   * @param backward If true, robot will drive backwards to the goal.
    * @returns The pose after one step forward.
    */
   geometry_msgs::msg::Pose predictNextPose(
     double dt, const geometry_msgs::msg::Pose & target,
-    const geometry_msgs::msg::Pose & current, bool reverse) override;
+    const geometry_msgs::msg::Pose & current, bool backward) override;
 
   /**
    * @struct ControllerState
@@ -136,13 +136,13 @@ protected:
    * @brief Calculate the distance and the heading error to the target.
    *
    * @param target Target pose, in robot centric coordinates.
-   * @param reverse If true, robot will drive backwards to the goal.
+   * @param backward If true, robot will drive backwards to the goal.
    * @param side Sign of the lateral term, becomes -1 when it passes target.
    * @param e_x Distance to the target along the robot's heading [m]
    * @param alpha Heading error relative to the target's x axis [rad].
    */
   void poseError(
-    const geometry_msgs::msg::Pose & target, bool reverse, double & side,
+    const geometry_msgs::msg::Pose & target, bool backward, double & side,
     double & e_x, double & alpha) const;
 
   /**

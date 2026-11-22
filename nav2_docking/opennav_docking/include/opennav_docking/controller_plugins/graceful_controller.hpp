@@ -59,24 +59,24 @@ public:
   /**
    * @brief Compute a velocity command using the smooth control law.
    * @param target Target pose, in robot centric coordinates.
-   * @param reverse If true, robot will drive backwards to the goal.
+   * @param backward If true, robot will drive backwards to the goal.
    * @param dt Control loop duration [s]. Unused: the smooth control law is a pure feedback law.
    * @returns Command velocity.
    */
   geometry_msgs::msg::Twist computeCommand(
-    const geometry_msgs::msg::Pose & target, bool reverse, double dt) override;
+    const geometry_msgs::msg::Pose & target, bool backward, double dt) override;
 
   /**
    * @brief Forward-simulate one step of the smooth control law.
    * @param dt Simulation time step [s].
    * @param target Target pose, in robot centric coordinates.
    * @param current Current pose along the projection, in robot centric coordinates.
-   * @param reverse If true, robot will drive backwards to the goal.
+   * @param backward If true, robot will drive backwards to the goal.
    * @returns The pose one step further along the projection.
    */
   geometry_msgs::msg::Pose predictNextPose(
     double dt, const geometry_msgs::msg::Pose & target,
-    const geometry_msgs::msg::Pose & current, bool reverse) override;
+    const geometry_msgs::msg::Pose & current, bool backward) override;
 
 protected:
   /**

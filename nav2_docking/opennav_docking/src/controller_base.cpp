@@ -112,11 +112,11 @@ bool ControllerBase::computeVelocityCommands(
   geometry_msgs::msg::Twist & cmd)
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
-  cmd = computeCommand(target, options.reverse, dt);
+  cmd = computeCommand(target, options.backward, dt);
   return isTrajectoryCollisionFree(
     options.dock_pose.value_or(target),
     nav2_util::poseToTransformStamped(robot_pose, base_frame_),
-    !options.undocking, options.reverse);
+    options.is_docking, options.backward);
 }
 
 geometry_msgs::msg::Twist ControllerBase::computeRotateToHeadingCommand(

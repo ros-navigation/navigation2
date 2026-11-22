@@ -675,7 +675,7 @@ bool DockingServer::approachDock(
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
     command->header.stamp = now();
     DockingOptions options;
-    options.reverse = backward;
+    options.backward = backward;
     options.dock_pose = base_dock_pose.pose;
     if (!controller_->computeVelocityCommands(
         robot_pose, odom_sub_->getRawTwist(), target_pose.pose, options, dt, command->twist))
@@ -800,8 +800,8 @@ bool DockingServer::getCommandToPose(
 
   // Compute velocity command
   DockingOptions options;
-  options.reverse = backward;
-  options.undocking = !is_docking;
+  options.backward = backward;
+  options.is_docking = is_docking;
   if (!controller_->computeVelocityCommands(
       robot_pose, odom_sub_->getRawTwist(), target_pose.pose, options,
       1.0 / params_->controller_frequency, cmd))

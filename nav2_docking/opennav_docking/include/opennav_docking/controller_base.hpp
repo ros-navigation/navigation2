@@ -44,11 +44,11 @@ namespace opennav_docking
  */
 struct DockingOptions
 {
-  /// @brief If true, the robot drives in reverse along the trajectory.
-  bool reverse{false};
+  /// @brief If true, the robot drives backwards along the trajectory.
+  bool backward{false};
 
-  /// @brief True when leaving the dock
-  bool undocking{false};
+  /// @brief If true robot is docking.
+  bool is_docking{true};
 
   /// @brief Dock pose in robot's base frame.
   std::optional<geometry_msgs::msg::Pose> dock_pose;
@@ -155,12 +155,12 @@ public:
    * Called with the shared parameter lock held; implementations must not take it again.
    *
    * @param target Target pose, in robot centric coordinates.
-   * @param reverse If true, robot will drive backwards to the goal.
+   * @param backward If true, robot will drive backwards to the goal.
    * @param dt Control loop duration [s].
    * @returns Command velocity.
    */
   virtual geometry_msgs::msg::Twist computeCommand(
-    const geometry_msgs::msg::Pose & target, bool reverse, double dt) = 0;
+    const geometry_msgs::msg::Pose & target, bool backward, double dt) = 0;
 
   /**
    * @brief Forward-simulate one step of the control law, for collision checking.
@@ -170,12 +170,12 @@ public:
    * @param dt Simulation time step [s].
    * @param target Target pose, in robot centric coordinates.
    * @param current Current pose along the projection, in robot centric coordinates.
-   * @param reverse If true, robot will drive backwards to the goal.
+   * @param backward If true, robot will drive backwards to the goal.
    * @returns The pose one step further along the projection.
    */
   virtual geometry_msgs::msg::Pose predictNextPose(
     double dt, const geometry_msgs::msg::Pose & target,
-    const geometry_msgs::msg::Pose & current, bool reverse) = 0;
+    const geometry_msgs::msg::Pose & current, bool backward) = 0;
 
 protected:
   /**
