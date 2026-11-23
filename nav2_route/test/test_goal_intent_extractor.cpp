@@ -13,8 +13,11 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+#include <chrono>
 #include <memory>
 #include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -25,6 +28,9 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/service_client.hpp"
 #include "nav2_ros_common/node_thread.hpp"
+#include "nav2_costmap_2d/costmap_subscriber.hpp"
+#include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_ros_common/qos_profiles.hpp"
 #include "nav2_route/goal_intent_extractor.hpp"
 
 
@@ -364,6 +370,99 @@ TEST(GoalIntentExtractorTest, test_pruning)
   extractor2.setStartAndGoal(start, goal);
   rtn = extractor2.pruneStartandGoal(route, poses_goal, rerouting_info);
   EXPECT_EQ(rtn.edges.size(), 2u);
+}
+
+TEST(GoalIntentExtractorTest, test_max_nn_search_iterations)
+{
+  auto pub_node = std::make_shared<rclcpp::Node>("goal_intent_costmap_pub");
+  auto pub = pub_node->create_publisher<nav2_msgs::msg::Costmap>(
+    "goal_intent_costmap", nav2::qos::LatchedPublisherQoS());
+
+  // 10x10 m costmap with a wall between each pose and its euclidean nearest node.
+  nav2_msgs::msg::Costmap msg;
+  msg.header.frame_id = "map";
+  msg.metadata.size_x = 100;
+  msg.metadata.size_y = 100;
+  msg.metadata.resolution = 0.1f;
+  msg.metadata.origin.position.x = -5.0;
+  msg.metadata.origin.position.y = -5.0;
+  msg.metadata.origin.orientation.w = 1.0;
+  msg.data.assign(100 * 100, 0);
+  for (int y = 40; y <= 60; ++y) {
+    msg.data[static_cast<size_t>(y) * 100 + 30] = 254;
+    msg.data[static_cast<size_t>(y) * 100 + 70] = 254;
+  }
+  pub->publish(msg);
+
+  const auto find_nodes = [](int max_iterations) {
+      auto node = std::make_shared<nav2::LifecycleNode>(
+        "goal_intent_iter_" + std::to_string(max_iterations));
+      node->declare_parameter("enable_nn_search", rclcpp::ParameterValue(true));
+      node->declare_parameter(
+        "max_nn_search_iterations", rclcpp::ParameterValue(max_iterations));
+      auto node_thread = std::make_unique<nav2::NodeThread>(node);
+
+      GoalIntentExtractor extractor;
+      Graph graph;
+      GraphToIDMap id_map;
+      const std::vector<std::tuple<unsigned int, float, float>> nodes = {
+        {1, -1.8f, 0.0f}, {2, -2.5f, 0.8f}, {3, -2.5f, -1.2f},
+        {4, -2.7f, 1.5f}, {5, -2.7f, -1.5f},
+        {6, 1.8f, 0.0f}, {7, 2.5f, 0.8f}, {8, 2.5f, -1.2f},
+        {9, 2.7f, 1.5f}, {10, 2.7f, -1.5f}};
+      graph.resize(nodes.size());
+      for (size_t i = 0; i != nodes.size(); ++i) {
+        graph[i].nodeid = std::get<0>(nodes[i]);
+        graph[i].coords.x = std::get<1>(nodes[i]);
+        graph[i].coords.y = std::get<2>(nodes[i]);
+        graph[i].coords.frame_id = "map";
+        id_map[graph[i].nodeid] = static_cast<unsigned int>(i);
+      }
+
+      auto tf = nav2::create_transform_buffer(node);
+      auto costmap_sub = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
+        node, "goal_intent_costmap");
+      extractor.configure(node, graph, &id_map, tf, costmap_sub, "map", "base_link");
+
+      bool costmap_ready = false;
+      for (int i = 0; i != 300 && !costmap_ready; ++i) {
+        try {
+          costmap_ready = costmap_sub->getCostmap() != nullptr;
+        } catch (const std::exception &) {
+          costmap_ready = false;
+        }
+        rclcpp::sleep_for(std::chrono::milliseconds(10));
+      }
+      if (!costmap_ready) {
+        ADD_FAILURE() << "costmap was not received";
+        return std::make_pair(0u, 0u);
+      }
+
+      nav2_msgs::action::ComputeRoute::Goal raw_goal;
+      raw_goal.use_start = true;
+      raw_goal.use_poses = true;
+      raw_goal.start.header.frame_id = "map";
+      raw_goal.start.pose.position.x = -2.5;
+      raw_goal.goal.header.frame_id = "map";
+      raw_goal.goal.pose.position.x = 2.5;
+      auto goal = std::make_shared<const nav2_msgs::action::ComputeRoute::Goal>(raw_goal);
+      auto [start_idx, goal_idx] = extractor.findStartandGoal(goal);
+      auto result = std::make_pair(graph[start_idx].nodeid, graph[goal_idx].nodeid);
+      node->shutdown();
+      return result;
+    };
+
+  // One iteration cannot reach any candidate, so both sides fall back to the
+  // euclidean nearest node.
+  const auto limited = find_nodes(1);
+  EXPECT_EQ(limited.first, 1u);
+  EXPECT_EQ(limited.second, 6u);
+
+  // With the default budget both searches pick the nearest candidate on the pose's
+  // side of the wall instead of the euclidean nearest behind it.
+  const auto full = find_nodes(10000);
+  EXPECT_EQ(full.first, 2u);
+  EXPECT_EQ(full.second, 7u);
 }
 
 int main(int argc, char ** argv)
