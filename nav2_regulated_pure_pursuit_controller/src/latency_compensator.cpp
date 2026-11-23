@@ -47,6 +47,7 @@ LatencyCompensator::LatencyCompensator(const AxisModel & linear, const AxisModel
 void LatencyCompensator::reset()
 {
   history_.clear();
+  linear_deadband_residual_ = 0.0;
 }
 
 void LatencyCompensator::recordCommand(
@@ -87,13 +88,16 @@ bool LatencyCompensator::commandAt(double t, double delay, StampedCommand & cmd)
 }
 
 PredictedState LatencyCompensator::predict(
-  const geometry_msgs::msg::Twist & measured_speed, const rclcpp::Time & now) const
+  const geometry_msgs::msg::Twist & measured_speed, const rclcpp::Time & measurement_time,
+  const rclcpp::Time & now) const
 {
   PredictedState state;
   state.linear_vel = measured_speed.linear.x;
   state.angular_vel = measured_speed.angular.z;
 
-  const double horizon = std::max(linear_.delay, angular_.delay);
+  // Commands issued since the measurement act on the robot too, so simulate from the measurement
+  const double age = std::max(0.0, (now - measurement_time).seconds());
+  const double horizon = age + std::max(linear_.delay, angular_.delay);
   if (horizon <= 0.0) {
     return state;
   }
@@ -105,7 +109,7 @@ PredictedState LatencyCompensator::predict(
   const double alpha_ang =
     angular_.time_constant > 0.0 ? 1.0 - std::exp(-dt / angular_.time_constant) : 1.0;
 
-  const double t0 = now.seconds();
+  const double t0 = measurement_time.seconds();
   StampedCommand cmd;
   for (unsigned int i = 0; i < steps; ++i) {
     const double t = t0 + i * dt;
@@ -139,7 +143,7 @@ PredictedState LatencyCompensator::predict(
 
 double LatencyCompensator::shapeCommand(
   double desired, double predicted, const AxisModel & model, double horizon,
-  bool use_lead, bool invert_actuation)
+  bool use_lead, bool invert_gain, bool allow_sign_change)
 {
   if (desired == 0.0) {
     return 0.0;
@@ -153,24 +157,40 @@ double LatencyCompensator::shapeCommand(
     target = (desired - predicted * decay) / (1.0 - decay);
   }
 
-  // Never command against the desired direction; zero is the strongest brake allowed
-  if (target * desired <= 0.0) {
+  // Unless allowed, never command against the desired direction; zero is the strongest brake
+  if (!allow_sign_change && target * desired <= 0.0) {
     return 0.0;
   }
 
-  double command = target;
-  if (invert_actuation) {
-    if (model.gain > 0.0) {
-      command /= model.gain;
-    }
-    // Round commands inside the deadband to either the deadband edge or zero
-    if (std::fabs(command) < model.deadband) {
-      command = std::fabs(command) >= 0.5 * model.deadband ?
-        std::copysign(model.deadband, command) : 0.0;
-    }
+  if (invert_gain && model.gain > 0.0) {
+    return target / model.gain;
+  }
+  return target;
+}
+
+double LatencyCompensator::roundToDeadband(double command, double deadband)
+{
+  if (std::fabs(command) >= deadband) {
+    return command;
+  }
+  return std::fabs(command) >= 0.5 * deadband ? std::copysign(deadband, command) : 0.0;
+}
+
+double LatencyCompensator::modulateDeadband(double command, double deadband)
+{
+  if (command == 0.0 || std::fabs(command) >= deadband) {
+    linear_deadband_residual_ = 0.0;
+    return command;
   }
 
-  return command;
+  // Round the command plus the error carried from previous rounding, then carry the new error
+  const double target = command + linear_deadband_residual_;
+  double output = std::fabs(target) >= 0.5 * deadband ? std::copysign(deadband, target) : 0.0;
+  if (output * command < 0.0) {
+    output = 0.0;
+  }
+  linear_deadband_residual_ = std::clamp(target - output, -deadband, deadband);
+  return output;
 }
 
 double LatencyCompensator::rotateStoppingSpeed(

@@ -55,6 +55,7 @@ void RegulatedPurePursuitController::configure(
   tf_ = tf;
   plugin_name_ = name;
   logger_ = node->get_logger();
+  clock_ = node->get_clock();
 
   // Handles storage and dynamic configuration of parameters.
   // Returns pointer to data current param settings.
@@ -189,17 +190,27 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   // With latency compensation, track the path from the state the robot is predicted to be in
   // when this command takes effect, rather than the measured state (Smith predictor).
   const bool compensate_latency = params_->use_latency_compensation;
-  const rclcpp::Time now(pose.header.stamp);
+  // Commands are recorded when issued, and the prediction runs from the pose's measurement time,
+  // so that commands issued since a stale pose are accounted for
+  const rclcpp::Time now = clock_->now();
+  rclcpp::Time measurement_time(pose.header.stamp, now.get_clock_type());
+  const double pose_age = (now - measurement_time).seconds();
+  if (pose_age < 0.0 || pose_age > costmap_ros_->getTransformTolerance()) {
+    // Clock skew or mismatched clocks, so treat the pose as current
+    if (compensate_latency) {
+      RCLCPP_WARN_THROTTLE(
+        logger_, *clock_, 5000, "Robot pose is %.3fs old, outside of [0, transform_tolerance]. "
+        "Treating it as current for latency compensation. Are the clocks synchronized?",
+        pose_age);
+    }
+    measurement_time = now;
+  }
   geometry_msgs::msg::PoseStamped tracking_pose = pose;
   geometry_msgs::msg::Twist tracking_speed = speed;
   PredictedState prediction;
-  bool hold_for_predicted_goal = false;
   if (compensate_latency) {
-    prediction = latency_compensator_->predict(speed, now);
-    // Hold if the robot will coast past the end of the path, unless it is already past it
-    hold_for_predicted_goal = !isPastPathEnd(transformed_plan);
+    prediction = latency_compensator_->predict(speed, measurement_time, now);
     transformed_plan = transformPlanToPredictedFrame(transformed_plan, prediction);
-    hold_for_predicted_goal = hold_for_predicted_goal && isPastPathEnd(transformed_plan);
 
     const double yaw = tf2::getYaw(pose.pose.orientation);
     tracking_pose.pose.position.x +=
@@ -279,11 +290,6 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
     rotateToHeading(
       linear_vel, angular_vel, angle_to_goal, rotate_base_speed, rotate_time_constant,
       tracking_speed.angular.z);
-  } else if (hold_for_predicted_goal) {
-    // In-flight commands carry the robot to the end of the path, so let it settle
-    is_rotating_to_heading_ = false;
-    linear_vel = 0.0;
-    angular_vel = 0.0;
   } else if (shouldRotateToPath(rotate_to_path_carrot_pose, angle_to_heading, x_vel_sign)) {
     is_rotating_to_heading_ = true;
     rotateToHeading(
@@ -365,17 +371,26 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   double cmd_angular_vel = angular_vel;
   if (compensate_latency && (params_->use_lead_compensation || params_->invert_actuation)) {
     // Reaching the desired velocity within a single control period demands large, chattering
-    // commands, so the lead aims to reach it over the lag's time constant
+    // commands, so the lead aims to reach it over the lag's time constant. The lead never
+    // reverses the linear direction, but may brake rotation against the desired direction.
     const auto & lin_model = params_->linear_model;
     const auto & ang_model = params_->angular_model;
     cmd_linear_vel = LatencyCompensator::shapeCommand(
       linear_vel, prediction.linear_vel, lin_model,
       std::max(control_duration_, lin_model.time_constant),
-      params_->use_lead_compensation, params_->invert_actuation);
+      params_->use_lead_compensation, params_->invert_actuation, false);
     cmd_angular_vel = LatencyCompensator::shapeCommand(
       angular_vel, prediction.angular_vel, ang_model,
       std::max(control_duration_, ang_model.time_constant),
-      params_->use_lead_compensation, params_->invert_actuation);
+      params_->use_lead_compensation, params_->invert_actuation, true);
+
+    if (params_->invert_actuation) {
+      // Path tracking feedback raises an angular correction rounded to zero, but nothing raises
+      // a linear velocity rounded to zero, so modulate it to average to the desired velocity
+      cmd_linear_vel = latency_compensator_->modulateDeadband(cmd_linear_vel, lin_model.deadband);
+      cmd_angular_vel =
+        LatencyCompensator::roundToDeadband(cmd_angular_vel, ang_model.deadband);
+    }
 
     // Bound the shaped command by the platform limits, scaled by the actuation gain
     const double lin_gain = params_->invert_actuation ? lin_model.gain : 1.0;
@@ -533,20 +548,6 @@ nav_msgs::msg::Path RegulatedPurePursuitController::transformPlanToPredictedFram
   }
 
   return predicted_path;
-}
-
-bool RegulatedPurePursuitController::isPastPathEnd(const nav_msgs::msg::Path & path)
-{
-  if (path.poses.size() < 2) {
-    return false;
-  }
-
-  // Use the direction of travel rather than orientation to support reversing
-  const auto & end = path.poses.back().pose.position;
-  const auto & prev = path.poses[path.poses.size() - 2].pose.position;
-  const double dir_x = end.x - prev.x;
-  const double dir_y = end.y - prev.y;
-  return -end.x * dir_x - end.y * dir_y > 0.0;
 }
 
 void RegulatedPurePursuitController::newPathReceived(

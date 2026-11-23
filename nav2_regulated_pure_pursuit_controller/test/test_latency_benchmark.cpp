@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
+#include "rcl/time.h"
 #include "angles/angles.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_controller/plugins/simple_goal_checker.hpp"
@@ -157,6 +158,8 @@ struct ControllerConfig
   double lookahead_dist{0.6};
   // Multiplicative error of the controller's delay model relative to the true plant
   double delay_error{1.0};
+  // Control cycles per odometry and TF update
+  int odom_period{1};
 };
 
 struct Scenario
@@ -245,6 +248,8 @@ protected:
   static void SetUpTestSuite()
   {
     node_ = std::make_shared<nav2::LifecycleNode>("rpp_latency_benchmark");
+    // The benchmark drives simulated time, which commands are recorded against
+    node_->set_parameter(rclcpp::Parameter("use_sim_time", true));
     tf_ = nav2::create_transform_buffer(node_);
     // Transforms are set synchronously by the benchmark loop
     tf_->setUsingDedicatedThread(true);
@@ -314,6 +319,15 @@ protected:
     for (const auto & result : node_->set_parameters(params)) {
       ASSERT_TRUE(result.successful) << result.reason;
     }
+  }
+
+  static void setTime(double t)
+  {
+    rcl_clock_t * clock = node_->get_clock()->get_clock_handle();
+    ASSERT_EQ(rcl_enable_ros_time_override(clock), RCL_RET_OK);
+    ASSERT_EQ(
+      rcl_set_ros_time_override(clock, static_cast<rcl_time_point_value_t>(t * 1e9)),
+      RCL_RET_OK);
   }
 
   static RunResult run(
@@ -399,27 +413,33 @@ protected:
         }
       };
 
+    geometry_msgs::msg::PoseStamped robot_pose;
+    geometry_msgs::msg::Twist measured;
     int k = 0;
     for (; k < max_steps; ++k) {
       const double t = kStartTime + k * kControlDt;
-      rclcpp::Time stamp(static_cast<int64_t>(t * 1e9), RCL_ROS_TIME);
+      setTime(t);
 
-      geometry_msgs::msg::TransformStamped tf_msg;
-      tf_msg.header.stamp = stamp;
-      tf_msg.header.frame_id = "map";
-      tf_msg.child_frame_id = "base_link";
-      tf_msg.transform.translation.x = robot.x();
-      tf_msg.transform.translation.y = robot.y();
-      tf_msg.transform.rotation =
-        nav2_util::geometry_utils::orientationAroundZAxis(robot.yaw());
-      tf_->setTransform(tf_msg, "benchmark");
+      // Odometry and TF may update slower than the controller, leaving the pose stale
+      if (k % c.odom_period == 0) {
+        rclcpp::Time stamp(static_cast<int64_t>(t * 1e9), RCL_ROS_TIME);
+        geometry_msgs::msg::TransformStamped tf_msg;
+        tf_msg.header.stamp = stamp;
+        tf_msg.header.frame_id = "map";
+        tf_msg.child_frame_id = "base_link";
+        tf_msg.transform.translation.x = robot.x();
+        tf_msg.transform.translation.y = robot.y();
+        tf_msg.transform.rotation =
+          nav2_util::geometry_utils::orientationAroundZAxis(robot.yaw());
+        tf_->setTransform(tf_msg, "benchmark");
 
-      geometry_msgs::msg::PoseStamped robot_pose;
-      robot_pose.header.frame_id = "map";
-      robot_pose.header.stamp = stamp;
-      robot_pose.pose.position.x = robot.x();
-      robot_pose.pose.position.y = robot.y();
-      robot_pose.pose.orientation = tf_msg.transform.rotation;
+        robot_pose.header.frame_id = "map";
+        robot_pose.header.stamp = stamp;
+        robot_pose.pose.position.x = robot.x();
+        robot_pose.pose.position.y = robot.y();
+        robot_pose.pose.orientation = tf_msg.transform.rotation;
+        measured = robot.measuredVelocity();
+      }
 
       // Local plan from the closest pose, as the controller server's path handler provides
       auto search_end = nav2_util::geometry_utils::first_after_integrated_distance(
@@ -436,7 +456,7 @@ protected:
 
       nav_msgs::msg::Path local_plan;
       local_plan.header.frame_id = "map";
-      local_plan.header.stamp = stamp;
+      local_plan.header.stamp = robot_pose.header.stamp;
       double length = 0.0;
       for (size_t i = plan_start; i < plan.poses.size(); ++i) {
         if (i > plan_start) {
@@ -449,9 +469,8 @@ protected:
         local_plan.poses.push_back(plan.poses[i]);
         local_plan.poses.back().header = local_plan.header;
       }
-      goal.header.stamp = stamp;
+      goal.header.stamp = robot_pose.header.stamp;
 
-      const auto measured = robot.measuredVelocity();
       if (checker_->isGoalReached(robot_pose.pose, goal.pose, measured, local_plan)) {
         result.success = true;
         break;
@@ -545,6 +564,8 @@ const ControllerConfig kCompTight{"comp_L0.3", true, false, true, 0.3};
 // Under-estimating the delay is the harmful direction of model error
 const ControllerConfig kCompDelayError{"comp_L0.45_d-30%", true, false, true, 0.45, 0.7};
 const ControllerConfig kCompLead{"comp+lead", true, true, true, 0.6};
+// Odometry at half the control rate, so consecutive cycles share a pose timestamp
+const ControllerConfig kCompSlowOdom{"comp_L0.3_odom/2", true, false, true, 0.3, 1.0, 2};
 
 }  // namespace
 
@@ -576,7 +597,7 @@ TEST_F(LatencyBenchmark, swathsAndSCurves)
   plants.push_back(plant("legged", 0.3, 0.3, 0.8, 0.05, 0.1, 0.03, 0.05));
 
   std::vector<ControllerConfig> configs = {
-    kBaseline, kPredict, kComp, kBaselineTight, kCompTight, kCompDelayError};
+    kBaseline, kPredict, kComp, kBaselineTight, kCompTight, kCompDelayError, kCompSlowOdom};
   if (full) {
     configs.push_back(kCompLead);
   }
@@ -607,6 +628,7 @@ TEST_F(LatencyBenchmark, swathsAndSCurves)
       const auto & base_tight = r[3];
       const auto & comp_tight = r[4];
       const auto & comp_delay_error = r[5];
+      const auto & comp_slow_odom = r[6];
       const std::string id = s.name + " " + p.name;
 
       if (p.linear.isIdentity() && p.angular.isIdentity()) {
@@ -627,7 +649,9 @@ TEST_F(LatencyBenchmark, swathsAndSCurves)
       // With significant delay and lag, compensation must complete every path, stop rotations
       // on the goal heading rather than past it, and allow a tighter lookahead that tracks
       // the path far better than baseline RPP at either lookahead, even with model error.
-      for (const auto * result : {&predict, &comp, &comp_tight, &comp_delay_error}) {
+      for (const auto * result :
+        {&predict, &comp, &comp_tight, &comp_delay_error, &comp_slow_odom})
+      {
         EXPECT_TRUE(result->success) << id;
       }
       if (s.rotate_at_goal) {
@@ -636,6 +660,8 @@ TEST_F(LatencyBenchmark, swathsAndSCurves)
       const double best_baseline = std::min(base.rms_cte, base_tight.rms_cte);
       EXPECT_LT(comp_tight.rms_cte, 0.5 * best_baseline) << id;
       EXPECT_LT(comp_delay_error.rms_cte, 0.8 * best_baseline) << id;
+      // Commands issued since a stale pose are accounted for
+      EXPECT_LT(comp_slow_odom.rms_cte, 1.1 * comp_tight.rms_cte) << id;
     }
   }
 }

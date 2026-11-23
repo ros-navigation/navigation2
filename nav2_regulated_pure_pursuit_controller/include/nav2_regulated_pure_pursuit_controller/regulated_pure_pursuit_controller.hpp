@@ -185,13 +185,6 @@ protected:
     const nav_msgs::msg::Path & path, const PredictedState & prediction);
 
   /**
-   * @brief Whether a robot at the origin of the path's frame has passed the end of the path
-   * @param path Path expressed in the robot frame to check
-   * @return If past the end of the path
-   */
-  bool isPastPathEnd(const nav_msgs::msg::Path & path);
-
-  /**
    * @brief apply regulation constraints to the system
    * @param linear_vel robot command linear velocity input
    * @param lookahead_dist optimal lookahead distance
@@ -210,6 +203,7 @@ protected:
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   nav2_costmap_2d::Costmap2D * costmap_;
   rclcpp::Logger logger_ {rclcpp::get_logger("RegulatedPurePursuitController")};
+  rclcpp::Clock::SharedPtr clock_;
 
   Parameters * params_;
   double control_duration_;

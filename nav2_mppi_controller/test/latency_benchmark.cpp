@@ -20,18 +20,20 @@
 //   MPPI_LATENCY_BENCHMARK_FULL=1   run the full plant grid rather than the CI subset
 //   MPPI_BENCH_REPEATS=<n>          repeats of each run, as MPPI's sampling is stochastic
 //   MPPI_BENCH_PLANTS=<a,b,...>     only run plants whose names contain any of the texts
+//   MPPI_BENCH_CONFIGS=<a,b,...>    only run controller configurations likewise
 //   MPPI_BENCH_CSV_DIR=<dir>        write a summary and the first repeat's trajectories as CSV
 
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <deque>
 #include <fstream>
 #include <memory>
 #include <random>
-#include <stdexcept>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -58,6 +60,7 @@ constexpr double kSettleTime = 2.0;
 constexpr double kXYTolerance = 0.25;
 constexpr double kYawTolerance = 0.25;
 constexpr int kMaxConsecutiveFailures = 20;
+constexpr int kPredictionSteps = 20;
 
 struct AxisResponse
 {
@@ -220,6 +223,21 @@ private:
   bool xy_reached_{false};
 };
 
+/**
+ * MPPI controller exposing its optimal trajectory, to measure how well it predicts the robot
+ */
+class InspectableController : public nav2_mppi_controller::MPPIController
+{
+public:
+  std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> evalControl(
+    const geometry_msgs::msg::PoseStamped & pose, const geometry_msgs::msg::Twist & speed,
+    nav2_core::GoalChecker * goal_checker, const nav_msgs::msg::Path & plan,
+    const geometry_msgs::msg::PoseStamped & goal)
+  {
+    return optimizer_.evalControl(pose, speed, plan, goal.pose, goal_checker);
+  }
+};
+
 struct ControllerConfig
 {
   std::string name;
@@ -234,6 +252,9 @@ struct ControllerConfig
   bool model_gain{false};
   // Weight of the VelocityDeadbandCritic, using the legged plant's deadbands
   double deadband_critic_weight{0.0};
+  double vx_max{0.5};
+  double path_align_weight{14.0};
+  double std_scale{1.0};
 };
 
 struct Scenario
@@ -254,6 +275,8 @@ struct RunResult
   double final_yaw_error{0.0};
   double goal_overshoot{0.0};
   int failures{0};
+  // Mean error of the robot's position predicted by the optimal trajectory, kPredictionSteps ahead
+  double prediction_error{0.0};
 };
 
 // Straight segments and arcs (positive angle turns left), as in the RPP benchmark
@@ -344,6 +367,8 @@ protected:
     declare(n + "model_dt", rclcpp::ParameterValue(kControlDt));
     declare(n + "batch_size", rclcpp::ParameterValue(1000));
     declare(n + "vx_max", rclcpp::ParameterValue(0.5));
+    declare(n + "vx_std", rclcpp::ParameterValue(0.2));
+    declare(n + "wz_std", rclcpp::ParameterValue(0.4));
     declare(n + "vx_min", rclcpp::ParameterValue(-0.35));
     declare(n + "wz_max", rclcpp::ParameterValue(1.9));
     declare(n + "visualize", rclcpp::ParameterValue(false));
@@ -413,7 +438,7 @@ protected:
   {
     stopController();
     setModel(p, c);
-    controller_ = std::make_shared<nav2_mppi_controller::MPPIController>();
+    controller_ = std::make_shared<InspectableController>();
     controller_->configure(node_, "FollowPath", tf_, costmap_);
     controller_->activate();
   }
@@ -442,6 +467,10 @@ protected:
       {
         rclcpp::Parameter(n + "model_delay_vx", p.linear.delay * c.delay_model_fraction),
         rclcpp::Parameter(n + "model_delay_wz", p.angular.delay * c.delay_model_fraction),
+        rclcpp::Parameter(n + "vx_max", c.vx_max),
+        rclcpp::Parameter(n + "PathAlignCritic.cost_weight", c.path_align_weight),
+        rclcpp::Parameter(n + "vx_std", 0.2 * c.std_scale),
+        rclcpp::Parameter(n + "wz_std", 0.4 * c.std_scale),
         rclcpp::Parameter(n + "ax_max", c.ax_max),
         rclcpp::Parameter(n + "ax_min", -c.ax_max),
         rclcpp::Parameter(n + "az_max", c.az_max),
@@ -486,6 +515,10 @@ protected:
     size_t closest = 0, plan_start = 0;
     double sum_sq_cte = 0.0, goal_err_sign = 0.0;
     int samples = 0, consecutive_failures = 0;
+    // Predicted positions of the robot, by the control step they are predicted for
+    std::deque<std::tuple<int, double, double>> predictions;
+    double sum_prediction_error = 0.0;
+    int prediction_samples = 0;
 
     auto sample = [&](double t, const geometry_msgs::msg::Twist & cmd) {
         geometry_msgs::msg::Pose pose;
@@ -574,12 +607,29 @@ protected:
         break;
       }
 
+      while (!predictions.empty() && std::get<0>(predictions.front()) <= k) {
+        if (std::get<0>(predictions.front()) == k) {
+          sum_prediction_error += std::hypot(
+            robot.x() - std::get<1>(predictions.front()),
+            robot.y() - std::get<2>(predictions.front()));
+          prediction_samples++;
+        }
+        predictions.pop_front();
+      }
+
       // As the controller server, publish zero on a failure and allow some failure tolerance
       geometry_msgs::msg::Twist cmd;
       try {
-        cmd = controller_->computeVelocityCommands(
-          robot_pose, measured, &checker, local_plan, goal).twist;
+        auto [cmd_stamped, trajectory] = controller_->evalControl(
+          robot_pose, measured, &checker, local_plan, goal);
+        cmd = cmd_stamped.twist;
         consecutive_failures = 0;
+        // Each trajectory point is a model_dt (one control step) after the last
+        if (trajectory.rows() >= kPredictionSteps) {
+          predictions.emplace_back(
+            k + kPredictionSteps, trajectory(kPredictionSteps - 1, 0),
+            trajectory(kPredictionSteps - 1, 1));
+        }
       } catch (const nav2_core::NoValidControl &) {
         result.failures++;
         if (++consecutive_failures > kMaxConsecutiveFailures) {
@@ -609,6 +659,8 @@ protected:
     }
 
     result.rms_cte = samples > 0 ? std::sqrt(sum_sq_cte / samples) : 0.0;
+    result.prediction_error =
+      prediction_samples > 0 ? sum_prediction_error / prediction_samples : 0.0;
     result.final_xy_error = std::hypot(
       robot.x() - goal.pose.position.x, robot.y() - goal.pose.position.y);
     result.final_yaw_error = std::fabs(angles::shortest_angular_distance(robot.yaw(), goal_yaw));
@@ -621,6 +673,7 @@ protected:
     int runs{0};
     double rms_mean{0.0}, rms_min{1e9}, rms_max{0.0};
     double max_cte{0.0}, time{0.0}, goal_overshoot{0.0}, final_yaw_error{0.0};
+    double prediction_error{0.0};
     int failures{0};
 
     void add(const RunResult & r)
@@ -635,6 +688,7 @@ protected:
       goal_overshoot = std::max(goal_overshoot, r.goal_overshoot);
       final_yaw_error = std::max(final_yaw_error, r.final_yaw_error);
       failures += r.failures;
+      prediction_error += (r.prediction_error - prediction_error) / runs;
     }
   };
 
@@ -643,32 +697,34 @@ protected:
     std::ofstream & summary)
   {
     printf(
-      "%-8s %-14s %-18s %3d/%-3d %7.3f %7.3f %7.3f %8.3f %7.1f %8.3f %8.3f %5d\n",
+      "%-8s %-14s %-18s %3d/%-3d %7.3f %7.3f %7.3f %8.3f %7.1f %8.3f %8.3f %5d %8.3f\n",
       s.name.c_str(), p.name.c_str(), c.name.c_str(), a.successes, a.runs, a.rms_mean,
-      a.rms_min, a.rms_max, a.max_cte, a.time, a.goal_overshoot, a.final_yaw_error, a.failures);
+      a.rms_min, a.rms_max, a.max_cte, a.time, a.goal_overshoot, a.final_yaw_error, a.failures,
+      a.prediction_error);
     fflush(stdout);
     if (summary.is_open()) {
       summary << s.name << "," << p.name << "," << c.name << "," << a.successes << "," <<
         a.runs << "," << a.rms_mean << "," << a.rms_min << "," << a.rms_max << "," <<
         a.max_cte << "," << a.time << "," << a.goal_overshoot << "," << a.final_yaw_error <<
-        "," << a.failures << "\n";
+        "," << a.failures << "," << a.prediction_error << "\n";
     }
   }
 
   static nav2::LifecycleNode::SharedPtr node_;
   static nav2::TransformBuffer::SharedPtr tf_;
   static std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_;
-  static std::shared_ptr<nav2_mppi_controller::MPPIController> controller_;
+  static std::shared_ptr<InspectableController> controller_;
 };
 
 nav2::LifecycleNode::SharedPtr MPPILatencyBenchmark::node_;
 nav2::TransformBuffer::SharedPtr MPPILatencyBenchmark::tf_;
 std::shared_ptr<nav2_costmap_2d::Costmap2DROS> MPPILatencyBenchmark::costmap_;
-std::shared_ptr<nav2_mppi_controller::MPPIController> MPPILatencyBenchmark::controller_;
+std::shared_ptr<InspectableController> MPPILatencyBenchmark::controller_;
 
 ControllerConfig config(
   const std::string & name, double delay_fraction, bool low_accel, bool lag = false,
-  bool deadband = false, bool gain = false, double deadband_critic_weight = 0.0)
+  bool deadband = false, bool gain = false, bool tuned = false,
+  double deadband_critic_weight = 0.0)
 {
   ControllerConfig c;
   c.name = name + (low_accel ? "_low_acc" : "");
@@ -680,11 +736,45 @@ ControllerConfig config(
   c.model_lag = lag;
   c.model_deadband = deadband;
   c.model_gain = gain;
+  // The lag filters the sampled controls' effect on the velocity, reducing exploration, and the
+  // robot's turns are no longer delayed by the lag, revealing MPPI's tendency to cut corners
+  if (tuned) {
+    c.std_scale = 1.5;
+    c.path_align_weight = 28.0;
+  }
   c.deadband_critic_weight = deadband_critic_weight;
   return c;
 }
 
 }  // namespace
+
+/**
+ * Keep only the items whose names contain any of the comma separated texts in the environment
+ * variable, if it is set
+ */
+template<typename T>
+void filterByName(std::vector<T> & items, const char * variable)
+{
+  const char * filter = std::getenv(variable);
+  if (!filter) {
+    return;
+  }
+  std::vector<std::string> names;
+  std::stringstream stream(filter);
+  std::string text;
+  while (std::getline(stream, text, ',')) {
+    names.push_back(text);
+  }
+  items.erase(
+    std::remove_if(
+      items.begin(), items.end(),
+      [&names](const T & item) {
+        return std::none_of(
+          names.begin(), names.end(),
+          [&item](const std::string & name) {return item.name.find(name) != std::string::npos;});
+      }),
+    items.end());
+}
 
 TEST_F(MPPILatencyBenchmark, swathsAndSCurves)
 {
@@ -713,36 +803,28 @@ TEST_F(MPPILatencyBenchmark, swathsAndSCurves)
   // Legged-like: large delay and lag, under-turning, deadbands and gait sway
   plants.push_back(plant("legged", 0.3, 0.3, 0.8, 0.05, 0.1, 0.03, 0.05));
   plants.push_back(plant("legged_no_db", 0.3, 0.3, 0.8, 0.0, 0.0, 0.03, 0.05));
-  if (const char * filter = std::getenv("MPPI_BENCH_PLANTS")) {
-    // Comma separated names, matched in part
-    std::vector<std::string> names;
-    std::stringstream stream(filter);
-    for (std::string name; std::getline(stream, name, ',');) {
-      names.push_back(name);
-    }
-    plants.erase(
-      std::remove_if(
-        plants.begin(), plants.end(),
-        [&names](const PlantModel & p) {
-          return std::none_of(
-            names.begin(), names.end(),
-            [&p](const std::string & name) {return p.name.find(name) != std::string::npos;});
-        }),
-      plants.end());
-  }
+  filterByName(plants, "MPPI_BENCH_PLANTS");
 
   std::vector<ControllerConfig> configs;
   for (bool low_accel : {false, true}) {
     configs.push_back(config("no_model", 0.0, low_accel));
     configs.push_back(config("delay_model", 1.0, low_accel));
     configs.push_back(config("full_model", 1.0, low_accel, true, true, true));
+    configs.push_back(config("full_model_tuned", 1.0, low_accel, true, true, true, true));
     if (full) {
-      configs.push_back(config("delay_lag", 1.0, low_accel, true));
-      configs.push_back(config("delay_lag_deadband", 1.0, low_accel, true, true));
-      configs.push_back(config("full_critic_deadband", 1.0, low_accel, true, false, true, 35.0));
-      configs.push_back(config("full_delay_-30%", 0.7, low_accel, true, true, true));
+      // Each part of the model, the tuning alone, and robustness to model error
+      const bool tuned = true;
+      configs.push_back(config("delay_model_tuned", 1.0, low_accel, false, false, false, tuned));
+      configs.push_back(config("delay_lag_tuned", 1.0, low_accel, true, false, false, tuned));
+      configs.push_back(
+        config("delay_lag_deadband_tuned", 1.0, low_accel, true, true, false, tuned));
+      configs.push_back(
+        config("full_model_tuned_delay_-30%", 0.7, low_accel, true, true, true, tuned));
+      configs.push_back(
+        config("full_model_tuned_deadband_critic", 1.0, low_accel, true, false, true, tuned, 35.0));
     }
   }
+  filterByName(configs, "MPPI_BENCH_CONFIGS");
   const char * repeats_env = std::getenv("MPPI_BENCH_REPEATS");
   const int repeats = repeats_env ? std::max(1, std::atoi(repeats_env)) : 3;
 
@@ -750,12 +832,12 @@ TEST_F(MPPILatencyBenchmark, swathsAndSCurves)
   if (csv_dir) {
     summary.open(std::string(csv_dir) + "/summary.csv");
     summary << "path,plant,controller,successes,runs,rms_mean,rms_min,rms_max,max_cte,time," <<
-      "goal_overshoot,final_yaw_error,failures\n";
+      "goal_overshoot,final_yaw_error,failures,prediction_error\n";
   }
 
   printf(
-    "%-8s %-14s %-18s %7s %7s %7s %7s %8s %7s %8s %8s %5s\n", "path", "plant", "controller",
-    "ok", "rms", "rms_min", "rms_max", "max_cte", "time", "goal_os", "yaw_err", "fail");
+    "%-8s %-14s %-18s %7s %7s %7s %7s %8s %7s %8s %8s %5s %8s\n", "path", "plant", "controller",
+    "ok", "rms", "rms_min", "rms_max", "max_cte", "time", "goal_os", "yaw_err", "fail", "pred_err");
   for (const auto & s : scenarios) {
     for (const auto & p : plants) {
       std::vector<Aggregate> results;
@@ -776,27 +858,40 @@ TEST_F(MPPILatencyBenchmark, swathsAndSCurves)
         printRow(s, p, c, aggregate, summary);
       }
 
-      auto result = [&](const std::string & name) -> const Aggregate & {
+      // Results by configuration name, if it was run
+      auto result = [&](const std::string & name) -> const Aggregate * {
           for (size_t i = 0; i < configs.size(); ++i) {
             if (configs[i].name == name) {
-              return results[i];
+              return &results[i];
             }
           }
-          throw std::runtime_error("No configuration " + name);
+          return nullptr;
         };
       const std::string id = s.name + " " + p.name;
 
       // With a delay model, every path is completed
-      const auto & delay_model = result("delay_model");
-      EXPECT_EQ(delay_model.successes, delay_model.runs) << id;
+      const auto * delay_model = result("delay_model");
+      if (delay_model) {
+        EXPECT_EQ(delay_model->successes, delay_model->runs) << id;
+      }
 
       // A robot which accelerates slowly is not held back by its lagging measured velocity, nor
       // modeled as reversing its acceleration after the delay, so tracks swaths far better
-      const auto & no_model_low_accel = result("no_model_low_acc");
-      const auto & delay_model_low_accel = result("delay_model_low_acc");
-      if (s.name == "swath" && p.linear.delay >= 0.3 && p.linear.time_constant >= 0.2) {
-        EXPECT_EQ(delay_model_low_accel.successes, delay_model_low_accel.runs) << id;
-        EXPECT_LT(delay_model_low_accel.rms_mean, 0.5 * no_model_low_accel.rms_mean) << id;
+      const auto * no_model_low_accel = result("no_model_low_acc");
+      const auto * delay_model_low_accel = result("delay_model_low_acc");
+      if (no_model_low_accel && delay_model_low_accel && s.name == "swath" &&
+        p.linear.delay >= 0.3 && p.linear.time_constant >= 0.2)
+      {
+        EXPECT_EQ(delay_model_low_accel->successes, delay_model_low_accel->runs) << id;
+        EXPECT_LT(delay_model_low_accel->rms_mean, 0.5 * no_model_low_accel->rms_mean) << id;
+      }
+
+      // Modeling the robot's lag, gain and deadband, with sampling and path alignment tuned for
+      // it, completes every path and tracks it far better than modeling the delay alone
+      const auto * full_model_tuned = result("full_model_tuned");
+      if (delay_model && full_model_tuned && p.linear.time_constant >= 0.2) {
+        EXPECT_EQ(full_model_tuned->successes, full_model_tuned->runs) << id;
+        EXPECT_LT(full_model_tuned->rms_mean, 0.7 * delay_model->rms_mean) << id;
       }
     }
   }

@@ -214,13 +214,6 @@ void Optimizer::getParams()
 
   s.constraints = s.base_constraints;
 
-  for (auto * response : {&s.actuation.vx, &s.actuation.vy, &s.actuation.wz}) {
-    if (response->gain <= 0.0f) {
-      RCLCPP_WARN(logger_, "model_gain parameters must be positive, defaulting to 1.0");
-      response->gain = 1.0f;
-    }
-  }
-
   // The robot's response to a command must be well within the horizon for it to be optimized
   const float max_delay = std::max(
     {s.actuation.vx.delay, s.actuation.vy.delay, s.actuation.wz.delay});
@@ -424,17 +417,17 @@ void Optimizer::prepare(
         robot_speed.linear.y + dt * c.ay_max);
     }
 
-    // With a delay or lag, the measured velocity is the robot's state now, which the commands
-    // in flight and the lag carry forward, rather than having already reached the last command
+    // With a delay or a response other than ideal, the measured velocity is the robot's state
+    // now, which the commands in flight carry forward, rather than having reached the last command
     const auto in_flight = motion_model_->getInFlightDuration();
     const auto & actuation = settings_.actuation;
-    if (in_flight.vx > 0.0f || actuation.vx.time_constant > 0.0f) {
+    if (in_flight.vx > 0.0f || !actuation.vx.isIdeal()) {
       state_.speed.linear.x = robot_speed.linear.x;
     }
-    if (in_flight.vy > 0.0f || actuation.vy.time_constant > 0.0f) {
+    if (in_flight.vy > 0.0f || !actuation.vy.isIdeal()) {
       state_.speed.linear.y = robot_speed.linear.y;
     }
-    if (in_flight.wz > 0.0f || actuation.wz.time_constant > 0.0f) {
+    if (in_flight.wz > 0.0f || !actuation.wz.isIdeal()) {
       state_.speed.angular.z = robot_speed.angular.z;
     }
   }
@@ -480,16 +473,13 @@ geometry_msgs::msg::Twist Optimizer::getCommandBaseSpeed() const
   const auto velocity = motion_model_->propagateInFlight(
     {static_cast<float>(state_.speed.linear.x), static_cast<float>(state_.speed.linear.y),
       static_cast<float>(state_.speed.angular.z)});
-  // With a lag, the robot's velocity trails its commands by design, so commands continue from the
-  // last command rather than being held back to the lagging velocity
+  // When the robot's response isn't ideal, commands aren't velocities, so the command now is the
+  // last command sent
   const auto & actuation = settings_.actuation;
   geometry_msgs::msg::Twist base_speed;
-  base_speed.linear.x =
-    actuation.vx.time_constant > 0.0f ? last_command_vel_.linear.x : velocity.vx;
-  base_speed.linear.y =
-    actuation.vy.time_constant > 0.0f ? last_command_vel_.linear.y : velocity.vy;
-  base_speed.angular.z =
-    actuation.wz.time_constant > 0.0f ? last_command_vel_.angular.z : velocity.wz;
+  base_speed.linear.x = actuation.vx.isIdeal() ? velocity.vx : last_command_vel_.linear.x;
+  base_speed.linear.y = actuation.vy.isIdeal() ? velocity.vy : last_command_vel_.linear.y;
+  base_speed.angular.z = actuation.wz.isIdeal() ? velocity.wz : last_command_vel_.angular.z;
   return base_speed;
 }
 
@@ -517,12 +507,18 @@ void Optimizer::applyControlSequenceInterIterationConstraints()
       control_sequence_.vy(0) = static_cast<float>(base_speed.linear.y);
     }
   } else {
-    // When not shifting, vx(0) is the sent command, clamp to the feasible envelope
-    control_sequence_.vx(0) = utils::clampVelocityByAccel(
-      speed_vx, control_sequence_.vx(0), min_delta_vx, max_delta_vx);
-    control_sequence_.wz(0) = utils::clampVelocityByAccel(
-      speed_wz, control_sequence_.wz(0), -max_delta_wz, max_delta_wz);
-    if (isHolonomic()) {
+    // When not shifting, vx(0) is the sent command, clamp to the feasible envelope. Commands
+    // aren't velocities when the robot's response isn't ideal, so its dynamics limit those.
+    const auto & actuation = s.actuation;
+    if (actuation.vx.isIdeal()) {
+      control_sequence_.vx(0) = utils::clampVelocityByAccel(
+        speed_vx, control_sequence_.vx(0), min_delta_vx, max_delta_vx);
+    }
+    if (actuation.wz.isIdeal()) {
+      control_sequence_.wz(0) = utils::clampVelocityByAccel(
+        speed_wz, control_sequence_.wz(0), -max_delta_wz, max_delta_wz);
+    }
+    if (isHolonomic() && actuation.vy.isIdeal()) {
       float speed_vy = static_cast<float>(base_speed.linear.y);
       control_sequence_.vy(0) = utils::clampVelocityByAccel(
         speed_vy, control_sequence_.vy(0), min_delta_vy, max_delta_vy);
@@ -561,6 +557,9 @@ void Optimizer::applyControlSequenceConstraints()
     }
   }
 
+  // Commands are velocities only when the robot's response is ideal, otherwise its dynamics in
+  // the trajectory rollouts limit the velocities resulting from the commands evaluated
+  const auto & actuation = s.actuation;
   for (unsigned int i = 0; i != control_sequence_.vx.size(); i++) {
     // After first timestep, switch to MPC model_dt for intra-iteration feasibility
     if (i == 1) {
@@ -573,18 +572,24 @@ void Optimizer::applyControlSequenceConstraints()
 
     float & vx_curr = control_sequence_.vx(i);
     vx_curr = utils::clamp(s.constraints.vx_min, s.constraints.vx_max, vx_curr);
-    vx_curr = utils::clampVelocityByAccel(vx_last, vx_curr, min_delta_vx, max_delta_vx);
+    if (actuation.vx.isIdeal()) {
+      vx_curr = utils::clampVelocityByAccel(vx_last, vx_curr, min_delta_vx, max_delta_vx);
+    }
     vx_last = vx_curr;
 
     float & wz_curr = control_sequence_.wz(i);
     wz_curr = utils::clamp(-s.constraints.wz, s.constraints.wz, wz_curr);
-    wz_curr = utils::clampVelocityByAccel(wz_last, wz_curr, -max_delta_wz, max_delta_wz);
+    if (actuation.wz.isIdeal()) {
+      wz_curr = utils::clampVelocityByAccel(wz_last, wz_curr, -max_delta_wz, max_delta_wz);
+    }
     wz_last = wz_curr;
 
     if (isHolonomic()) {
       float & vy_curr = control_sequence_.vy(i);
       vy_curr = utils::clamp(-s.constraints.vy, s.constraints.vy, vy_curr);
-      vy_curr = utils::clampVelocityByAccel(vy_last, vy_curr, min_delta_vy, max_delta_vy);
+      if (actuation.vy.isIdeal()) {
+        vy_curr = utils::clampVelocityByAccel(vy_last, vy_curr, min_delta_vy, max_delta_vy);
+      }
       vy_last = vy_curr;
     }
   }
@@ -724,6 +729,7 @@ Eigen::ArrayXXf Optimizer::getOptimizedTrajectory()
     optimal.cvx.row(0) = control_sequence_.vx.transpose();
     optimal.cwz.row(0) = control_sequence_.wz.transpose();
     optimal.cvy.row(0) = control_sequence_.vy.transpose();
+    optimal.speed = state_.speed;
     updateInitialStateVelocities(optimal);
     motion_model_->predict(optimal);
     sequence.col(0) = optimal.vx.row(0).transpose();
@@ -844,6 +850,16 @@ void Optimizer::setMotionModel(const std::string & motion_model_name)
 
 void Optimizer::setMotionModelConstraints()
 {
+  // Checked here to include dynamic parameter updates
+  for (auto * response : {&settings_.actuation.vx, &settings_.actuation.vy,
+      &settings_.actuation.wz})
+  {
+    if (response->gain <= 0.0f) {
+      RCLCPP_WARN(logger_, "model_gain parameters must be positive, defaulting to 1.0");
+      response->gain = 1.0f;
+    }
+  }
+
   // With shifting, the first control is the current velocity rather than a command to send
   settings_.actuation.first_control_sent = !settings_.shift_control_sequence;
   motion_model_->setConstraints(

@@ -86,7 +86,7 @@ public:
   LatencyCompensator(const AxisModel & linear, const AxisModel & angular);
 
   /**
-   * @brief Clear the command history
+   * @brief Clear the command history and deadband modulation state
    */
   void reset();
 
@@ -99,26 +99,51 @@ public:
 
   /**
    * @brief Predict the robot state when a command issued at `now` takes effect
-   * @param measured_speed Current measured robot velocity
-   * @param now Current time, on the same clock as the recorded commands
-   * @return State relative to the current robot base frame
+   * @param measured_speed Robot velocity measured at measurement_time
+   * @param measurement_time Time of the measured robot state
+   * @param now Time the next command is issued, on the same clock as the recorded commands.
+   * The robot is simulated from measurement_time until the command takes effect at now + delay.
+   * @return State relative to the robot base frame at measurement_time
    */
   PredictedState predict(
-    const geometry_msgs::msg::Twist & measured_speed, const rclcpp::Time & now) const;
+    const geometry_msgs::msg::Twist & measured_speed, const rclcpp::Time & measurement_time,
+    const rclcpp::Time & now) const;
 
   /**
-   * @brief Shape a desired velocity into the command that best achieves it under the model
+   * @brief Shape a desired velocity into the command that best achieves it under the model,
+   * excluding the deadband (see roundToDeadband and modulateDeadband)
    * @param desired Desired axis velocity
    * @param predicted Predicted axis velocity when the command takes effect
    * @param model Axis model
    * @param horizon Time over which the lead term attempts to reach the desired velocity
    * @param use_lead Whether to invert the first-order lag
-   * @param invert_actuation Whether to invert the gain and deadband
-   * @return Command for the axis. Never of opposite sign to the desired velocity.
+   * @param invert_gain Whether to invert the gain
+   * @param allow_sign_change Whether the lead may command against the desired direction.
+   * When false, zero is the strongest brake commanded.
+   * @return Command for the axis
    */
   static double shapeCommand(
     double desired, double predicted, const AxisModel & model, double horizon,
-    bool use_lead, bool invert_actuation);
+    bool use_lead, bool invert_gain, bool allow_sign_change);
+
+  /**
+   * @brief Round a command within the deadband to the deadband edge or zero, whichever is
+   * nearer. Suited to axes inside a feedback loop, which raises a correction rounded to zero.
+   * @param command Axis command
+   * @param deadband Command magnitude below which the robot does not move
+   * @return Command outside of the deadband, or zero
+   */
+  static double roundToDeadband(double command, double deadband);
+
+  /**
+   * @brief Modulate a command within the deadband between the deadband edge and zero, carrying
+   * the rounding error into the next command (sigma-delta), so that the commands average to the
+   * desired value rather than stalling at zero
+   * @param command Axis command
+   * @param deadband Command magnitude below which the robot does not move
+   * @return Command outside of the deadband, or zero. Never of opposite sign to the command.
+   */
+  double modulateDeadband(double command, double deadband);
 
   /**
    * @brief Largest commanded rotation speed from which the robot can stop within an angle.
@@ -154,6 +179,7 @@ protected:
   const AxisModel & linear_;
   const AxisModel & angular_;
   std::deque<StampedCommand> history_;
+  double linear_deadband_residual_{0.0};
 };
 
 }  // namespace nav2_regulated_pure_pursuit_controller

@@ -61,6 +61,10 @@ This process is then repeated a number of times and returns a converged solution
  | regenerate_noises          | bool   | Default false. Whether to regenerate noises each iteration or use single noise distribution computed on initialization and reset. Practically, this is found to work fine since the trajectories are being sampled stochastically from a normal distribution and reduces compute jittering at run-time due to thread wake-ups to resample normal distribution. |
  | publish_optimal_trajectory | bool   | Publishes the full optimal trajectory sequence each control iteration for downstream  control systems, collision checkers, etc to have context beyond the next timestep. |
  | open_loop        | bool    | Default false. Useful when using low accelerations and when wheel odometry's latency causes issues in initial state estimation. |
+ | model_delay_vx, model_delay_vy, model_delay_wz | double | Default 0.0. Delay (s) from a command being sent to the robot's velocity beginning to respond on the axis, including transport, actuation and odometry latency. Commands sent within the delay are modeled as still in flight, so new commands take effect after them. Rounded to `model_dt` steps. See [Modeling the Robot's Response](#modeling-the-robots-response). |
+ | model_time_constant_vx, model_time_constant_vy, model_time_constant_wz | double | Default 0.0. Time constant (s) of the robot's first-order velocity response to commands on the axis, after the delay. |
+ | model_gain_vx, model_gain_vy, model_gain_wz | double | Default 1.0. Ratio of the robot's steady-state velocity to the command on the axis. |
+ | model_deadband_vx, model_deadband_vy, model_deadband_wz | double | Default 0.0. Command magnitude (m/s or rad/s) below which the robot doesn't move on the axis. |
 
 #### Trajectory Visualizer
  | Parameter             | Type   | Definition                                                                                                  |
@@ -375,6 +379,28 @@ Thus, care should be taken to select weights of the obstacle critic in conjuncti
 As you increase or decrease your weights on the Obstacle, you may notice the aforementioned behaviors (e.g. won't overcome free to non-free threshold). To overcome them, increase the FollowPath critic cost to increase the desire for the trajectory planner to continue moving towards the goal. Make sure to not overshoot this though, keep them balanced. A desirable outcome is smooth motion roughly in the center of spaces without significant close interactions with obstacles. It shouldn't be perfectly following a path yet nor should the output velocity be wobbling jaggedly.
 
 Once you have your obstacle avoidance behavior tuned and matched with an appropriate path following penalty, tune the Path Align critic to align with the path. If you design exact-path-alignment behavior, its possible to skip the obstacle critic step as highly tuning the system to follow the path will give it less ability to deviate to avoid obstacles (though it'll slow and stop). Tuning the critic weight for the Obstacle critic high will do the job to avoid near-collisions but the repulsion weight is largely unnecessary to you. For others wanting more dynamic behavior, it _can_ be beneficial to slowly lower the weight on the obstacle critic to give the path alignment critic some more room to work. If your path was generated with a cost-aware planner (like all provided by Nav2) and providing paths sufficiently far from obstacles for your satisfaction, the impact of a slightly reduced Obstacle critic with a Path Alignment critic will do you well. Not over-weighting the path align critic will allow the robot to  deviate from the path to get around dynamic obstacles in the scene or other obstacles not previous considered during path planning. It is subjective as to the best behavior for your application, but it has been shown that MPPI can be an exact path tracker and/or avoid dynamic obstacles very fluidly and everywhere in between. The defaults provided are in the generally right regime for a balanced initial trade-off.
+
+### Modeling the Robot's Response
+
+By default, MPPI models the robot as achieving each velocity command within its acceleration limits, one control period after it is sent. Robots with significant execution latency, a sluggish velocity response, a velocity gain error, or deadbands (for example legged robots driven by learned locomotion policies) violate this, which causes weaving, overshoot, and slow or stalled acceleration.
+
+The `model_*` parameters model the robot's response to commands on each axis, which is then included in the trajectory rollouts. A command passes through a deadband, is scaled by the gain, takes effect after the delay, and the velocity responds with a first-order lag, within the acceleration limits. Because the rollouts predict the robot's actual response, MPPI chooses the commands that achieve the motion desired, for example commanding more angular velocity to a robot which under-turns. The commands already sent are still in flight during the delay, so the new commands take effect after them.
+
+When an axis's response is modeled with a lag, gain or deadband, its commands are no longer velocities, so the acceleration limits apply to the robot's velocity in the rollouts rather than to the commands themselves.
+
+To identify the parameters, command steps in velocity on each axis and record the commanded and measured velocities:
+- `model_delay_*`: the time from a command being sent to the measured velocity starting to change. Use a high percentile of repeated steps rather than the mean, as underestimating the delay degrades tracking more than overestimating it.
+- `model_time_constant_*`: the time from the response starting to reaching 63% of its final change.
+- `model_gain_*`: the steady-state measured velocity over the command, from steps of several sizes.
+- `model_deadband_*`: the smallest command which moves the robot, from a slow ramp from rest.
+
+For legged robots, average velocities over whole gait cycles first. The trajectory horizon (`time_steps * model_dt`) should be several times longer than the delay plus three time constants.
+
+Modeling a lag requires retuning. The lag filters the effect of the sampled controls on the velocity, which reduces how widely the trajectories explore, so increase the sampling standard deviations (`vx_std`, `wz_std`, `vy_std`) by around 1.5x. The robot's turns are then also no longer delayed by an unmodeled lag, which otherwise happens to offset MPPI's tendency to cut corners, so increase the `PathAlignCritic` weight (for example from 14 to 28). Without this retuning, modeling a lag can make path tracking worse despite predicting the robot's motion more accurately.
+
+`VelocityDeadbandCritic` instead penalizes trajectories with velocities inside a deadband. It also penalizes driving straight, as the angular velocity is then within its deadband, so modeling the deadband is preferred.
+
+In a simulated benchmark (`test/latency_benchmark.cpp`) of a legged-like robot with a 0.3s delay, 0.3s lag, 80% angular gain, deadbands and gait noise, the RMS cross track error on S-curve paths was 3.5cm modeling only the delay and 1.7cm with the full model and retuning above, which also completed the paths 20% faster. With a 0.4s delay and 0.2s lag, it was 4.4cm and 1.2cm respectively. With only the retuning above and no lag modeled, it was 3.8cm and 1.8cm, respectively. When modeling only the delay, commands are no longer held back by the robot's lagging measured velocity. With a 0.4s delay and 0.2s lag and low acceleration limits, this reduced the RMS cross track error on swath paths from 36cm with no model to 3.6cm.
 
 ### Critic costs debugging
 

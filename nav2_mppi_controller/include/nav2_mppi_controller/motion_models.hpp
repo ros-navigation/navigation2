@@ -251,8 +251,15 @@ public:
 
     // The velocity the robot moves towards due to a command: commands within the deadband have
     // no effect, others are scaled by the gain, and the velocity responds with a first-order lag
-    auto actuate = [this](const auto & cmd, const auto & last_vel,
-      const models::AxisResponse & response) -> Eigen::ArrayXf {
+    auto lag_alpha = [this](const models::AxisResponse & response) {
+        return response.time_constant > 0.0f ?
+               1.0f - std::exp(-model_dt_ / response.time_constant) : 1.0f;
+      };
+    const float alpha_vx = lag_alpha(actuation_.vx);
+    const float alpha_vy = lag_alpha(actuation_.vy);
+    const float alpha_wz = lag_alpha(actuation_.wz);
+    auto actuate = [](const auto & cmd, const auto & last_vel,
+      const models::AxisResponse & response, float alpha) -> Eigen::ArrayXf {
         Eigen::ArrayXf target = cmd;
         if (response.deadband > 0.0f) {
           target = (target.abs() < response.deadband).select(0.0f, target);
@@ -261,32 +268,9 @@ public:
           target *= response.gain;
         }
         if (response.time_constant > 0.0f) {
-          const float alpha = 1.0f - std::exp(-model_dt_ / response.time_constant);
           target = last_vel + alpha * (target - last_vel);
         }
         return target;
-      };
-
-    auto limit_vx = [&](auto && vel, const auto & last_vel, const auto & cmd) {
-        if (actuation_.vx.isIdeal()) {
-          accel_limit_vx(vel, last_vel, cmd);
-        } else {
-          accel_limit_vx(vel, last_vel, actuate(cmd, last_vel, actuation_.vx));
-        }
-      };
-    auto limit_vy = [&](auto && vel, const auto & last_vel, const auto & cmd) {
-        if (actuation_.vy.isIdeal()) {
-          accel_limit_vy(vel, last_vel, cmd);
-        } else {
-          accel_limit_vy(vel, last_vel, actuate(cmd, last_vel, actuation_.vy));
-        }
-      };
-    auto limit_wz = [&](auto && vel, const auto & last_vel, const auto & cmd) {
-        if (actuation_.wz.isIdeal()) {
-          accel_limit_wz(vel, last_vel, cmd);
-        } else {
-          accel_limit_wz(vel, last_vel, actuate(cmd, last_vel, actuation_.wz));
-        }
       };
 
     // Commands sent before this one are still in flight over the first steps due to the delay,
@@ -295,16 +279,25 @@ public:
     // follows those in flight so that it takes effect after exactly the delay.
     const auto n_controls = state.cvx.cols();
     auto step = [&](unsigned int i, Eigen::ArrayXXf & vel, Eigen::ArrayXXf & controls,
-      const std::vector<float> & history, const models::AxisResponse & response,
-      auto && limit) {
+      const std::vector<float> & history, const models::AxisResponse & response, float alpha,
+      auto && accel_limit) {
+        auto respond = [&](const auto & cmd) {
+            if (response.isIdeal()) {
+              accel_limit(vel.col(i), vel.col(i - 1), cmd);
+            } else {
+              const Eigen::ArrayXf target = actuate(cmd, vel.col(i - 1), response, alpha);
+              accel_limit(vel.col(i), vel.col(i - 1), target);
+            }
+          };
+
         const unsigned int delay = inFlightSteps(history);
         if (i - 1 < delay) {
-          limit(vel.col(i), vel.col(i - 1), Eigen::ArrayXf::Constant(n_rows, history[i]));
+          respond(Eigen::ArrayXf::Constant(n_rows, history[i]));
           return;
         }
         const unsigned int skip = (delay > 0u && !actuation_.first_control_sent) ? 1u : 0u;
         const auto c = std::min<Eigen::Index>(i - 1 - delay + skip, n_controls - 1);
-        limit(vel.col(i), vel.col(i - 1), controls.col(c));
+        respond(controls.col(c));
         // Otherwise the velocity achieved isn't the command, so the command can't be replaced
         if (clamp_raw_controls_ && response.isIdeal()) {
           controls.col(c) = vel.col(i);
@@ -313,10 +306,10 @@ public:
 
     // Set dynamic limits to the platform velocities from the raw controls sampling
     for (unsigned int i = 1; i < n_cols; i++) {
-      step(i, state.vx, state.cvx, cmd_history_vx_, actuation_.vx, limit_vx);
-      step(i, state.wz, state.cwz, cmd_history_wz_, actuation_.wz, limit_wz);
+      step(i, state.vx, state.cvx, cmd_history_vx_, actuation_.vx, alpha_vx, accel_limit_vx);
+      step(i, state.wz, state.cwz, cmd_history_wz_, actuation_.wz, alpha_wz, accel_limit_wz);
       if (is_holo) {
-        step(i, state.vy, state.cvy, cmd_history_vy_, actuation_.vy, limit_vy);
+        step(i, state.vy, state.cvy, cmd_history_vy_, actuation_.vy, alpha_vy, accel_limit_vy);
       }
     }
   }

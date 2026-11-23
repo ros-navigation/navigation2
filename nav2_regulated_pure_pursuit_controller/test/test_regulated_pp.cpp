@@ -93,11 +93,6 @@ public:
 
   nav2_regulated_pure_pursuit_controller::Parameters * getParams() {return params_;}
 
-  void recordCommand(const geometry_msgs::msg::Twist & cmd, const rclcpp::Time & stamp)
-  {
-    latency_compensator_->recordCommand(cmd, stamp);
-  }
-
   bool isCollisionImminentWrapper(
     const geometry_msgs::msg::PoseStamped & robot_pose,
     const double & linear_vel, const double & angular_vel,
@@ -853,26 +848,6 @@ TEST(RegulatedPurePursuitTest, latencyCompensationComputeVelocity)
   EXPECT_NEAR(inverted_cmd.angular.z, baseline_cmd.angular.z / 0.8, 1e-9);
   node->set_parameter(rclcpp::Parameter(lc + "angular_gain", 1.0));
   node->set_parameter(rclcpp::Parameter(lc + "invert_actuation", false));
-
-  // A robot which will coast past the end of the path is held to let it settle
-  auto short_path = path_utils::generate_path(
-    start, 0.05, {std::make_unique<path_utils::Straight>(0.4)});
-  node->set_parameter(rclcpp::Parameter(lc + "enabled", false));
-  ctrl->reset();
-  auto approach_cmd = compute(short_path, speed);
-  EXPECT_GT(approach_cmd.linear.x, 0.0);
-
-  node->set_parameter(rclcpp::Parameter(lc + "enabled", true));
-  node->set_parameter(rclcpp::Parameter(lc + "linear_delay", 1.0));
-  ctrl->reset();
-  geometry_msgs::msg::Twist forward;
-  forward.linear.x = 0.5;
-  for (int i = 20; i > 0; --i) {
-    ctrl->recordCommand(forward, stamp - rclcpp::Duration::from_seconds(0.05 * i));
-  }
-  auto held_cmd = compute(short_path, speed);
-  EXPECT_DOUBLE_EQ(held_cmd.linear.x, 0.0);
-  EXPECT_DOUBLE_EQ(held_cmd.angular.z, 0.0);
 
   ctrl->deactivate();
   ctrl->cleanup();

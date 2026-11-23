@@ -137,6 +137,15 @@ controller_server:
       model_delay_vx: 0.0
       model_delay_vy: 0.0
       model_delay_wz: 0.0
+      model_time_constant_vx: 0.0
+      model_time_constant_vy: 0.0
+      model_time_constant_wz: 0.0
+      model_gain_vx: 1.0
+      model_gain_vy: 1.0
+      model_gain_wz: 1.0
+      model_deadband_vx: 0.0
+      model_deadband_vy: 0.0
+      model_deadband_wz: 0.0
       batch_size: 2000
       open_loop: false
       ax_max: 3.0
