@@ -29,6 +29,7 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include "nav2_regulated_pure_pursuit_controller/collision_checker.hpp"
+#include "nav2_regulated_pure_pursuit_controller/latency_compensator.hpp"
 #include "nav2_regulated_pure_pursuit_controller/parameter_handler.hpp"
 #include "nav2_regulated_pure_pursuit_controller/regulation_functions.hpp"
 #include "nav2_regulated_pure_pursuit_controller/dynamic_window_pure_pursuit_functions.hpp"
@@ -164,11 +165,31 @@ protected:
    * @param linear_vel linear velocity
    * @param angular_vel angular velocity
    * @param angle_to_path Angle of robot output relative to carrot marker
-   * @param curr_speed the current robot speed
+   * @param curr_speed the current robot speed, used as the base for acceleration limits
+   * @param time_constant Time constant (s) of the robot's angular velocity response
+   * @param robot_angular_vel Robot angular velocity when this command takes effect
    */
   void rotateToHeading(
     double & linear_vel, double & angular_vel,
-    const double & angle_to_path, const geometry_msgs::msg::Twist & curr_speed);
+    const double & angle_to_path, const geometry_msgs::msg::Twist & curr_speed,
+    const double & time_constant = 0.0, const double & robot_angular_vel = 0.0);
+
+  /**
+   * @brief Re-express a robot-frame path in the frame of the predicted robot pose and drop
+   * the poses behind its closest point
+   * @param path Path in the robot base frame
+   * @param prediction Predicted robot state relative to the robot base frame
+   * @return Path in the predicted robot frame
+   */
+  nav_msgs::msg::Path transformPlanToPredictedFrame(
+    const nav_msgs::msg::Path & path, const PredictedState & prediction);
+
+  /**
+   * @brief Whether a robot at the origin of the path's frame has passed the end of the path
+   * @param path Path expressed in the robot frame to check
+   * @return If past the end of the path
+   */
+  bool isPastPathEnd(const nav_msgs::msg::Path & path);
 
   /**
    * @brief apply regulation constraints to the system
@@ -196,6 +217,8 @@ protected:
   bool finished_cancelling_ = false;
   bool is_rotating_to_heading_ = false;
   geometry_msgs::msg::Twist last_command_velocity_;
+  // Velocity the controller wants the robot to achieve, prior to actuation shaping
+  geometry_msgs::msg::Twist last_desired_velocity_;
 
   nav2::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr carrot_pub_;
   nav2::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr curvature_carrot_pub_;
@@ -203,6 +226,7 @@ protected:
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr carrot_arc_pub_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::ParameterHandler> param_handler_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::CollisionChecker> collision_checker_;
+  std::unique_ptr<nav2_regulated_pure_pursuit_controller::LatencyCompensator> latency_compensator_;
 };
 
 }  // namespace nav2_regulated_pure_pursuit_controller

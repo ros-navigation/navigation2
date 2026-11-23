@@ -17,12 +17,14 @@
 #define NAV2_LOOPBACK_SIM__LOOPBACK_SIMULATOR_HPP_
 
 #include <cmath>
+#include <deque>
 #include <limits>
 #include <memory>
 #include <optional>
 #include <random>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
@@ -160,6 +162,14 @@ protected:
   void getLaserScan(int num_samples, sensor_msgs::msg::LaserScan & scan_msg);
 
   /**
+   * @brief Advance the simulated actuation by one update and get the robot's velocity.
+   * Commands pass through a deadband and gain, a pure delay, and a first-order lag, which
+   * by default execute commands immediately and exactly.
+   * @return Velocity the robot moves with over this update
+   */
+  geometry_msgs::msg::Twist updateActuation();
+
+  /**
    * @brief Add a yaw rotation to a quaternion
    * @param quaternion Input quaternion
    * @param yaw_to_add Yaw angle to add in radians
@@ -187,10 +197,21 @@ protected:
   bool publish_scan_;
   bool publish_clock_;
   double speed_factor_;
+  // Actuation model: deadband -> gain -> delay -> first-order lag
+  double cmd_vel_delay_;
+  double linear_time_constant_;
+  double angular_time_constant_;
+  double linear_gain_;
+  double angular_gain_;
+  double linear_deadband_;
+  double angular_deadband_;
 
   // State
   std::optional<geometry_msgs::msg::Twist> curr_cmd_vel_;
   rclcpp::Time curr_cmd_vel_time_;
+  std::deque<std::pair<rclcpp::Time, geometry_msgs::msg::Twist>> cmd_vel_queue_;
+  geometry_msgs::msg::Twist applied_cmd_vel_;
+  geometry_msgs::msg::Twist robot_vel_;
   bool has_initial_pose_{false};
   geometry_msgs::msg::Pose initial_pose_;
   bool has_map_{false};

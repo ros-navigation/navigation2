@@ -154,9 +154,11 @@ public:
 
   /**
    * @brief Reset the optimization problem to initial conditions
-   * @param Whether to reset the constraints to its base values
+   * @param reset_dynamic_speed_limits Whether to reset the constraints to its base values
+   * @param clear_command_history Whether to forget the commands sent, which are modeled as
+   * in flight when there is a delay
    */
-  void reset(bool reset_dynamic_speed_limits = true);
+  void reset(bool reset_dynamic_speed_limits = true, bool clear_command_history = true);
 
   /**
    * @brief Check if a dynamic speed limit is currently active
@@ -196,6 +198,19 @@ protected:
    * @brief Obtain the main controller's parameters
    */
   void getParams();
+
+  /**
+   * @brief Get the velocity the next command must be dynamically feasible from. Commands take
+   * effect after those in flight, so this is the velocity those commands bring the robot to,
+   * rather than its lagging measured velocity.
+   * @return Velocity
+   */
+  geometry_msgs::msg::Twist getCommandBaseSpeed() const;
+
+  /**
+   * @brief Apply the constraints and actuation model to the motion model
+   */
+  void setMotionModelConstraints();
 
   /**
    * @brief Set the motion model of the vehicle platform

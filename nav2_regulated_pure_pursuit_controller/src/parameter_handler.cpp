@@ -165,6 +165,35 @@ ParameterHandler::ParameterHandler(
       "it should be >0. Disabling cost regulated linear velocity scaling.");
     params_.use_cost_regulated_linear_velocity_scaling = false;
   }
+
+  const std::string lc = plugin_name_ + ".latency_compensation.";
+  params_.use_latency_compensation = node->declare_or_get_parameter(lc + "enabled", false);
+  params_.linear_model.delay = node->declare_or_get_parameter(lc + "linear_delay", 0.0);
+  params_.angular_model.delay = node->declare_or_get_parameter(lc + "angular_delay", 0.0);
+  params_.linear_model.time_constant =
+    node->declare_or_get_parameter(lc + "linear_time_constant", 0.0);
+  params_.angular_model.time_constant =
+    node->declare_or_get_parameter(lc + "angular_time_constant", 0.0);
+  params_.linear_model.gain = node->declare_or_get_parameter(lc + "linear_gain", 1.0);
+  params_.angular_model.gain = node->declare_or_get_parameter(lc + "angular_gain", 1.0);
+  params_.linear_model.deadband = node->declare_or_get_parameter(lc + "linear_deadband", 0.0);
+  params_.angular_model.deadband = node->declare_or_get_parameter(lc + "angular_deadband", 0.0);
+  params_.use_lead_compensation =
+    node->declare_or_get_parameter(lc + "use_lead_compensation", false);
+  params_.invert_actuation = node->declare_or_get_parameter(lc + "invert_actuation", false);
+  for (auto * model : {&params_.linear_model, &params_.angular_model}) {
+    if (model->delay < 0.0 || model->time_constant < 0.0 || model->deadband < 0.0 ||
+      model->gain <= 0.0)
+    {
+      RCLCPP_WARN(
+        logger_, "latency_compensation delays, time constants and deadbands must be >=0 and "
+        "gains >0. Using defaults for invalid values.");
+      model->delay = std::max(0.0, model->delay);
+      model->time_constant = std::max(0.0, model->time_constant);
+      model->deadband = std::max(0.0, model->deadband);
+      model->gain = model->gain > 0.0 ? model->gain : 1.0;
+    }
+  }
 }
 
 rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpdatesCallback(
@@ -184,12 +213,20 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
         param_name == plugin_name_ + ".min_angular_vel" ||
         param_name == plugin_name_ + ".max_linear_decel" ||
         param_name == plugin_name_ + ".max_angular_decel";
+      const bool must_be_positive =
+        param_name == plugin_name_ + ".latency_compensation.linear_gain" ||
+        param_name == plugin_name_ + ".latency_compensation.angular_gain";
       if (param_name == plugin_name_ + ".inflation_cost_scaling_factor" &&
         parameter.as_double() <= 0.0)
       {
         RCLCPP_WARN(
           logger_, "The value inflation_cost_scaling_factor is incorrectly set, "
           "it should be >0. Ignoring parameter update.");
+        result.successful = false;
+      } else if (must_be_positive && parameter.as_double() <= 0.0) {
+        RCLCPP_WARN(
+          logger_, "The value of parameter '%s' should be >0. Ignoring parameter update.",
+          param_name.c_str());
         result.successful = false;
       } else if (parameter.as_double() < 0.0 && !allow_negative) {
         RCLCPP_WARN(
@@ -279,6 +316,22 @@ ParameterHandler::updateParametersCallback(
         params_.rotate_to_heading_min_angle = parameter.as_double();
       } else if (param_name == plugin_name_ + ".approach_velocity_scaling_dist") {
         params_.approach_velocity_scaling_dist = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".latency_compensation.linear_delay") {
+        params_.linear_model.delay = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".latency_compensation.angular_delay") {
+        params_.angular_model.delay = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".latency_compensation.linear_time_constant") {
+        params_.linear_model.time_constant = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".latency_compensation.angular_time_constant") {
+        params_.angular_model.time_constant = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".latency_compensation.linear_gain") {
+        params_.linear_model.gain = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".latency_compensation.angular_gain") {
+        params_.angular_model.gain = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".latency_compensation.linear_deadband") {
+        params_.linear_model.deadband = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".latency_compensation.angular_deadband") {
+        params_.angular_model.deadband = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == plugin_name_ + ".use_velocity_scaled_lookahead_dist") {
@@ -303,6 +356,12 @@ ParameterHandler::updateParametersCallback(
         params_.use_dynamic_window = parameter.as_bool();
       } else if (param_name == plugin_name_ + ".allow_obstacle_checking_beyond_goal") {
         params_.allow_obstacle_checking_beyond_goal = parameter.as_bool();
+      } else if (param_name == plugin_name_ + ".latency_compensation.enabled") {
+        params_.use_latency_compensation = parameter.as_bool();
+      } else if (param_name == plugin_name_ + ".latency_compensation.use_lead_compensation") {
+        params_.use_lead_compensation = parameter.as_bool();
+      } else if (param_name == plugin_name_ + ".latency_compensation.invert_actuation") {
+        params_.invert_actuation = parameter.as_bool();
       }
     }
   }

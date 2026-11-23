@@ -329,6 +329,46 @@ TEST_F(LoopbackSimulatorTest, SpeedFactorDynamicReconfigure)
   EXPECT_DOUBLE_EQ(sim_node_->get_parameter("speed_factor").as_double(), 5.0);
 }
 
+// Verify the actuation model delays, lags and scales the commanded velocity
+TEST_F(LoopbackSimulatorTest, ActuationDelayLagAndGain)
+{
+  configureAndActivate();
+  EXPECT_TRUE(sim_node_->set_parameter(rclcpp::Parameter("cmd_vel_delay", 0.3)).successful);
+  EXPECT_TRUE(
+    sim_node_->set_parameter(rclcpp::Parameter("linear_time_constant", 0.1)).successful);
+  EXPECT_TRUE(sim_node_->set_parameter(rclcpp::Parameter("linear_gain", 0.5)).successful);
+  EXPECT_FALSE(sim_node_->set_parameter(rclcpp::Parameter("cmd_vel_delay", -0.1)).successful);
+  EXPECT_FALSE(sim_node_->set_parameter(rclcpp::Parameter("angular_gain", 0.0)).successful);
+
+  nav_msgs::msg::Odometry latest_odom;
+  bool got_odom = false;
+  auto odom_sub = helper_node_->create_subscription<nav_msgs::msg::Odometry>(
+    "odom", 10,
+    [&](const nav_msgs::msg::Odometry::ConstSharedPtr msg) {
+      latest_odom = *msg;
+      got_odom = true;
+    });
+
+  publishInitialPose(0.0, 0.0, 0.0);
+  spinFor(500ms);
+
+  // Still within the delay, so the robot has not started to move
+  for (int i = 0; i < 5; i++) {
+    publishCmdVel(1.0, 0.0, 0.0);
+    spinFor(30ms);
+  }
+  ASSERT_TRUE(got_odom);
+  EXPECT_NEAR(latest_odom.twist.twist.linear.x, 0.0, 1e-6);
+
+  // Settles to the commanded velocity scaled by the gain
+  for (int i = 0; i < 50; i++) {
+    publishCmdVel(1.0, 0.0, 0.0);
+    spinFor(30ms);
+  }
+  EXPECT_NEAR(latest_odom.twist.twist.linear.x, 0.5, 0.02);
+  EXPECT_GT(latest_odom.pose.pose.position.x, 0.0);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

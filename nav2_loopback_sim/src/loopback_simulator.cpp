@@ -61,6 +61,13 @@ LoopbackSimulator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   publish_scan_ = declare_or_get_parameter("publish_scan", true);
   publish_clock_ = declare_or_get_parameter("publish_clock", true);
   speed_factor_ = declare_or_get_parameter("speed_factor", 1.0);
+  cmd_vel_delay_ = declare_or_get_parameter("cmd_vel_delay", 0.0);
+  linear_time_constant_ = declare_or_get_parameter("linear_time_constant", 0.0);
+  angular_time_constant_ = declare_or_get_parameter("angular_time_constant", 0.0);
+  linear_gain_ = declare_or_get_parameter("linear_gain", 1.0);
+  angular_gain_ = declare_or_get_parameter("angular_gain", 1.0);
+  linear_deadband_ = declare_or_get_parameter("linear_deadband", 0.0);
+  angular_deadband_ = declare_or_get_parameter("angular_deadband", 0.0);
 
   // Setup transforms
   t_map_to_odom_.header.frame_id = map_frame_id_;
@@ -170,6 +177,9 @@ LoopbackSimulator::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   has_initial_pose_ = false;
   curr_cmd_vel_.reset();
+  cmd_vel_queue_.clear();
+  applied_cmd_vel_ = geometry_msgs::msg::Twist();
+  robot_vel_ = geometry_msgs::msg::Twist();
 
   destroyBond();
 
@@ -262,6 +272,7 @@ void LoopbackSimulator::cmdVelCallback(
   }
   curr_cmd_vel_ = *msg;
   curr_cmd_vel_time_ = this->now();
+  cmd_vel_queue_.emplace_back(this->now(), *msg);
 }
 
 void LoopbackSimulator::cmdVelStampedCallback(
@@ -273,6 +284,8 @@ void LoopbackSimulator::cmdVelStampedCallback(
   }
   curr_cmd_vel_ = msg->twist;
   curr_cmd_vel_time_ = rclcpp::Time(msg->header.stamp);
+  // Delay from receipt, as the stamp may be the (older) time of the robot pose it used
+  cmd_vel_queue_.emplace_back(this->now(), msg->twist);
 }
 
 void LoopbackSimulator::initialPoseCallback(
@@ -329,20 +342,56 @@ void LoopbackSimulator::initialPoseCallback(
   t_map_to_odom_.transform = tf2::toMsg(tf_map_to_odom);
 }
 
+geometry_msgs::msg::Twist LoopbackSimulator::updateActuation()
+{
+  // Apply the newest command that has been in flight for at least the delay
+  const rclcpp::Time now = this->now();
+  const rclcpp::Duration delay = rclcpp::Duration::from_seconds(cmd_vel_delay_);
+  while (!cmd_vel_queue_.empty() && cmd_vel_queue_.front().first + delay <= now) {
+    applied_cmd_vel_ = cmd_vel_queue_.front().second;
+    cmd_vel_queue_.pop_front();
+  }
+  if (!curr_cmd_vel_.has_value()) {
+    applied_cmd_vel_ = geometry_msgs::msg::Twist();
+  }
+
+  auto actuate = [](double cmd, double gain, double deadband) {
+      return std::fabs(cmd) < deadband ? 0.0 : gain * cmd;
+    };
+  auto lag = [this](double vel, double target, double time_constant) {
+      if (time_constant <= 0.0) {
+        return target;
+      }
+      return vel + (1.0 - std::exp(-update_dur_ / time_constant)) * (target - vel);
+    };
+
+  robot_vel_.linear.x = lag(
+    robot_vel_.linear.x,
+    actuate(applied_cmd_vel_.linear.x, linear_gain_, linear_deadband_), linear_time_constant_);
+  robot_vel_.linear.y = lag(
+    robot_vel_.linear.y,
+    actuate(applied_cmd_vel_.linear.y, linear_gain_, linear_deadband_), linear_time_constant_);
+  robot_vel_.angular.z = lag(
+    robot_vel_.angular.z,
+    actuate(applied_cmd_vel_.angular.z, angular_gain_, angular_deadband_),
+    angular_time_constant_);
+  return robot_vel_;
+}
+
 void LoopbackSimulator::timerCallback()
 {
-  // If no data, just republish existing transforms without change
+  // If no recent commands, stop (subject to the actuation model)
   auto one_sec = rclcpp::Duration::from_seconds(1.0);
   if (!curr_cmd_vel_.has_value() || (this->now() - curr_cmd_vel_time_) > one_sec) {
-    publishTransforms(t_map_to_odom_, t_odom_to_base_link_);
     curr_cmd_vel_.reset();
-    return;
+    cmd_vel_queue_.clear();
   }
 
   // Update odom->base_link from cmd_vel
-  double dx = curr_cmd_vel_->linear.x * update_dur_;
-  double dy = curr_cmd_vel_->linear.y * update_dur_;
-  double dth = curr_cmd_vel_->angular.z * update_dur_;
+  const geometry_msgs::msg::Twist vel = updateActuation();
+  double dx = vel.linear.x * update_dur_;
+  double dy = vel.linear.y * update_dur_;
+  double dth = vel.angular.z * update_dur_;
 
   tf2::Quaternion q(
     t_odom_to_base_link_.transform.rotation.x,
@@ -414,9 +463,7 @@ void LoopbackSimulator::publishOdometry(
   odom->pose.pose.position.x = odom_to_base_link.transform.translation.x;
   odom->pose.pose.position.y = odom_to_base_link.transform.translation.y;
   odom->pose.pose.orientation = odom_to_base_link.transform.rotation;
-  if (curr_cmd_vel_.has_value()) {
-    odom->twist.twist = curr_cmd_vel_.value();
-  }
+  odom->twist.twist = robot_vel_;
   odom_pub_->publish(std::move(odom));
 }
 
@@ -527,6 +574,17 @@ LoopbackSimulator::validateParameterUpdatesCallback(
         result.reason = "speed_factor must be positive";
         return result;
       }
+    } else if (param.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE) {
+      const auto & name = param.get_name();
+      const bool is_gain = name == "linear_gain" || name == "angular_gain";
+      const bool is_actuation = is_gain || name == "cmd_vel_delay" ||
+        name == "linear_time_constant" || name == "angular_time_constant" ||
+        name == "linear_deadband" || name == "angular_deadband";
+      if (is_actuation && (param.as_double() < 0.0 || (is_gain && param.as_double() == 0.0))) {
+        result.successful = false;
+        result.reason = name + " must be " + (is_gain ? "positive" : "non-negative");
+        return result;
+      }
     }
   }
   return result;
@@ -541,6 +599,20 @@ void LoopbackSimulator::updateParametersCallback(
       if (clock_publisher_) {
         clock_publisher_->setSpeedFactor(speed_factor_);
       }
+    } else if (param.get_name() == "cmd_vel_delay") {
+      cmd_vel_delay_ = param.as_double();
+    } else if (param.get_name() == "linear_time_constant") {
+      linear_time_constant_ = param.as_double();
+    } else if (param.get_name() == "angular_time_constant") {
+      angular_time_constant_ = param.as_double();
+    } else if (param.get_name() == "linear_gain") {
+      linear_gain_ = param.as_double();
+    } else if (param.get_name() == "angular_gain") {
+      angular_gain_ = param.as_double();
+    } else if (param.get_name() == "linear_deadband") {
+      linear_deadband_ = param.as_double();
+    } else if (param.get_name() == "angular_deadband") {
+      angular_deadband_ = param.as_double();
     }
   }
 }

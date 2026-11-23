@@ -43,3 +43,16 @@ target_link_libraries(critics_tests
 if(${TEST_DEBUG_INFO})
   target_compile_definitions(critics_tests PUBLIC -DTEST_DEBUG_INFO)
 endif()
+
+# Closed-loop benchmark on a robot with latency, lag, gain error and deadbands
+nav2_add_gtest(latency_benchmark latency_benchmark.cpp TIMEOUT 900)
+target_link_libraries(latency_benchmark
+  mppi_controller
+  geometry_msgs::geometry_msgs
+  nav_msgs::nav_msgs
+  nav2_core::nav2_core
+  nav2_costmap_2d::nav2_costmap_2d_core
+  nav2_util::nav2_util_core
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+)

@@ -19,6 +19,41 @@ namespace mppi::models
 {
 
 /**
+ * @struct mppi::models::AxisResponse
+ * @brief Response of the robot's velocity on an axis to a command: commands within the deadband
+ * have no effect, otherwise are scaled by the gain, take effect after the delay, and the
+ * velocity then responds with a first-order lag
+ */
+struct AxisResponse
+{
+  float delay{0.0f};
+  float time_constant{0.0f};
+  float gain{1.0f};
+  float deadband{0.0f};
+
+  /**
+   * @brief Whether commands are achieved immediately after the delay
+   */
+  bool isIdeal() const
+  {
+    return time_constant <= 0.0f && gain == 1.0f && deadband <= 0.0f;
+  }
+};
+
+/**
+ * @struct mppi::models::ActuationModel
+ * @brief Response of the robot to commands on each axis
+ */
+struct ActuationModel
+{
+  AxisResponse vx;
+  AxisResponse vy;
+  AxisResponse wz;
+  // Whether the first control of a sequence is sent, rather than pinned to the current velocity
+  bool first_control_sent{true};
+};
+
+/**
  * @struct mppi::models::ControlConstraints
  * @brief Constraints on control
  */

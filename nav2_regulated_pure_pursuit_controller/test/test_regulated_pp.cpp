@@ -91,6 +91,13 @@ public:
       linear_vel, sign);
   }
 
+  nav2_regulated_pure_pursuit_controller::Parameters * getParams() {return params_;}
+
+  void recordCommand(const geometry_msgs::msg::Twist & cmd, const rclcpp::Time & stamp)
+  {
+    latency_compensator_->recordCommand(cmd, stamp);
+  }
+
   bool isCollisionImminentWrapper(
     const geometry_msgs::msg::PoseStamped & robot_pose,
     const double & linear_vel, const double & angular_vel,
@@ -728,6 +735,146 @@ TEST(RegulatedPurePursuitTest, testParameterWarnings)
   node->set_parameter(rclcpp::Parameter(name + ".use_velocity_scaled_lookahead_dist", true));
   node->set_parameter(rclcpp::Parameter(name + ".min_distance_to_obstacle", -1.0));
   ctrl->configure(node, name, tf, costmap);
+  ctrl->cleanup();
+}
+
+TEST(RegulatedPurePursuitTest, latencyCompensationParameters)
+{
+  auto ctrl = std::make_shared<BasicAPIRPP>();
+  auto node = std::make_shared<nav2::LifecycleNode>("testRPPLatencyParams");
+  std::string name = "PathFollower";
+  auto tf = nav2::create_transform_buffer(node);
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+  rclcpp_lifecycle::State state;
+  costmap->on_configure(state);
+
+  // Invalid values at startup are corrected
+  node->declare_parameter(name + ".latency_compensation.linear_delay", -0.2);
+  node->declare_parameter(name + ".latency_compensation.angular_gain", 0.0);
+  ctrl->configure(node, name, tf, costmap);
+  ctrl->activate();
+  auto params = ctrl->getParams();
+  EXPECT_FALSE(params->use_latency_compensation);
+  EXPECT_DOUBLE_EQ(params->linear_model.delay, 0.0);
+  EXPECT_DOUBLE_EQ(params->angular_model.gain, 1.0);
+
+  // Invalid dynamic updates are rejected
+  const std::string lc = name + ".latency_compensation.";
+  EXPECT_FALSE(node->set_parameter(rclcpp::Parameter(lc + "linear_gain", 0.0)).successful);
+  EXPECT_FALSE(node->set_parameter(rclcpp::Parameter(lc + "angular_delay", -0.1)).successful);
+  EXPECT_FALSE(
+    node->set_parameter(rclcpp::Parameter(lc + "linear_time_constant", -0.1)).successful);
+
+  // Valid dynamic updates apply
+  EXPECT_TRUE(node->set_parameter(rclcpp::Parameter(lc + "enabled", true)).successful);
+  EXPECT_TRUE(node->set_parameter(rclcpp::Parameter(lc + "angular_delay", 0.3)).successful);
+  EXPECT_TRUE(node->set_parameter(rclcpp::Parameter(lc + "angular_gain", 0.8)).successful);
+  EXPECT_TRUE(node->set_parameter(rclcpp::Parameter(lc + "invert_actuation", true)).successful);
+  EXPECT_TRUE(params->use_latency_compensation);
+  EXPECT_DOUBLE_EQ(params->angular_model.delay, 0.3);
+  EXPECT_DOUBLE_EQ(params->angular_model.gain, 0.8);
+  EXPECT_TRUE(params->invert_actuation);
+
+  ctrl->deactivate();
+  ctrl->cleanup();
+}
+
+TEST(RegulatedPurePursuitTest, latencyCompensationComputeVelocity)
+{
+  auto ctrl = std::make_shared<BasicAPIRPP>();
+  auto node = std::make_shared<nav2::LifecycleNode>("testRPPLatency");
+  std::string name = "PathFollower";
+  auto tf = nav2::create_transform_buffer(node);
+  tf->setUsingDedicatedThread(true);
+  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
+  rclcpp_lifecycle::State state;
+  costmap->on_configure(state);
+  nav2::declare_parameter_if_not_declared(
+    node, name + ".use_collision_detection", rclcpp::ParameterValue(false));
+  node->set_parameter(rclcpp::Parameter(name + ".use_collision_detection", false));
+  ctrl->configure(node, name, tf, costmap);
+  ctrl->activate();
+  nav2_controller::FeasiblePathHandler path_handler;
+  path_handler.initialize(node, node->get_logger(), "path_handler", costmap, tf);
+  nav2_controller::SimpleGoalChecker checker;
+  checker.initialize(node, "checker", costmap);
+
+  rclcpp::Time stamp(100, 0, RCL_ROS_TIME);
+  auto compute = [&](const nav_msgs::msg::Path & plan, const geometry_msgs::msg::Twist & speed) {
+      geometry_msgs::msg::TransformStamped map_to_base;
+      map_to_base.header.stamp = stamp;
+      map_to_base.header.frame_id = "map";
+      map_to_base.child_frame_id = "base_link";
+      map_to_base.transform.translation.x = 1.0;
+      map_to_base.transform.translation.y = 1.0;
+      map_to_base.transform.rotation.w = 1.0;
+      tf->setTransform(map_to_base, "latency-test");
+      geometry_msgs::msg::PoseStamped robot_pose;
+      robot_pose.header.frame_id = "map";
+      robot_pose.header.stamp = stamp;
+      robot_pose.pose.position.x = 1.0;
+      robot_pose.pose.position.y = 1.0;
+      robot_pose.pose.orientation.w = 1.0;
+      path_handler.setPlan(plan);
+      auto [closest_point, pruned_plan_end] = path_handler.findPlanSegment(robot_pose);
+      auto local_plan = path_handler.transformLocalPlan(closest_point, pruned_plan_end);
+      auto goal = path_handler.getTransformedGoal(robot_pose.header.stamp);
+      return ctrl->computeVelocityCommands(robot_pose, speed, &checker, local_plan, goal).twist;
+    };
+
+  geometry_msgs::msg::PoseStamped start;
+  start.header.frame_id = "map";
+  start.pose.position.x = 1.0;
+  start.pose.position.y = 1.0;
+  start.pose.orientation.w = 1.0;
+  geometry_msgs::msg::Twist speed;
+  speed.linear.x = 0.5;
+  speed.angular.z = 0.2;
+
+  // Compensation with an ideal model does not change the command
+  auto curve = path_utils::generate_path(
+    start, 0.05, {std::make_unique<path_utils::LeftTurn>(1.5)});
+  ctrl->reset();
+  auto baseline_cmd = compute(curve, speed);
+  const std::string lc = name + ".latency_compensation.";
+  node->set_parameter(rclcpp::Parameter(lc + "enabled", true));
+  ctrl->reset();
+  auto ideal_cmd = compute(curve, speed);
+  EXPECT_DOUBLE_EQ(ideal_cmd.linear.x, baseline_cmd.linear.x);
+  EXPECT_DOUBLE_EQ(ideal_cmd.angular.z, baseline_cmd.angular.z);
+  EXPECT_NE(baseline_cmd.angular.z, 0.0);
+
+  // With inversion, the command is scaled up for a robot which under-turns
+  node->set_parameter(rclcpp::Parameter(lc + "angular_gain", 0.8));
+  node->set_parameter(rclcpp::Parameter(lc + "invert_actuation", true));
+  ctrl->reset();
+  auto inverted_cmd = compute(curve, speed);
+  EXPECT_DOUBLE_EQ(inverted_cmd.linear.x, baseline_cmd.linear.x);
+  EXPECT_NEAR(inverted_cmd.angular.z, baseline_cmd.angular.z / 0.8, 1e-9);
+  node->set_parameter(rclcpp::Parameter(lc + "angular_gain", 1.0));
+  node->set_parameter(rclcpp::Parameter(lc + "invert_actuation", false));
+
+  // A robot which will coast past the end of the path is held to let it settle
+  auto short_path = path_utils::generate_path(
+    start, 0.05, {std::make_unique<path_utils::Straight>(0.4)});
+  node->set_parameter(rclcpp::Parameter(lc + "enabled", false));
+  ctrl->reset();
+  auto approach_cmd = compute(short_path, speed);
+  EXPECT_GT(approach_cmd.linear.x, 0.0);
+
+  node->set_parameter(rclcpp::Parameter(lc + "enabled", true));
+  node->set_parameter(rclcpp::Parameter(lc + "linear_delay", 1.0));
+  ctrl->reset();
+  geometry_msgs::msg::Twist forward;
+  forward.linear.x = 0.5;
+  for (int i = 20; i > 0; --i) {
+    ctrl->recordCommand(forward, stamp - rclcpp::Duration::from_seconds(0.05 * i));
+  }
+  auto held_cmd = compute(short_path, speed);
+  EXPECT_DOUBLE_EQ(held_cmd.linear.x, 0.0);
+  EXPECT_DOUBLE_EQ(held_cmd.angular.z, 0.0);
+
+  ctrl->deactivate();
   ctrl->cleanup();
 }
 

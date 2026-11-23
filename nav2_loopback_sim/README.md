@@ -53,6 +53,16 @@ ros2 launch nav2_bringup tb4_loopback_simulation.launch.py  # Nav2 integrated na
 - `scan_use_inf`: Whether to use `inf` for out-of-range values. If `false`, uses `scan_range_max - 0.1` instead (default: `true`)
 - `scan_noise_std`: Standard deviation of Gaussian noise added to scan ranges (default: `0.01`)
 
+The following parameters simulate an imperfect velocity response, such as execution latency, for testing controllers. Commands pass through a deadband, then a gain, then a delay, then a first-order lag before moving the robot, and the odometry reports the resulting velocity. With the defaults, commands are executed immediately and exactly. All are dynamically reconfigurable.
+
+- `cmd_vel_delay`: Delay (s) from receiving a command to the robot beginning to respond (default: `0.0`)
+- `linear_time_constant`: Time constant (s) of the first-order linear velocity response (default: `0.0`)
+- `angular_time_constant`: Time constant (s) of the first-order angular velocity response (default: `0.0`)
+- `linear_gain`: Ratio of achieved to commanded linear velocity (default: `1.0`)
+- `angular_gain`: Ratio of achieved to commanded angular velocity (default: `1.0`)
+- `linear_deadband`: Linear velocity command magnitude below which the robot does not move (default: `0.0`)
+- `angular_deadband`: Angular velocity command magnitude below which the robot does not rotate (default: `0.0`)
+
 
 ### Topics
 

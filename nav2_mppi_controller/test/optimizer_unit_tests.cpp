@@ -21,6 +21,8 @@
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/utilities.hpp"
 #include "nav2_mppi_controller/optimizer.hpp"
+#include "nav2_core/controller_exceptions.hpp"
+#include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
@@ -96,6 +98,34 @@ public:
   void resetMotionModel()
   {
     motion_model_.reset();
+  }
+
+  std::shared_ptr<MotionModel> getMotionModel()
+  {
+    return motion_model_;
+  }
+
+  /**
+   * @brief Roll out the current control sequence without noise, returning the velocities
+   */
+  Eigen::ArrayXf rolloutSequenceVx()
+  {
+    state_.cvx = Eigen::ArrayXXf::Ones(state_.cvx.rows(), 1) * control_sequence_.vx.transpose()
+      .matrix().array();
+    state_.cvy.setZero();
+    state_.cwz.setZero();
+    updateStateVelocities(state_);
+    return state_.vx.row(0).transpose();
+  }
+
+  void prepareWrapper(
+    const geometry_msgs::msg::Twist & robot_speed, const geometry_msgs::msg::Twist & last_command)
+  {
+    last_command_vel_ = last_command;
+    geometry_msgs::msg::PoseStamped pose;
+    nav_msgs::msg::Path path;
+    path.poses = {pose, pose};
+    prepare(pose, robot_speed, path, pose.pose, nullptr);
   }
 
   void setOffsetWrapper(const double controller_period)
@@ -469,6 +499,225 @@ TEST(OptimizerTests, FallbackTests)
   EXPECT_TRUE(optimizer_tester.fallbackWrapper(true));
   EXPECT_THROW(optimizer_tester.fallbackWrapper(true), std::runtime_error);
 }
+
+TEST(OptimizerTests, FallbackKeepsInFlightCommands)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(20.0));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(10));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(10));
+  node->declare_parameter("mppic.model_delay_vx", rclcpp::ParameterValue(0.15));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  auto tf_buffer = nav2::create_transform_buffer(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+
+  auto motion_model = optimizer_tester.getMotionModel();
+  for (int i = 0; i < 3; ++i) {
+    motion_model->pushCommandHistory(0.4f, 0.0f, 0.0f);
+  }
+
+  // A soft reset restarts the optimization, but the commands already sent are still in flight
+  EXPECT_TRUE(optimizer_tester.fallbackWrapper(true));
+  models::State state;
+  state.reset(2, 10);
+  state.vx.col(0).setConstant(0.4f);
+  motion_model->predict(state);
+  EXPECT_TRUE(state.vx.col(1).isApproxToConstant(0.4f));
+  EXPECT_TRUE(state.vx.col(2).isApproxToConstant(0.4f));
+
+  // Resetting the controller between goals clears them, so the robot is modeled as slowing
+  optimizer_tester.reset();
+  motion_model->predict(state);
+  EXPECT_TRUE(state.vx.col(1).isApproxToConstant(0.25f));
+}
+
+TEST(OptimizerTests, NoValidControlRecordsStop)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(20.0));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(32));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(10));
+  node->declare_parameter("mppic.retry_attempt_limit", rclcpp::ParameterValue(0));
+  node->declare_parameter("mppic.model_delay_vx", rclcpp::ParameterValue(0.15));
+  node->declare_parameter(
+    "mppic.critics", rclcpp::ParameterValue(std::vector<std::string>{"CostCritic"}));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  costmap_ros->on_configure(rclcpp_lifecycle::State{});
+  auto tf_buffer = nav2::create_transform_buffer(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+
+  // Every trajectory is in collision, so no valid control is found
+  auto costmap = costmap_ros->getCostmap();
+  for (unsigned int i = 0; i < costmap->getSizeInCellsX(); ++i) {
+    for (unsigned int j = 0; j < costmap->getSizeInCellsY(); ++j) {
+      costmap->setCost(i, j, nav2_costmap_2d::LETHAL_OBSTACLE);
+    }
+  }
+
+  auto motion_model = optimizer_tester.getMotionModel();
+  for (int i = 0; i < 3; ++i) {
+    motion_model->pushCommandHistory(0.4f, 0.0f, 0.0f, 0.05f);
+  }
+
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.stamp = rclcpp::Time(10, 150000000);
+  pose.pose.position.x = 2.5;
+  pose.pose.position.y = 2.5;
+  pose.pose.orientation.w = 1.0;
+  geometry_msgs::msg::Twist speed;
+  speed.linear.x = 0.4;
+  nav_msgs::msg::Path path;
+  path.header.stamp = pose.header.stamp;
+  path.poses = {pose, pose};
+  path.poses.back().pose.position.x = 3.0;
+  EXPECT_THROW(
+    optimizer_tester.evalControl(pose, speed, path, path.poses.back().pose, nullptr),
+    nav2_core::NoValidControl);
+
+  // The controller server stops the robot, so the stop is the newest command in flight
+  models::State state;
+  state.reset(1, 10);
+  state.vx.col(0).setConstant(0.4f);
+  motion_model->predict(state);
+  EXPECT_FLOAT_EQ(state.vx(0, 1), 0.4f);
+  EXPECT_FLOAT_EQ(state.vx(0, 2), 0.25f);
+  optimizer_tester.shutdown();
+}
+
+TEST(OptimizerTests, CommandsFeasibleFromInFlightVelocity)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(20.0));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(32));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(10));
+  node->declare_parameter("mppic.vx_max", rclcpp::ParameterValue(1.0));
+  node->declare_parameter("mppic.model_delay_vx", rclcpp::ParameterValue(0.15));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  costmap_ros->on_configure(rclcpp_lifecycle::State{});
+  auto tf_buffer = nav2::create_transform_buffer(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+
+  auto & sequence = optimizer_tester.grabControlSequence();
+  auto & state = optimizer_tester.grabState();
+
+  // While stopped, commands ramp from the current velocity, by 0.15 m/s per step
+  state.speed.linear.x = 0.0;
+  sequence.vx = Eigen::ArrayXf::Ones(10);
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+  EXPECT_FLOAT_EQ(sequence.vx(0), 0.0f);
+  EXPECT_FLOAT_EQ(sequence.vx(1), 0.15f);
+
+  // The robot has not yet responded to the commands ramping up in flight, so the new commands
+  // ramp from the velocity those bring the robot to, not the lagging measured velocity
+  auto motion_model = optimizer_tester.getMotionModel();
+  motion_model->pushCommandHistory(0.15f, 0.0f, 0.0f);
+  motion_model->pushCommandHistory(0.3f, 0.0f, 0.0f);
+  motion_model->pushCommandHistory(0.45f, 0.0f, 0.0f);
+  state.speed.linear.x = 0.0;
+  sequence.vx = Eigen::ArrayXf::Ones(10);
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+  EXPECT_FLOAT_EQ(sequence.vx(0), 0.3f);
+  EXPECT_FLOAT_EQ(sequence.vx(1), 0.45f);
+  optimizer_tester.shutdown();
+}
+
+TEST(OptimizerTests, PrepareStateWithDelayPerAxis)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(20.0));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(10));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(10));
+  node->declare_parameter("mppic.model_delay_wz", rclcpp::ParameterValue(0.15));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  costmap_ros->on_configure(rclcpp_lifecycle::State{});
+  auto tf_buffer = nav2::create_transform_buffer(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+
+  geometry_msgs::msg::Twist measured, last_command;
+  last_command.linear.x = 0.5;
+  last_command.angular.z = 0.5;
+  optimizer_tester.prepareWrapper(measured, last_command);
+
+  // Without a delay, the robot is predicted to be one control period towards the last command.
+  // With a delay, the robot is at its measured velocity, as the commands in flight carry it.
+  const auto & state = optimizer_tester.grabState();
+  EXPECT_NEAR(state.speed.linear.x, 0.15, 1e-6);
+  EXPECT_DOUBLE_EQ(state.speed.angular.z, 0.0);
+  optimizer_tester.shutdown();
+}
+
+class OptimizerDelayTimingTests : public ::testing::TestWithParam<std::tuple<double, double>> {};
+
+TEST_P(OptimizerDelayTimingTests, SentCommandTakesEffectAfterDelay)
+{
+  // A command sent now first affects the robot's velocity after the delay. With shifting on, the
+  // first control is pinned to now and not sent, so the first sent control is the second.
+  const auto [controller_frequency, delay] = GetParam();
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(controller_frequency));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(4));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(12));
+  node->declare_parameter("mppic.model_delay_vx", rclcpp::ParameterValue(delay));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  costmap_ros->on_configure(rclcpp_lifecycle::State{});
+  auto tf_buffer = nav2::create_transform_buffer(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+
+  const bool first_control_sent = !optimizer_tester.getShiftControlSequence();
+  auto & sequence = optimizer_tester.grabControlSequence();
+  sequence.vx = Eigen::ArrayXf::Constant(12, 0.5f);
+  if (!first_control_sent) {
+    sequence.vx(0) = 0.0f;
+  }
+  optimizer_tester.grabState().speed = geometry_msgs::msg::Twist();
+  const Eigen::ArrayXf vx = optimizer_tester.rolloutSequenceVx();
+
+  int first_moving = -1;
+  for (int i = 0; i < vx.size(); ++i) {
+    if (vx(i) > 0.0f) {
+      first_moving = i;
+      break;
+    }
+  }
+  EXPECT_EQ(first_moving, static_cast<int>(std::lround(delay / 0.05))) << vx.transpose();
+  optimizer_tester.shutdown();
+}
+
+INSTANTIATE_TEST_SUITE_P(
+  DelaysAndRates, OptimizerDelayTimingTests,
+  ::testing::Combine(::testing::Values(20.0, 30.0), ::testing::Values(0.1, 0.25)));
 
 TEST(OptimizerTests, PrepareTests)
 {

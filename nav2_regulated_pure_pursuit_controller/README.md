@@ -68,6 +68,24 @@ Unlike conventional Pure Pursuit variants, DWPP computes command velocities that
 
 - Fumiya Ohnishi and Masaki Takahashi, **DWPP: Dynamic Window Pure Pursuit Considering Velocity and Acceleration Constraints**, arXiv:2601.15006., 2026. https://arxiv.org/abs/2601.15006
 
+## Latency Compensation Features
+
+Pure Pursuit assumes that the robot executes a velocity command immediately and exactly. Robots with execution latency, a lagged velocity response, a velocity gain error, or deadbands (for example legged robots driven by learned locomotion policies, or robots with long transport and drive-controller chains) violate this. Typical symptoms are weaving down straight paths that worsens with shorter lookaheads, overshoot after turns, and rotations to heading that overshoot or are declared complete before in-flight commands have finished turning the robot.
+
+Optional latency compensation (`latency_compensation.enabled`) models the robot's command response per axis in Hammerstein form: `command -> deadband -> gain -> pure delay -> first-order lag -> velocity`. It then:
+
+- **Predicts the robot state when the new command takes effect** (a Smith predictor). The commands already sent but not yet executed are replayed through the model to predict the robot's pose and velocity at the end of the delay. Path tracking (lookahead point, curvature, regulation, collision checking) and the decision to rotate to the path heading then use the predicted pose rather than the measured one.
+- **Stops rotations on the target heading.** Rotations to heading use the predicted heading, ramp from the last commanded rather than the lagged measured angular velocity, and slow down for the extra rotation that the lag will cause, so that the robot comes to rest on the target heading.
+- **Inverts the gain and deadband** (`latency_compensation.invert_actuation`) so that the robot achieves the desired velocity, for example by commanding more angular velocity to a robot which under-turns.
+- **Optionally inverts the lag** (`latency_compensation.use_lead_compensation`) by commanding a lead which aims to reach the desired velocity within the lag's time constant.
+
+This is similar to the `model_delay_*` parameters of the MPPI controller, extended with the lag, gain and deadband of the response. The model parameters should be identified from step responses of the robot, and the delay should include transport, actuation and odometry latency. When the delay is uncertain, prefer to over-estimate it: under-estimating the delay degrades tracking more than over-estimating it.
+
+With an accurate model, compensation removes the latency-induced oscillation which otherwise forces long lookahead distances on these robots. Shorter lookahead distances can then be used, reducing Pure Pursuit's corner cutting. On a simulated robot with a 0.3s delay, 0.3s lag, 80% angular gain, and deadbands, root mean squared cross track error on swath and S-curve paths reduced from 4.0 cm and 5.9 cm (at the best performing lookahead of 0.6m for each) to 0.5 cm and 0.9 cm (at a lookahead of 0.3m). With a 0.4s delay and 0.4s lag, the overshoot of the final rotation to the goal heading reduced from 24 degrees to 0.1 degrees.
+
+Latency compensation is not beneficial in all cases. For short, pure delays, the delay slows Pure Pursuit's turning response and partially offsets its tendency to cut corners, so the uncompensated controller may track slightly better. Lead compensation was found to increase path tracking error in all cases simulated and is disabled by default.
+
+The closed-loop benchmark `test/test_latency_benchmark.cpp` runs this controller on a simulated robot with configurable latency, lag, gain, deadband and noise over swath and S-curve paths. Set `RPP_LATENCY_BENCHMARK_FULL=1` to run the full grid of robot models, and `RPP_BENCH_CSV_DIR` to a directory to export the trajectories. `nav2_loopback_sim` can also simulate these effects for full-system testing.
 
 ## Configuration
 
@@ -106,6 +124,17 @@ Unlike conventional Pure Pursuit variants, DWPP computes command velocities that
 | `min_distance_to_obstacle` | The shortest distance at which the robot is allowed to be from an obstacle along its trajectory. Set <= 0.0 to disable. It is limited to maximum distance of lookahead distance selected. |
 | `use_dynamic_window` | Whether to use the Dynamic Window Pure Pursuit (DWPP) Algorithm. This algorithm computes optimal path tracking velocity commands under velocity and acceleration constraints. |
 | `allow_obstacle_checking_beyond_goal` | Whether to continue obstacle checking past the goal position up to `min_distance_to_obstacle`. When enabled, obstacles located beyond the goal along the projected trajectory may prevent motion. Requires `use_velocity_scaled_lookahead_dist` to be enabled and `min_distance_to_obstacle` > 0.0. |
+| `latency_compensation.enabled` | Whether to compensate for the robot's execution latency and velocity response using the model below. |
+| `latency_compensation.linear_delay` | Delay (s) from a linear velocity command being sent to the robot beginning to respond, including transport, actuation and odometry latency. |
+| `latency_compensation.angular_delay` | Delay (s) from an angular velocity command being sent to the robot beginning to respond, including transport, actuation and odometry latency. |
+| `latency_compensation.linear_time_constant` | Time constant (s) of the robot's first-order linear velocity response, after the delay. |
+| `latency_compensation.angular_time_constant` | Time constant (s) of the robot's first-order angular velocity response, after the delay. |
+| `latency_compensation.linear_gain` | Ratio of achieved to commanded linear velocity at steady state. |
+| `latency_compensation.angular_gain` | Ratio of achieved to commanded angular velocity at steady state. |
+| `latency_compensation.linear_deadband` | Linear velocity command magnitude (m/s) below which the robot does not move. |
+| `latency_compensation.angular_deadband` | Angular velocity command magnitude (rad/s) below which the robot does not rotate. |
+| `latency_compensation.invert_actuation` | Whether to scale commands by the inverse of the gains and round commands within the deadbands to the deadband edge or zero. |
+| `latency_compensation.use_lead_compensation` | Whether to command a lead which inverts the first-order lag. This was found to increase path tracking error in simulation and is not generally recommended. |
 
 Example fully-described XML with default parameter values:
 
@@ -163,6 +192,18 @@ controller_server:
       inflation_cost_scaling_factor: 3.0
       use_dynamic_window: false
       allow_obstacle_checking_beyond_goal: false
+      latency_compensation:
+        enabled: false
+        linear_delay: 0.0
+        angular_delay: 0.0
+        linear_time_constant: 0.0
+        angular_time_constant: 0.0
+        linear_gain: 1.0
+        angular_gain: 1.0
+        linear_deadband: 0.0
+        angular_deadband: 0.0
+        invert_actuation: false
+        use_lead_compensation: false
 ```
 
 ## Topics

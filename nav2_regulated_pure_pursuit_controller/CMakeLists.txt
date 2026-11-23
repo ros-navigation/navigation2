@@ -26,6 +26,7 @@ set(library_name nav2_regulated_pure_pursuit_controller)
 add_library(${library_name} SHARED
   src/regulated_pure_pursuit_controller.cpp
   src/collision_checker.cpp
+  src/latency_compensator.cpp
   src/parameter_handler.cpp)
 target_include_directories(${library_name}
   PUBLIC
