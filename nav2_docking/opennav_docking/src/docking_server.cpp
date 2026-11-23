@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <algorithm>
-
 #include "angles/angles.h"
 #include "nav2_ros_common/rate.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -29,8 +27,7 @@ namespace opennav_docking
 {
 
 DockingServer::DockingServer(const rclcpp::NodeOptions & options)
-: nav2::LifecycleNode("docking_server", "", options),
-  controller_loader_("opennav_docking", "opennav_docking::ControllerBase")
+: nav2::LifecycleNode("docking_server", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating %s", get_name());
 }
@@ -65,14 +62,9 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
     true);
 
   // Create composed utilities
-  std::vector<std::string> controller_ids;
-  if (!loadControllerPlugins(node, controller_ids)) {
-    on_cleanup(state);
-    return nav2::CallbackReturn::FAILURE;
-  }
   navigator_ = std::make_unique<Navigator>(node);
   dock_db_ = std::make_unique<DockDatabase>(param_handler_->getMutex());
-  if (!dock_db_->initialize(node, tf2_buffer_, controller_ids, default_controller_id_)) {
+  if (!dock_db_->initialize(node, tf2_buffer_)) {
     on_cleanup(state);
     return nav2::CallbackReturn::FAILURE;
   }
@@ -89,9 +81,6 @@ DockingServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   tf2_listener_ = nav2::create_transform_listener(*tf2_buffer_, this, true);
   dock_db_->activate();
-  for (auto & controller : controllers_) {
-    controller.second->activate();
-  }
   navigator_->activate();
   vel_publisher_->on_activate();
   docking_action_server_->activate();
@@ -114,9 +103,6 @@ DockingServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   docking_action_server_->deactivate();
   undocking_action_server_->deactivate();
   dock_db_->deactivate();
-  for (auto & controller : controllers_) {
-    controller.second->deactivate();
-  }
   navigator_->deactivate();
   vel_publisher_->on_deactivate();
   param_handler_->deactivate();
@@ -135,15 +121,12 @@ DockingServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   tf2_buffer_.reset();
   docking_action_server_.reset();
   undocking_action_server_.reset();
+  // Release controller before the database that owns its loader
+  controller_.reset();
   dock_db_.reset();
   navigator_.reset();
   curr_dock_type_.clear();
   curr_dock_controller_.clear();
-  for (auto & controller : controllers_) {
-    controller.second->cleanup();
-  }
-  controllers_.clear();
-  controller_.reset();
   vel_publisher_.reset();
   params_->dock_backwards.reset();
   odom_sub_.reset();
@@ -157,96 +140,11 @@ DockingServer::on_shutdown(const rclcpp_lifecycle::State &)
   return nav2::CallbackReturn::SUCCESS;
 }
 
-bool DockingServer::loadControllerPlugins(
-  const nav2::LifecycleNode::SharedPtr & node, std::vector<std::string> & controller_ids)
-{
-  const std::vector<std::string> default_controller_ids{"controller"};
-  controller_ids = node->declare_or_get_parameter("controllers", default_controller_ids);
-
-  const std::string graceful_type = "opennav_docking::GracefulController";
-  if (controller_ids == default_controller_ids) {
-    nav2::declare_parameter_if_not_declared(
-      node, "controller.plugin", rclcpp::ParameterValue(graceful_type));
-  }
-
-  if (controller_ids.empty()) {
-    RCLCPP_ERROR(node->get_logger(), "Controllers empty! Must provide at least 1.");
-    return false;
-  }
-
-  const std::string reserved_controller_id = "default_graceful_controller";
-  if (std::find(controller_ids.begin(), controller_ids.end(), reserved_controller_id) !=
-    controller_ids.end())
-  {
-    RCLCPP_ERROR(
-      node->get_logger(), "Controller name '%s' is reserved. Please rename it in `controllers`.",
-      reserved_controller_id.c_str());
-    return false;
-  }
-
-  // Docks naming no controller use a graceful controller
-  if (controller_ids == default_controller_ids &&
-    nav2::get_plugin_type_param(node, default_controller_ids.front()) == graceful_type)
-  {
-    default_controller_id_ = default_controller_ids.front();
-  } else {
-    default_controller_id_ = reserved_controller_id;
-    controller_ids.push_back(default_controller_id_);
-    nav2::declare_parameter_if_not_declared(
-      node, default_controller_id_ + ".plugin", rclcpp::ParameterValue(graceful_type));
-  }
-
-  for (size_t i = 0; i != controller_ids.size(); i++) {
-    if (controllers_.find(controller_ids[i]) != controllers_.end()) {
-      RCLCPP_FATAL(
-        node->get_logger(), "Controller %s is listed more than once in `controllers`.",
-        controller_ids[i].c_str());
-      return false;
-    }
-
-    try {
-      std::string plugin_type = nav2::get_plugin_type_param(node, controller_ids[i]);
-      ControllerBase::Ptr controller = controller_loader_.createSharedInstance(plugin_type);
-      RCLCPP_INFO(
-        node->get_logger(), "Created controller plugin %s of type %s",
-        controller_ids[i].c_str(), plugin_type.c_str());
-      controller->configure(node, controller_ids[i], tf2_buffer_);
-      controllers_.insert({controller_ids[i], controller});
-    } catch (const std::exception & ex) {
-      RCLCPP_FATAL(
-        node->get_logger(), "Failed to create controller plugin %s. Exception: %s",
-        controller_ids[i].c_str(), ex.what());
-      return false;
-    }
-  }
-
-  controller_ids_concat_.clear();
-  for (const auto & controller_id : controller_ids) {
-    controller_ids_concat_ += controller_id + std::string(" ");
-  }
-  RCLCPP_INFO(
-    node->get_logger(), "Docking server has %s controllers available.",
-    controller_ids_concat_.c_str());
-
-  return true;
-}
-
 void DockingServer::selectController(
   const std::string & requested_controller_name, const std::string & dock_type)
 {
-  const std::string controller_name =
-    dock_db_->getControllerName(requested_controller_name, dock_type);
-
-  auto it = controllers_.find(controller_name);
-  if (it == controllers_.end()) {
-    RCLCPP_ERROR(
-      get_logger(), "Dock requested controller '%s', which does not exist. "
-      "Available controllers are: %s.", controller_name.c_str(), controller_ids_concat_.c_str());
-    throw opennav_docking_core::DockNotValid(
-            "Controller '" + controller_name + "' is not loaded");
-  }
-  RCLCPP_DEBUG(get_logger(), "Selected controller: %s.", controller_name.c_str());
-  controller_ = it->second;
+  controller_ = dock_db_->findController(requested_controller_name, dock_type);
+  RCLCPP_DEBUG(get_logger(), "Selected controller: %s.", controller_->getName().c_str());
 }
 
 template<typename ActionT>
@@ -513,7 +411,6 @@ Dock * DockingServer::generateGoalDock(std::shared_ptr<const DockRobot::Goal> go
   dock->pose = goal->dock_pose.pose;
   dock->type = goal->dock_type;
   dock->plugin = plugin;
-  dock->controller_name = dock_db_->getControllerName("", dock->type);
   return dock;
 }
 

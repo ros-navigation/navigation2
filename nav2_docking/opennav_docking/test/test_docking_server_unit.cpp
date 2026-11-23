@@ -70,7 +70,15 @@ public:
   DockingServerControllerShim()
   : DockingServerShim() {}
 
-  const ControllerMap & getControllers() {return controllers_;}
+  unsigned int controllerCount() {return dock_db_ ? dock_db_->controller_size() : 0u;}
+  bool hasController(const std::string & name)
+  {
+    try {
+      return dock_db_ && dock_db_->findController(name, "") != nullptr;
+    } catch (const opennav_docking_core::DockNotValid &) {
+      return false;
+    }
+  }
   std::string getCurrentController() {return controller_ ? controller_->getName() : "";}
   ChargingDock::Ptr getDockPlugin(const std::string & type) {return dock_db_->findDockPlugin(type);}
 
@@ -666,7 +674,7 @@ TEST(DockingServerTests, ControllerDefaultInstance)
 
   // With no `controllers` list, a single instance named `controller` is synthesized so that
   // the `controller.*` namespace existing configuration files use keeps applying
-  EXPECT_EQ(node->getControllers().size(), 1u);
+  EXPECT_EQ(node->controllerCount(), 1u);
   EXPECT_TRUE(node->getCurrentController().empty());
   EXPECT_EQ(
     node->get_parameter("controller.plugin").as_string(),
@@ -674,7 +682,7 @@ TEST(DockingServerTests, ControllerDefaultInstance)
   EXPECT_EQ(node->get_parameter("controller.k_phi").as_double(), 3.0);
 
   node->on_cleanup(rclcpp_lifecycle::State());
-  EXPECT_TRUE(node->getControllers().empty());
+  EXPECT_EQ(node->controllerCount(), 0u);
   node->shutdown();
 }
 
@@ -691,9 +699,9 @@ TEST(DockingServerTests, ControllerNamedInstances)
   ASSERT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::SUCCESS);
 
   // The listed instances plus the default graceful controller
-  EXPECT_EQ(node->getControllers().size(), 3u);
-  EXPECT_NE(node->getControllers().find("c1"), node->getControllers().end());
-  EXPECT_NE(node->getControllers().find("c2"), node->getControllers().end());
+  EXPECT_EQ(node->controllerCount(), 3u);
+  EXPECT_TRUE(node->hasController("c1"));
+  EXPECT_TRUE(node->hasController("c2"));
   EXPECT_EQ(
     node->get_parameter("default_graceful_controller.plugin").as_string(),
     "opennav_docking::GracefulController");
@@ -717,7 +725,7 @@ TEST(DockingServerTests, ControllerMissingPluginFailsConfigure)
 
   // `c1.plugin` is never set, so the plugin type cannot be resolved
   EXPECT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::FAILURE);
-  EXPECT_TRUE(node->getControllers().empty());
+  EXPECT_EQ(node->controllerCount(), 0u);
   node->shutdown();
 }
 
@@ -729,7 +737,7 @@ TEST(DockingServerTests, ControllerDuplicateNameFailsConfigure)
   node->declare_parameter("c1.plugin", "opennav_docking::GracefulController");
 
   EXPECT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::FAILURE);
-  EXPECT_TRUE(node->getControllers().empty());
+  EXPECT_EQ(node->controllerCount(), 0u);
   node->shutdown();
 }
 
@@ -744,7 +752,7 @@ TEST(DockingServerTests, controllerReservedNameFails)
     "default_graceful_controller.plugin", "opennav_docking::PIDController");
 
   EXPECT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::FAILURE);
-  EXPECT_TRUE(node->getControllers().empty());
+  EXPECT_EQ(node->controllerCount(), 0u);
   node->shutdown();
 }
 
@@ -755,7 +763,7 @@ TEST(DockingServerTests, controllerEmptyListFails)
   node->declare_parameter("controllers", std::vector<std::string>{});
 
   EXPECT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::FAILURE);
-  EXPECT_TRUE(node->getControllers().empty());
+  EXPECT_EQ(node->controllerCount(), 0u);
   node->shutdown();
 }
 
@@ -768,7 +776,7 @@ TEST(DockingServerTests, controllerUnknownPluginTypeFails)
   node->declare_parameter("c1.plugin", "opennav_docking::NoSuchController");
 
   EXPECT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::FAILURE);
-  EXPECT_TRUE(node->getControllers().empty());
+  EXPECT_EQ(node->controllerCount(), 0u);
   node->shutdown();
 }
 

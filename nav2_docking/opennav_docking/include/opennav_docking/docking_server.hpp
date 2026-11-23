@@ -20,12 +20,10 @@
 #include <mutex>
 #include <optional>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "rclcpp/node_options.hpp"
 #include "rclcpp/time.hpp"
-#include "pluginlib/class_loader.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/simple_action_server.hpp"
@@ -227,15 +225,6 @@ protected:
   void undockRobot();
 
   /**
-   * @brief Create the controller plugins listed in the `controllers` parameter.
-   * @param node Lifecycle node
-   * @param controller_ids Set to the instance names read from `controllers`.
-   * @return True if every controller was created and configured
-   */
-  bool loadControllerPlugins(
-    const nav2::LifecycleNode::SharedPtr & node, std::vector<std::string> & controller_ids);
-
-  /**
    * @brief Select the controller for a docking or undocking request.
    *
    * @param requested_controller_name Controller to use. If empty, the dock type's
@@ -265,12 +254,7 @@ protected:
   std::unique_ptr<Navigator> navigator_;
   std::string curr_dock_type_;
   std::string curr_dock_controller_;
-
-  using ControllerMap = std::unordered_map<std::string, ControllerBase::Ptr>;
-  pluginlib::ClassLoader<ControllerBase> controller_loader_;
-  ControllerMap controllers_;
-  std::string controller_ids_concat_;
-  std::string default_controller_id_;
+  // Controller decrlared after its owner dock_db_ so it is destroyed first
   ControllerBase::Ptr controller_;
 
   nav2::TransformBuffer::SharedPtr tf2_buffer_;

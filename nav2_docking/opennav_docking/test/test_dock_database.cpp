@@ -41,6 +41,8 @@ public:
   : DockDatabase(mutex)
   {}
 
+  using DockDatabase::getControllerName;
+
   void populateOne()
   {
     Dock dock;
@@ -63,7 +65,7 @@ TEST(DatabaseTests, ObjectLifecycle)
   auto node = std::make_shared<nav2::LifecycleNode>("test");
   std::mutex mutex;
   opennav_docking::DockDatabase db(mutex);
-  db.initialize(node, nullptr);
+  db.initialize(node, nav2::create_transform_buffer(node));
   db.activate();
   db.deactivate();
 
@@ -78,11 +80,11 @@ TEST(DatabaseTests, initializeBogusPlugins)
   node->declare_parameter("dock_plugins", rclcpp::ParameterValue(plugins));
   std::mutex mutex;
   opennav_docking::DockDatabase db(mutex);
-  db.initialize(node, nullptr);
+  db.initialize(node, nav2::create_transform_buffer(node));
 
   plugins.clear();
   node->set_parameter(rclcpp::Parameter("dock_plugins", rclcpp::ParameterValue(plugins)));
-  db.initialize(node, nullptr);
+  db.initialize(node, nav2::create_transform_buffer(node));
 }
 
 TEST(DatabaseTests, findTests)
@@ -118,7 +120,7 @@ TEST(DatabaseTests, getDockInstancesBadConversionFile)
       "/dock_files/test_dock_bad_conversion_file.yaml"));
   std::mutex mutex;
   opennav_docking::DockDatabase db(mutex);
-  db.initialize(node, nullptr);
+  db.initialize(node, nav2::create_transform_buffer(node));
 
   EXPECT_EQ(db.plugin_size(), 1u);
   EXPECT_EQ(db.instance_size(), 0u);
@@ -138,7 +140,7 @@ TEST(DatabaseTests, getDockInstancesWrongPath)
 
   std::mutex mutex;
   opennav_docking::DockDatabase db(mutex);
-  db.initialize(node, nullptr);
+  db.initialize(node, nav2::create_transform_buffer(node));
 
   EXPECT_EQ(db.plugin_size(), 1u);
   EXPECT_EQ(db.instance_size(), 0u);
@@ -154,7 +156,7 @@ TEST(DatabaseTests, reloadDbService)
     rclcpp::ParameterValue("opennav_docking::SimpleChargingDock"));
   std::mutex mutex;
   opennav_docking::DockDatabase db(mutex);
-  db.initialize(node, nullptr);
+  db.initialize(node, nav2::create_transform_buffer(node));
 
   // Call service with a filepath
   auto client =
@@ -195,7 +197,7 @@ TEST(DatabaseTests, reloadDbMutexLocked)
   std::mutex mutex;
   mutex.lock();
   opennav_docking::DockDatabase db(mutex);
-  db.initialize(node, nullptr);
+  db.initialize(node, nav2::create_transform_buffer(node));
 
   // Call service with a filepath
   auto client =
@@ -237,15 +239,31 @@ static void addDockInstance(
   node->declare_parameter("d1.controller", controller);
 }
 
+static void declareControllers(
+  const nav2::LifecycleNode::SharedPtr & node, const std::vector<std::string> & names)
+{
+  node->declare_parameter("controllers", names);
+  for (const auto & name : names) {
+    node->declare_parameter(name + ".plugin", "opennav_docking::GracefulController");
+  }
+}
+
 TEST(DatabaseTests, controllerValidationAcceptsLoadedController)
 {
   auto node = createControllerTestNode("c1");
   addDockInstance(node, "c2");
+  declareControllers(node, {"c1", "c2"});
   std::mutex mutex;
   opennav_docking::DockDatabase db(mutex);
 
-  EXPECT_TRUE(db.initialize(node, nullptr, {"c1", "c2"}));
+  EXPECT_TRUE(db.initialize(node, nav2::create_transform_buffer(node)));
   EXPECT_EQ(db.instance_size(), 1u);
+  // The listed controllers plus the default graceful controller
+  EXPECT_EQ(db.controller_size(), 3u);
+  EXPECT_EQ(db.findController("c2", "dockv1")->getName(), "c2");
+  // Empty requested controller selects the dock type controller
+  EXPECT_EQ(db.findController("", "dockv1")->getName(), "c1");
+  EXPECT_THROW(db.findController("not_loaded", "dockv1"), opennav_docking_core::DockNotValid);
 }
 
 TEST(DatabaseTests, controllerValidationRejectsUnknownController)
@@ -255,19 +273,20 @@ TEST(DatabaseTests, controllerValidationRejectsUnknownController)
   std::mutex mutex;
   opennav_docking::DockDatabase db(mutex);
 
-  EXPECT_FALSE(db.initialize(node, nullptr, {"c1"}));
+  EXPECT_FALSE(db.initialize(node, nav2::create_transform_buffer(node)));
 }
 
 TEST(DatabaseTests, typeControllerName)
 {
   auto node = createControllerTestNode("c1");
   addDockInstance(node, "");
+  declareControllers(node, {"c1"});
   std::mutex mutex;
-  opennav_docking::DockDatabase db(mutex);
+  DbShim db(mutex);
 
-  ASSERT_TRUE(db.initialize(node, nullptr, {"c1"}));
+  ASSERT_TRUE(db.initialize(node, nav2::create_transform_buffer(node)));
   EXPECT_EQ(db.getControllerName("", "dockv1"), "c1");
-  EXPECT_EQ(db.getControllerName("", "unknown_type"), "");
+  EXPECT_EQ(db.getControllerName("", "unknown_type"), "default_graceful_controller");
   // Empty selects the only dock type
   EXPECT_EQ(db.getControllerName("", ""), "c1");
 }
@@ -276,10 +295,11 @@ TEST(DatabaseTests, rejectUnknownController)
 {
   auto node = createControllerTestNode("not_loaded");
   addDockInstance(node, "c1");
+  declareControllers(node, {"c1"});
   std::mutex mutex;
   opennav_docking::DockDatabase db(mutex);
 
-  EXPECT_FALSE(db.initialize(node, nullptr, {"c1"}));
+  EXPECT_FALSE(db.initialize(node, nav2::create_transform_buffer(node)));
 }
 
 }  // namespace opennav_docking

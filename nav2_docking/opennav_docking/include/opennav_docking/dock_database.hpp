@@ -29,14 +29,18 @@
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "opennav_docking/utils.hpp"
 #include "opennav_docking/types.hpp"
+#include "opennav_docking/controller_base.hpp"
 #include "nav2_msgs/srv/reload_dock_database.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
 namespace opennav_docking
 {
+
+using ControllerMap = std::unordered_map<std::string, ControllerBase::Ptr>;
+
 /**
  * @class opennav_docking::DockDatabase
- * @brief An object to contain docks and docking plugins
+ * @brief An object to contain docks, dock plugins and docking controller plugins
  */
 class DockDatabase
 {
@@ -50,14 +54,10 @@ public:
    * @brief A setup function to populate database
    * @param parent Weakptr to the node to use to get interances and parameters
    * @param tf TF buffer
-   * @param valid_controller_ids Controller names the server loaded
-   * @param default_controller_id Controller used when dock or its type do not assign one
    * @return If successful
    */
   bool initialize(
-    const nav2::LifecycleNode::WeakPtr & parent, nav2::TransformBuffer::SharedPtr tf,
-    const std::vector<std::string> & valid_controller_ids = {},
-    const std::string & default_controller_id = "");
+    const nav2::LifecycleNode::WeakPtr & parent, nav2::TransformBuffer::SharedPtr tf);
 
   /**
    * @brief A destructor for opennav_docking::DockDatabase
@@ -89,12 +89,13 @@ public:
   ChargingDock::Ptr findDockPlugin(const std::string & type);
 
   /**
-   * @brief Get the controller to use
-   * @param requested_controller_name Controller name requested
-   * @param type Dock type whose controller used when requested is empty
-   * @return Controller name: requested one, else dock type's, else the default
+   * @brief Find the loaded controller plugin
+   * @param requested_controller_name Controller name
+   * @param type Dock type whose controller is used when requested is empty
+   * @return Controller plugin pointer
+   * @throw DockNotValid if the controller is not loaded
    */
-  std::string getControllerName(
+  ControllerBase::Ptr findController(
     const std::string & requested_controller_name, const std::string & type) const;
 
   /**
@@ -109,7 +110,22 @@ public:
    */
   unsigned int plugin_size() const;
 
+  /**
+   * @brief Get the number of loaded controller plugins
+   * @return unsigned int Number of controller plugins including the default
+   */
+  unsigned int controller_size() const;
+
 protected:
+  /**
+   * @brief Get the controller to use
+   * @param requested_controller_name Controller name requested
+   * @param type Dock type whose controller used when requested is empty
+   * @return Controller name: requested one, else dock type's, else the default
+   */
+  std::string getControllerName(
+    const std::string & requested_controller_name, const std::string & type) const;
+
   /**
    * @brief Populate database of dock type plugins
    * @param Node Node to get values from
@@ -124,6 +140,16 @@ protected:
    * @param Node Node to get values from
    */
   bool getDockInstances(const nav2::LifecycleNode::SharedPtr & node);
+
+  /**
+   * @brief Create the controller plugins listed in the `controllers` parameter,
+   * and the default graceful controller if not provided
+   * @param node Node to get values from
+   * @param tf TF buffer
+   * @return bool If every controller is created and configured
+   */
+  bool getControllerPlugins(
+    const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf);
 
   /**
    * @brief Check every controller name in the database against the loaded controllers.
@@ -161,9 +187,11 @@ protected:
   DockPluginMap dock_plugins_;
   std::unordered_map<std::string, std::string> type_controllers_;
   DockMap dock_instances_;
-  std::vector<std::string> valid_controller_ids_;
-  std::string default_controller_id_;
   pluginlib::ClassLoader<opennav_docking_core::ChargingDock> dock_loader_;
+  // Declared before the map so that it is destructed after controllers
+  pluginlib::ClassLoader<ControllerBase> controller_loader_;
+  ControllerMap controllers_;
+  std::string default_controller_id_;
   nav2::ServiceServer<nav2_msgs::srv::ReloadDockDatabase>::SharedPtr reload_db_service_;
 };
 

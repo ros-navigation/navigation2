@@ -126,6 +126,7 @@ protected:
    * @param channel The controller state to advance.
    * @param error Current error on this axis.
    * @param dt Time step [s]
+   * @returns Contribution to the command.
    */
   double advance(ControllerState & channel, double error, double dt);
 
