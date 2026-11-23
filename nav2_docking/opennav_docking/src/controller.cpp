@@ -97,12 +97,24 @@ Controller::~Controller()
 }
 
 bool Controller::computeVelocityCommand(
+<<<<<<< HEAD
   const geometry_msgs::msg::Pose & pose, geometry_msgs::msg::Twist & cmd, bool is_docking,
   bool backward)
 {
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   cmd = control_law_->calculateRegularVelocity(pose, backward);
   return isTrajectoryCollisionFree(pose, is_docking, backward);
+=======
+  const geometry_msgs::msg::Pose & pose,
+  const geometry_msgs::msg::Pose & collision_pose, geometry_msgs::msg::Twist & cmd,
+  const geometry_msgs::msg::TransformStamped & base_to_fixed_transform,
+  bool is_docking, bool backward)
+{
+  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
+  cmd = control_law_->calculateRegularVelocity(pose, backward);
+  return isTrajectoryCollisionFree(pose, collision_pose, base_to_fixed_transform, is_docking,
+    backward);
+>>>>>>> 9113449 ((opennav_docking) Account for projection when checking dock_collision_threshold (#6719))
 }
 
 geometry_msgs::msg::Twist Controller::computeRotateToHeadingCommand(
@@ -131,7 +143,13 @@ geometry_msgs::msg::Twist Controller::computeRotateToHeadingCommand(
 }
 
 bool Controller::isTrajectoryCollisionFree(
+<<<<<<< HEAD
   const geometry_msgs::msg::Pose & target_pose, bool is_docking, bool backward)
+=======
+  const geometry_msgs::msg::Pose & target_pose, const geometry_msgs::msg::Pose & collision_pose,
+  const geometry_msgs::msg::TransformStamped & base_to_fixed_transform,
+  bool is_docking, bool backward)
+>>>>>>> 9113449 ((opennav_docking) Account for projection when checking dock_collision_threshold (#6719))
 {
   // Visualization of the trajectory
   auto trajectory = std::make_unique<nav_msgs::msg::Path>();
@@ -177,8 +195,8 @@ bool Controller::isTrajectoryCollisionFree(
     // Skip the final segment of the trajectory for docking
     // and the initial segment for undocking
     // This avoids false positives when the robot is at the dock
-    double dock_collision_distance = is_docking ?
-      nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose) :
+    distance = nav2_util::geometry_utils::euclidean_distance(collision_pose, next_pose.pose);
+    double dock_collision_distance = is_docking ? distance :
       std::hypot(next_pose.pose.position.x, next_pose.pose.position.y);
 
     // If this distance is greater than the dock_collision_threshold, check for collisions
@@ -193,9 +211,6 @@ bool Controller::isTrajectoryCollisionFree(
       trajectory_pub_->publish(std::move(trajectory));
       return false;
     }
-
-    // Check if we reach the goal
-    distance = nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose);
   }while(distance > 1e-2 && trajectory->poses.size() < max_iter);
 
   trajectory_pub_->publish(std::move(trajectory));

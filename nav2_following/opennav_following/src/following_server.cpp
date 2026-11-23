@@ -387,7 +387,13 @@ bool FollowingServer::approachObject(
     // Compute and publish controls
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
     command->header.stamp = now();
+<<<<<<< HEAD
     if (!controller_->computeVelocityCommand(target_pose.pose, command->twist, true, false)) {
+=======
+    if (!controller_->computeVelocityCommand(
+        target_pose.pose, target_pose.pose, command->twist, base_to_fixed_transform, true, false))
+    {
+>>>>>>> 9113449 ((opennav_docking) Account for projection when checking dock_collision_threshold (#6719))
       throw opennav_docking_core::FailedToControl("Failed to get control");
     }
     vel_publisher_->publish(std::move(command));

@@ -52,7 +52,11 @@ public:
     const geometry_msgs::msg::Pose & target_pose, bool is_docking, bool backward = false)
   {
     return opennav_docking::Controller::isTrajectoryCollisionFree(
+<<<<<<< HEAD
       target_pose, is_docking, backward);
+=======
+      target_pose, target_pose, base_to_fixed_transform, is_docking, backward);
+>>>>>>> 9113449 ((opennav_docking) Account for projection when checking dock_collision_threshold (#6719))
   }
 
   void setCollisionTolerance(double tolerance)
@@ -211,7 +215,17 @@ TEST(ControllerTests, ObjectLifecycle)
 
   geometry_msgs::msg::Pose pose;
   geometry_msgs::msg::Twist cmd_out, cmd_init;
+<<<<<<< HEAD
   EXPECT_TRUE(controller->computeVelocityCommand(pose, cmd_out, true));
+=======
+  geometry_msgs::msg::TransformStamped base_to_fixed_transform;
+  base_to_fixed_transform.header.frame_id = "test_base_frame";
+  base_to_fixed_transform.header.stamp = node->now();
+  base_to_fixed_transform.child_frame_id = "test_base_frame";
+  base_to_fixed_transform.transform.rotation.w = 1.0;
+  EXPECT_TRUE(
+    controller->computeVelocityCommand(pose, pose, cmd_out, base_to_fixed_transform, true));
+>>>>>>> 9113449 ((opennav_docking) Account for projection when checking dock_collision_threshold (#6719))
   EXPECT_NE(cmd_init, cmd_out);
   controller.reset();
 }

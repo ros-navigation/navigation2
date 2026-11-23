@@ -59,14 +59,22 @@ public:
   /**
    * @brief Compute a velocity command using control law.
    * @param pose Target pose, in robot centric coordinates.
+   * @param collision_pose The pose to use for collision checking, if different than target pose.
    * @param cmd Command velocity.
    * @param is_docking If true, robot is docking. If false, robot is undocking.
    * @param backward If true, robot will drive backwards to goal.
    * @returns True if command is valid, false otherwise.
    */
   bool computeVelocityCommand(
+<<<<<<< HEAD
     const geometry_msgs::msg::Pose & pose, geometry_msgs::msg::Twist & cmd, bool is_docking,
     bool backward = false);
+=======
+    const geometry_msgs::msg::Pose & pose,
+    const geometry_msgs::msg::Pose & collision_pose, geometry_msgs::msg::Twist & cmd,
+    const geometry_msgs::msg::TransformStamped & base_to_fixed_transform,
+    bool is_docking, bool backward = false);
+>>>>>>> 9113449 ((opennav_docking) Account for projection when checking dock_collision_threshold (#6719))
 
   /**
    * @brief Perform a command for in-place rotation.
@@ -85,12 +93,23 @@ protected:
    * @brief Check if a trajectory is collision free.
    *
    * @param target_pose Target pose, in robot centric coordinates.
+<<<<<<< HEAD
+=======
+   * @param collision_pose The pose to use for collision checking, if different than target pose.
+   * @param base_to_fixed_transform Transform from the robot base to the fixed frame.
+>>>>>>> 9113449 ((opennav_docking) Account for projection when checking dock_collision_threshold (#6719))
    * @param is_docking If true, robot is docking. If false, robot is undocking.
    * @param backward If true, robot will drive backwards to goal.
    * @return True if trajectory is collision free.
    */
   bool isTrajectoryCollisionFree(
+<<<<<<< HEAD
     const geometry_msgs::msg::Pose & target_pose, bool is_docking, bool backward = false);
+=======
+    const geometry_msgs::msg::Pose & target_pose, const geometry_msgs::msg::Pose & collision_pose,
+    const geometry_msgs::msg::TransformStamped & base_to_fixed_transform,
+    bool is_docking, bool backward = false);
+>>>>>>> 9113449 ((opennav_docking) Account for projection when checking dock_collision_threshold (#6719))
 
   /**
    * @brief Validate incoming parameter updates before applying them.
