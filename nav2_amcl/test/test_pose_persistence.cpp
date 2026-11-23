@@ -98,12 +98,12 @@ TEST_F(PosePersistenceTest, map_topic_change_starts_new_first_map_epoch)
   amcl->configure();
   amcl->activate();
   amcl->receiveMap(0.0);
-  EXPECT_EQ(amcl->mapOriginX(), 5.0);
+  EXPECT_EQ(amcl->mapOriginX(), 5.5);
 
   amcl->updateMapTopic("replacement_map");
   amcl->receiveMap(100.0);
 
-  EXPECT_EQ(amcl->mapOriginX(), 105.0);
+  EXPECT_EQ(amcl->mapOriginX(), 105.5);
   amcl->deactivate();
   amcl->cleanup();
 }

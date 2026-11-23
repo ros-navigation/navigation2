@@ -15,3 +15,11 @@ target_link_libraries(test_pose_persistence
   nav2_util::nav2_util_core
   rclcpp::rclcpp
 )
+
+nav2_add_gtest(test_map_conversion
+  test_map_conversion.cpp
+)
+target_link_libraries(test_map_conversion
+  ${library_name}
+  rclcpp::rclcpp
+)
