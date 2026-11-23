@@ -65,41 +65,26 @@ public:
     * @brief Initialize motion model on bringup and set required variables
     * @param control_constraints Constraints on control
     * @param model_dt duration of a time step
-    * @param actuation Response of the robot to commands
-    * @param clamp_raw_controls Whether to clamp the sampled controls to the feasible velocities
-    */
-  void setConstraints(
-    const models::ControlConstraints & control_constraints, float model_dt,
-    const models::ActuationModel & actuation, bool clamp_raw_controls)
-  {
-    control_constraints_ = control_constraints;
-    model_dt_ = model_dt;
-    actuation_ = actuation;
-    clamp_raw_controls_ = clamp_raw_controls;
-
-    cmd_history_vx_.resize(offsetSteps(actuation_.vx.delay), 0.0f);
-    cmd_history_vy_.resize(offsetSteps(actuation_.vy.delay), 0.0f);
-    cmd_history_wz_.resize(offsetSteps(actuation_.wz.delay), 0.0f);
-  }
-
-  /**
-    * @brief Initialize motion model on bringup and set required variables
-    * @param control_constraints Constraints on control
-    * @param model_dt duration of a time step
     * @param model_delay_vx Delay (s) of the robot's response to vx commands
     * @param model_delay_vy Delay (s) of the robot's response to vy commands
     * @param model_delay_wz Delay (s) of the robot's response to wz commands
     * @param clamp_raw_controls Whether to clamp the sampled controls to the feasible velocities
+    * @param first_control_sent Whether the first control of a sequence is sent, rather than
+    *        pinned to the current velocity
     */
   void setConstraints(
     const models::ControlConstraints & control_constraints, float model_dt,
-    float model_delay_vx, float model_delay_vy, float model_delay_wz, bool clamp_raw_controls)
+    float model_delay_vx, float model_delay_vy, float model_delay_wz, bool clamp_raw_controls,
+    bool first_control_sent = true)
   {
-    models::ActuationModel actuation;
-    actuation.vx.delay = model_delay_vx;
-    actuation.vy.delay = model_delay_vy;
-    actuation.wz.delay = model_delay_wz;
-    setConstraints(control_constraints, model_dt, actuation, clamp_raw_controls);
+    control_constraints_ = control_constraints;
+    model_dt_ = model_dt;
+    clamp_raw_controls_ = clamp_raw_controls;
+    first_control_sent_ = first_control_sent;
+
+    cmd_history_vx_.resize(offsetSteps(model_delay_vx), 0.0f);
+    cmd_history_vy_.resize(offsetSteps(model_delay_vy), 0.0f);
+    cmd_history_wz_.resize(offsetSteps(model_delay_wz), 0.0f);
   }
 
   /**
@@ -175,14 +160,12 @@ public:
   }
 
   /**
-    * @brief Whether the robot's response to commands is modeled as anything but immediate
+    * @brief Whether the robot's response to commands is modeled as delayed
     */
   bool hasLatencyModel() const
   {
     const auto in_flight = getInFlightDuration();
-    return in_flight.vx > 0.0f || in_flight.vy > 0.0f || in_flight.wz > 0.0f ||
-           !actuation_.vx.isIdeal() || !actuation_.wz.isIdeal() ||
-           (isHolonomic() && !actuation_.vy.isIdeal());
+    return in_flight.vx > 0.0f || in_flight.vy > 0.0f || in_flight.wz > 0.0f;
   }
 
   /**
@@ -249,67 +232,32 @@ public:
         vel = target.cwiseMax(last_vel - max_delta_wz).cwiseMin(last_vel + max_delta_wz);
       };
 
-    // The velocity the robot moves towards due to a command: commands within the deadband have
-    // no effect, others are scaled by the gain, and the velocity responds with a first-order lag
-    auto lag_alpha = [this](const models::AxisResponse & response) {
-        return response.time_constant > 0.0f ?
-               1.0f - std::exp(-model_dt_ / response.time_constant) : 1.0f;
-      };
-    const float alpha_vx = lag_alpha(actuation_.vx);
-    const float alpha_vy = lag_alpha(actuation_.vy);
-    const float alpha_wz = lag_alpha(actuation_.wz);
-    auto actuate = [](const auto & cmd, const auto & last_vel,
-      const models::AxisResponse & response, float alpha) -> Eigen::ArrayXf {
-        Eigen::ArrayXf target = cmd;
-        if (response.deadband > 0.0f) {
-          target = (target.abs() < response.deadband).select(0.0f, target);
-        }
-        if (response.gain != 1.0f) {
-          target *= response.gain;
-        }
-        if (response.time_constant > 0.0f) {
-          target = last_vel + alpha * (target - last_vel);
-        }
-        return target;
-      };
-
     // Commands sent before this one are still in flight over the first steps due to the delay,
     // so the sampled controls take effect after them, continuing from their velocity. When the
     // first control isn't sent, being pinned to the current velocity, the first sent control
     // follows those in flight so that it takes effect after exactly the delay.
     const auto n_controls = state.cvx.cols();
     auto step = [&](unsigned int i, Eigen::ArrayXXf & vel, Eigen::ArrayXXf & controls,
-      const std::vector<float> & history, const models::AxisResponse & response, float alpha,
-      auto && accel_limit) {
-        auto respond = [&](const auto & cmd) {
-            if (response.isIdeal()) {
-              accel_limit(vel.col(i), vel.col(i - 1), cmd);
-            } else {
-              const Eigen::ArrayXf target = actuate(cmd, vel.col(i - 1), response, alpha);
-              accel_limit(vel.col(i), vel.col(i - 1), target);
-            }
-          };
-
+      const std::vector<float> & history, auto && accel_limit) {
         const unsigned int delay = inFlightSteps(history);
         if (i - 1 < delay) {
-          respond(Eigen::ArrayXf::Constant(n_rows, history[i]));
+          accel_limit(vel.col(i), vel.col(i - 1), Eigen::ArrayXf::Constant(n_rows, history[i]));
           return;
         }
-        const unsigned int skip = (delay > 0u && !actuation_.first_control_sent) ? 1u : 0u;
+        const unsigned int skip = (delay > 0u && !first_control_sent_) ? 1u : 0u;
         const auto c = std::min<Eigen::Index>(i - 1 - delay + skip, n_controls - 1);
-        respond(controls.col(c));
-        // Otherwise the velocity achieved isn't the command, so the command can't be replaced
-        if (clamp_raw_controls_ && response.isIdeal()) {
+        accel_limit(vel.col(i), vel.col(i - 1), controls.col(c));
+        if (clamp_raw_controls_) {
           controls.col(c) = vel.col(i);
         }
       };
 
     // Set dynamic limits to the platform velocities from the raw controls sampling
     for (unsigned int i = 1; i < n_cols; i++) {
-      step(i, state.vx, state.cvx, cmd_history_vx_, actuation_.vx, alpha_vx, accel_limit_vx);
-      step(i, state.wz, state.cwz, cmd_history_wz_, actuation_.wz, alpha_wz, accel_limit_wz);
+      step(i, state.vx, state.cvx, cmd_history_vx_, accel_limit_vx);
+      step(i, state.wz, state.cwz, cmd_history_wz_, accel_limit_wz);
       if (is_holo) {
-        step(i, state.vy, state.cvy, cmd_history_vy_, actuation_.vy, alpha_vy, accel_limit_vy);
+        step(i, state.vy, state.cvy, cmd_history_vy_, accel_limit_vy);
       }
     }
   }
@@ -378,8 +326,9 @@ protected:
   }
 
   float model_dt_{0.0};
-  models::ActuationModel actuation_;
   bool clamp_raw_controls_{false};
+  // Whether the first control of a sequence is sent, rather than pinned to the current velocity
+  bool first_control_sent_{true};
   // Time (s) since the model_dt step of the newest command history element began
   double history_step_elapsed_{std::numeric_limits<double>::quiet_NaN()};
 

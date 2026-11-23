@@ -13,14 +13,16 @@
 // limitations under the License.
 
 // Closed-loop benchmark of MPPI on a simulated robot with execution delay, lag, gain error
-// and deadbands. Drives the real controller plugin through swath (boustrophedon) and S-curve
-// paths, with and without the delay model, and reports tracking metrics.
+// and deadbands. Drives the real controller plugin through swath (boustrophedon), S-curve and
+// straight paths, with and without the robot's delay modeled, and reports tracking metrics.
 //
 // Environment variables:
 //   MPPI_LATENCY_BENCHMARK_FULL=1   run the full plant grid rather than the CI subset
 //   MPPI_BENCH_REPEATS=<n>          repeats of each run, as MPPI's sampling is stochastic
-//   MPPI_BENCH_PLANTS=<a,b,...>     only run plants whose names contain any of the texts
+//   MPPI_BENCH_PLANTS=<a,b,...>     only run plants with any of the names, where a trailing *
+//                                   matches any ending
 //   MPPI_BENCH_CONFIGS=<a,b,...>    only run controller configurations likewise
+//   MPPI_BENCH_PATHS=<a,b,...>      only run paths likewise
 //   MPPI_BENCH_CSV_DIR=<dir>        write a summary and the first repeat's trajectories as CSV
 
 #include <algorithm>
@@ -246,15 +248,6 @@ struct ControllerConfig
   // Acceleration limits, as a robot which cannot accelerate quickly would be configured
   double ax_max{3.0};
   double az_max{3.5};
-  // Which of the plant's other response characteristics the controller models
-  bool model_lag{false};
-  bool model_deadband{false};
-  bool model_gain{false};
-  // Weight of the VelocityDeadbandCritic, using the legged plant's deadbands
-  double deadband_critic_weight{0.0};
-  double vx_max{0.5};
-  double path_align_weight{14.0};
-  double std_scale{1.0};
 };
 
 struct Scenario
@@ -379,7 +372,7 @@ protected:
       n + "critics", rclcpp::ParameterValue(
         std::vector<std::string>{"ConstraintCritic", "CostCritic", "GoalCritic",
           "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic",
-          "PreferForwardCritic", "VelocityDeadbandCritic"}));
+          "PreferForwardCritic"}));
     declare(n + "ConstraintCritic.cost_weight", rclcpp::ParameterValue(4.0));
     declare(n + "GoalCritic.cost_weight", rclcpp::ParameterValue(5.0));
     declare(n + "GoalCritic.threshold_to_consider", rclcpp::ParameterValue(1.4));
@@ -398,16 +391,6 @@ protected:
     declare(n + "PathAngleCritic.cost_weight", rclcpp::ParameterValue(2.0));
     declare(n + "PathAngleCritic.offset_from_furthest", rclcpp::ParameterValue(4));
     declare(n + "PathAngleCritic.threshold_to_consider", rclcpp::ParameterValue(0.5));
-    // Disabled by weight unless a configuration uses it, with the legged plant's deadbands
-    declare(
-      n + "VelocityDeadbandCritic.deadband_velocities",
-      rclcpp::ParameterValue(std::vector<double>{0.05, 0.0, 0.1}));
-    declare(n + "VelocityDeadbandCritic.cost_weight", rclcpp::ParameterValue(0.0));
-    for (const std::string axis : {"vx", "wz"}) {
-      declare(n + "model_time_constant_" + axis, rclcpp::ParameterValue(0.0));
-      declare(n + "model_deadband_" + axis, rclcpp::ParameterValue(0.0));
-      declare(n + "model_gain_" + axis, rclcpp::ParameterValue(1.0));
-    }
     declare(n + "model_delay_vx", rclcpp::ParameterValue(0.0));
     declare(n + "model_delay_wz", rclcpp::ParameterValue(0.0));
     declare(n + "ax_max", rclcpp::ParameterValue(3.0));
@@ -467,21 +450,9 @@ protected:
       {
         rclcpp::Parameter(n + "model_delay_vx", p.linear.delay * c.delay_model_fraction),
         rclcpp::Parameter(n + "model_delay_wz", p.angular.delay * c.delay_model_fraction),
-        rclcpp::Parameter(n + "vx_max", c.vx_max),
-        rclcpp::Parameter(n + "PathAlignCritic.cost_weight", c.path_align_weight),
-        rclcpp::Parameter(n + "vx_std", 0.2 * c.std_scale),
-        rclcpp::Parameter(n + "wz_std", 0.4 * c.std_scale),
         rclcpp::Parameter(n + "ax_max", c.ax_max),
         rclcpp::Parameter(n + "ax_min", -c.ax_max),
         rclcpp::Parameter(n + "az_max", c.az_max),
-        rclcpp::Parameter(n + "model_time_constant_vx", c.model_lag ? p.linear.time_constant : 0.0),
-        rclcpp::Parameter(
-          n + "model_time_constant_wz", c.model_lag ? p.angular.time_constant : 0.0),
-        rclcpp::Parameter(n + "model_deadband_vx", c.model_deadband ? p.linear.deadband : 0.0),
-        rclcpp::Parameter(n + "model_deadband_wz", c.model_deadband ? p.angular.deadband : 0.0),
-        rclcpp::Parameter(n + "model_gain_vx", c.model_gain ? p.linear.gain : 1.0),
-        rclcpp::Parameter(n + "model_gain_wz", c.model_gain ? p.angular.gain : 1.0),
-        rclcpp::Parameter(n + "VelocityDeadbandCritic.cost_weight", c.deadband_critic_weight),
       }))
     {
       ASSERT_TRUE(result.successful) << result.reason;
@@ -721,10 +692,7 @@ nav2::TransformBuffer::SharedPtr MPPILatencyBenchmark::tf_;
 std::shared_ptr<nav2_costmap_2d::Costmap2DROS> MPPILatencyBenchmark::costmap_;
 std::shared_ptr<InspectableController> MPPILatencyBenchmark::controller_;
 
-ControllerConfig config(
-  const std::string & name, double delay_fraction, bool low_accel, bool lag = false,
-  bool deadband = false, bool gain = false, bool tuned = false,
-  double deadband_critic_weight = 0.0)
+ControllerConfig config(const std::string & name, double delay_fraction, bool low_accel)
 {
   ControllerConfig c;
   c.name = name + (low_accel ? "_low_acc" : "");
@@ -733,24 +701,14 @@ ControllerConfig config(
     c.ax_max = 0.5;
     c.az_max = 1.0;
   }
-  c.model_lag = lag;
-  c.model_deadband = deadband;
-  c.model_gain = gain;
-  // The lag filters the sampled controls' effect on the velocity, reducing exploration, and the
-  // robot's turns are no longer delayed by the lag, revealing MPPI's tendency to cut corners
-  if (tuned) {
-    c.std_scale = 1.5;
-    c.path_align_weight = 28.0;
-  }
-  c.deadband_critic_weight = deadband_critic_weight;
   return c;
 }
 
 }  // namespace
 
 /**
- * Keep only the items whose names contain any of the comma separated texts in the environment
- * variable, if it is set
+ * Keep only the items named in the comma separated environment variable, if it is set, where a
+ * trailing * matches any ending
  */
 template<typename T>
 void filterByName(std::vector<T> & items, const char * variable)
@@ -771,7 +729,12 @@ void filterByName(std::vector<T> & items, const char * variable)
       [&names](const T & item) {
         return std::none_of(
           names.begin(), names.end(),
-          [&item](const std::string & name) {return item.name.find(name) != std::string::npos;});
+          [&item](const std::string & name) {
+            if (!name.empty() && name.back() == '*') {
+              return item.name.rfind(name.substr(0, name.size() - 1), 0) == 0;
+            }
+            return item.name == name;
+          });
       }),
     items.end());
 }
@@ -784,6 +747,8 @@ TEST_F(MPPILatencyBenchmark, swathsAndSCurves)
   std::vector<Scenario> scenarios = {
     {"swath", makeSwathPath(), M_PI_2, true},
     {"s_curve", makeSCurvePath(), 0.0, false},
+    // Converging onto a straight path from a heading error
+    {"straight", makePath({{10.0, 0.0}}), 0.35, false},
   };
 
   std::vector<PlantModel> plants;
@@ -804,24 +769,15 @@ TEST_F(MPPILatencyBenchmark, swathsAndSCurves)
   plants.push_back(plant("legged", 0.3, 0.3, 0.8, 0.05, 0.1, 0.03, 0.05));
   plants.push_back(plant("legged_no_db", 0.3, 0.3, 0.8, 0.0, 0.0, 0.03, 0.05));
   filterByName(plants, "MPPI_BENCH_PLANTS");
+  filterByName(scenarios, "MPPI_BENCH_PATHS");
 
   std::vector<ControllerConfig> configs;
   for (bool low_accel : {false, true}) {
     configs.push_back(config("no_model", 0.0, low_accel));
     configs.push_back(config("delay_model", 1.0, low_accel));
-    configs.push_back(config("full_model", 1.0, low_accel, true, true, true));
-    configs.push_back(config("full_model_tuned", 1.0, low_accel, true, true, true, true));
     if (full) {
-      // Each part of the model, the tuning alone, and robustness to model error
-      const bool tuned = true;
-      configs.push_back(config("delay_model_tuned", 1.0, low_accel, false, false, false, tuned));
-      configs.push_back(config("delay_lag_tuned", 1.0, low_accel, true, false, false, tuned));
-      configs.push_back(
-        config("delay_lag_deadband_tuned", 1.0, low_accel, true, true, false, tuned));
-      configs.push_back(
-        config("full_model_tuned_delay_-30%", 0.7, low_accel, true, true, true, tuned));
-      configs.push_back(
-        config("full_model_tuned_deadband_critic", 1.0, low_accel, true, false, true, tuned, 35.0));
+      // Robustness to under-estimating the delay
+      configs.push_back(config("delay_model_-30%", 0.7, low_accel));
     }
   }
   filterByName(configs, "MPPI_BENCH_CONFIGS");
@@ -884,14 +840,6 @@ TEST_F(MPPILatencyBenchmark, swathsAndSCurves)
       {
         EXPECT_EQ(delay_model_low_accel->successes, delay_model_low_accel->runs) << id;
         EXPECT_LT(delay_model_low_accel->rms_mean, 0.5 * no_model_low_accel->rms_mean) << id;
-      }
-
-      // Modeling the robot's lag, gain and deadband, with sampling and path alignment tuned for
-      // it, completes every path and tracks it far better than modeling the delay alone
-      const auto * full_model_tuned = result("full_model_tuned");
-      if (delay_model && full_model_tuned && p.linear.time_constant >= 0.2) {
-        EXPECT_EQ(full_model_tuned->successes, full_model_tuned->runs) << id;
-        EXPECT_LT(full_model_tuned->rms_mean, 0.7 * delay_model->rms_mean) << id;
       }
     }
   }

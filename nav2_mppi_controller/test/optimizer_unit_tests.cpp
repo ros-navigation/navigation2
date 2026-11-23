@@ -719,42 +719,6 @@ INSTANTIATE_TEST_SUITE_P(
   DelaysAndRates, OptimizerDelayTimingTests,
   ::testing::Combine(::testing::Values(20.0, 30.0), ::testing::Values(0.1, 0.25)));
 
-TEST(OptimizerTests, CommandsWithLagAreNotAccelerationLimited)
-{
-  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
-  OptimizerTester optimizer_tester;
-  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(20.0));
-  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(10));
-  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(10));
-  node->declare_parameter("mppic.vx_max", rclcpp::ParameterValue(1.0));
-  node->declare_parameter("mppic.model_time_constant_vx", rclcpp::ParameterValue(0.3));
-  node->declare_parameter(
-    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
-  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", true);
-  std::string name = "test";
-  ParametersHandler param_handler(node, name);
-  costmap_ros->on_configure(rclcpp_lifecycle::State{});
-  auto tf_buffer = nav2::create_transform_buffer(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
-
-  // The robot lags behind the last command, but the rollouts start from its measured velocity
-  geometry_msgs::msg::Twist measured, last_command;
-  measured.linear.x = 0.1;
-  last_command.linear.x = 0.4;
-  optimizer_tester.prepareWrapper(measured, last_command);
-  EXPECT_DOUBLE_EQ(optimizer_tester.grabState().speed.linear.x, 0.1);
-
-  // The commands continue from the last command, rather than the lagging velocity, and aren't
-  // acceleration limited, as the lag and acceleration limits apply to the robot's velocity
-  auto & sequence = optimizer_tester.grabControlSequence();
-  sequence.vx = Eigen::ArrayXf::Ones(10);
-  optimizer_tester.applyControlSequenceConstraintsWrapper();
-  EXPECT_FLOAT_EQ(sequence.vx(0), 0.4f);
-  EXPECT_FLOAT_EQ(sequence.vx(1), 1.0f);
-  optimizer_tester.shutdown();
-}
-
 TEST(OptimizerTests, OptimalTrajectoryIncludesCommandsInFlight)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");
@@ -825,37 +789,6 @@ TEST(OptimizerTests, OpenLoopStartsFromPredictedVelocity)
   optimizer_tester.getOptimizedTrajectory();
   optimizer_tester.prepareWrapper(unmeasured, last_command);
   EXPECT_NEAR(optimizer_tester.grabState().speed.linear.x, 0.15, 1e-6);
-  optimizer_tester.shutdown();
-}
-
-TEST(OptimizerTests, PrepareStateWithGainAndInvalidGain)
-{
-  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
-  OptimizerTester optimizer_tester;
-  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(20.0));
-  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(10));
-  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(10));
-  node->declare_parameter("mppic.model_gain_vx", rclcpp::ParameterValue(0.8));
-  node->declare_parameter("mppic.model_gain_wz", rclcpp::ParameterValue(0.0));
-  node->declare_parameter(
-    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
-  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", true);
-  std::string name = "test";
-  ParametersHandler param_handler(node, name);
-  costmap_ros->on_configure(rclcpp_lifecycle::State{});
-  auto tf_buffer = nav2::create_transform_buffer(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
-
-  // A gain which isn't positive is invalid
-  EXPECT_FLOAT_EQ(optimizer_tester.grabSettings().actuation.wz.gain, 1.0f);
-
-  // With a gain, the last command isn't the velocity reached, so the measured velocity is used
-  geometry_msgs::msg::Twist measured, last_command;
-  measured.linear.x = 0.1;
-  last_command.linear.x = 0.4;
-  optimizer_tester.prepareWrapper(measured, last_command);
-  EXPECT_DOUBLE_EQ(optimizer_tester.grabState().speed.linear.x, 0.1);
   optimizer_tester.shutdown();
 }
 

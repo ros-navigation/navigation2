@@ -200,15 +200,15 @@ protected:
   void getParams();
 
   /**
-   * @brief Get the command the next command continues from. Commands take effect after those in
-   * flight, so when commands are velocities this is the velocity those commands bring the robot
-   * to, rather than its lagging measured velocity. Otherwise, it is the last command sent.
+   * @brief Get the velocity the next command continues from. Commands take effect after those in
+   * flight, so this is the velocity those commands bring the robot to, rather than its lagging
+   * measured velocity.
    * @return Command velocity
    */
   geometry_msgs::msg::Twist getCommandBaseSpeed() const;
 
   /**
-   * @brief Apply the constraints and actuation model to the motion model
+   * @brief Apply the constraints and delays to the motion model
    */
   void setMotionModelConstraints();
 
