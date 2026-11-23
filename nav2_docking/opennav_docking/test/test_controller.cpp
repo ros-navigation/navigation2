@@ -64,7 +64,7 @@ public:
     base_to_fixed_transform.child_frame_id = base_frame_;
     base_to_fixed_transform.transform.rotation.w = 1.0;
     return GracefulController::isTrajectoryCollisionFree(
-      target_pose, base_to_fixed_transform, is_docking, backward);
+      target_pose, target_pose, base_to_fixed_transform, is_docking, backward);
   }
 
   void setCollisionTolerance(double tolerance)
@@ -73,6 +73,13 @@ public:
   }
 
   using GracefulController::validateParameterUpdatesCallback;
+};
+
+class PIDControllerFixture : public PIDController
+{
+public:
+  using PIDController::computeCommand;
+  using PIDController::predictNextPose;
 };
 
 class TestCollisionChecker : public nav2::LifecycleNode
@@ -674,7 +681,7 @@ TEST(ControllerTests, RotateToHeading) {
 
 TEST(ControllerTests, PIDControlTests) {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto controller = makeController<PIDController>(
+  auto controller = makeController<PIDControllerFixture>(
     node, nullptr, "test_base_frame", "test_base_frame");
 
   // Case 1: Target ahead and to the left
@@ -737,7 +744,7 @@ TEST(ControllerTests, PIDControlTests) {
 
 TEST(ControllerTests, PIDDynamicParameters) {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto controller = makeController<PIDController>(
+  auto controller = makeController<PIDControllerFixture>(
     node, nullptr, "test_base_frame", "test_base_frame");
   controller->activate();
 

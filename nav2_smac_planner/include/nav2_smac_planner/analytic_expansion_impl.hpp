@@ -235,7 +235,6 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
     // num_intervals == 0
     possible_nodes.nodes.reserve(num_intervals);  // We won't store this node or the goal
     std::vector<double> reals;
-    double theta;
 
     // Pre-allocate
     NodePtr prev(node);
@@ -251,10 +250,7 @@ typename AnalyticExpansion<NodeT>::AnalyticExpansionNodes AnalyticExpansion<Node
     for (float i = 1; i <= num_intervals; i++) {
       state_space->interpolate(from(), to(), i / num_intervals, s());
       reals = s.reals();
-      // Make sure in range [0, 2PI)
-      theta = (reals[2] < 0.0) ? (reals[2] + 2.0 * M_PI) : reals[2];
-      theta = (theta > 2.0 * M_PI) ? (theta - 2.0 * M_PI) : theta;
-      angle = _ctx->motion_table.getAngle(theta);
+      angle = _ctx->motion_table.getAngle(reals[2]);
 
       // Turn the pose into a node, and check if it is valid
       index = NodeT::getIndex(

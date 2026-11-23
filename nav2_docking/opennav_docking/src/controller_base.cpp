@@ -18,6 +18,7 @@
 #include <cmath>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -113,7 +114,8 @@ bool ControllerBase::computeVelocityCommands(
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
   cmd = computeCommand(target, options.backward, dt);
   return isTrajectoryCollisionFree(
-    target, nav2_util::poseToTransformStamped(robot_pose, base_frame_),
+    target, options.collision_pose.value_or(target),
+    nav2_util::poseToTransformStamped(robot_pose, base_frame_),
     options.is_docking, options.backward);
 }
 
@@ -145,7 +147,7 @@ geometry_msgs::msg::Twist ControllerBase::computeRotateToHeadingCommand(
 }
 
 bool ControllerBase::isTrajectoryCollisionFree(
-  const geometry_msgs::msg::Pose & target_pose,
+  const geometry_msgs::msg::Pose & target_pose, const geometry_msgs::msg::Pose & collision_pose,
   const geometry_msgs::msg::TransformStamped & base_to_fixed_transform,
   bool is_docking, bool backward)
 {
@@ -181,8 +183,8 @@ bool ControllerBase::isTrajectoryCollisionFree(
     // Skip the final segment of the trajectory for docking
     // and the initial segment for undocking
     // This avoids false positives when the robot is at the dock
-    double dock_collision_distance = is_docking ?
-      nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose) :
+    distance = nav2_util::geometry_utils::euclidean_distance(collision_pose, next_pose.pose);
+    double dock_collision_distance = is_docking ? distance :
       std::hypot(next_pose.pose.position.x, next_pose.pose.position.y);
 
     // If this distance is greater than the dock_collision_threshold, check for collisions
@@ -197,9 +199,6 @@ bool ControllerBase::isTrajectoryCollisionFree(
       trajectory_pub_->publish(std::move(trajectory));
       return false;
     }
-
-    // Check if we reach the goal
-    distance = nav2_util::geometry_utils::euclidean_distance(target_pose, next_pose.pose);
   }while(distance > 1e-2 && trajectory->poses.size() < max_iter);
 
   trajectory_pub_->publish(std::move(trajectory));

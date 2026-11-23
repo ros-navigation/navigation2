@@ -142,6 +142,24 @@ TEST(GeoJsonGraphFileLoader, test_missing_node_id)
   std::filesystem::remove(file_path);
 }
 
+TEST(GeoJsonGraphFileLoader, test_duplicate_node_id)
+{
+  Json json_graph = g_simple_graph;
+  // second copy of node 1: the edge still resolves, only the duplicate check rejects it
+  json_graph["features"].push_back(json_graph["features"][1]);
+
+  std::string file_path = "duplicate_id.geojson";
+  writeGraphToFile(json_graph, file_path);
+
+  Graph graph;
+  GraphToIDMap graph_to_id_map;
+  GeoJsonGraphFileLoader graph_file_loader;
+  EXPECT_THROW(
+    graph_file_loader.loadGraphFromFile(graph, graph_to_id_map, file_path),
+    nav2_core::NoValidGraph);
+  std::filesystem::remove(file_path);
+}
+
 TEST(GeoJsonGraphFileLoader, test_invalid_start_id_for_edge)
 {
   Json json_graph = g_simple_graph;

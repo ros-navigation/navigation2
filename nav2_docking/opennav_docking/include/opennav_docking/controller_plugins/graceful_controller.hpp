@@ -50,6 +50,7 @@ public:
    */
   void deactivate() override;
 
+protected:
   /**
    * @brief Declare the smooth control law parameters and construct the control law.
    * @param node Lifecycle node
@@ -78,7 +79,6 @@ public:
     double dt, const geometry_msgs::msg::Pose & target,
     const geometry_msgs::msg::Pose & current, bool backward) override;
 
-protected:
   /**
    * @brief Validate parameter before applying them.
    * @param parameters List of parameters.

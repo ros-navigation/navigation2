@@ -53,12 +53,15 @@ bool Smoother::smooth(
   nav_msgs::msg::Path & path,
   const nav2_costmap_2d::Costmap2D * costmap,
   const double & max_time,
-  const std::vector<geometry_msgs::msg::Point> & footprint)
+  const std::vector<geometry_msgs::msg::Point> & footprint,
+  const GridCollisionChecker * collision_checker)
 {
   // by-pass path orientations approximation when skipping smac smoother
   if (max_its_ == 0) {
     return false;
   }
+
+  collision_checker_ = collision_checker;
 
   steady_clock::time_point start = steady_clock::now();
   double time_remaining = max_time;
@@ -180,23 +183,24 @@ bool Smoother::smoothImpl(
       }
 
       for (unsigned int i = 1; i != path_size - 1; i++) {
-        float cost = 0.0;
-
-        if (footprint.empty()) {
-          costmap->worldToMap(
-            getFieldByDim(new_path.poses[i], 0),
-            getFieldByDim(new_path.poses[i], 1),
-            mx, my);
-          cost = static_cast<float>(costmap->getCost(mx, my));
-        } else {
-          cost = static_cast<float>(footprint_checker_.footprintCostAtPose(
+        // Center cost of the pose's cell, off the map is in collision
+        const bool in_map = costmap->worldToMap(
+          getFieldByDim(new_path.poses[i], 0),
+          getFieldByDim(new_path.poses[i], 1),
+          mx, my);
+        const float center_cost =
+          in_map ? static_cast<float>(costmap->getCost(mx, my)) : OCCUPIED_COST;
+        const float cost = footprint.empty() ?
+          center_cost :
+          static_cast<float>(footprint_checker_.footprintCostAtPose(
             new_path.poses[i].pose.position.x,
             new_path.poses[i].pose.position.y,
             tf2::getYaw(new_path.poses[i].pose.orientation),
             footprint));
-        }
 
-        if (cost > MAX_NON_OBSTACLE_COST && cost != UNKNOWN_COST) {
+        if ((cost > MAX_NON_OBSTACLE_COST && cost != UNKNOWN_COST) ||
+          exceedsMaxCost(center_cost, mx, my))
+        {
           RCLCPP_DEBUG(
             rclcpp::get_logger("SmacPlannerSmoother"),
             "Smoothing process resulted in an infeasible collision. "
@@ -296,7 +300,7 @@ void Smoother::findBoundaryExpansion(
   }
 
   std::vector<double> reals;
-  double theta(0.0), x(0.0), y(0.0);
+  double x(0.0), y(0.0);
   double x_m = start.position.x;
   double y_m = start.position.y;
 
@@ -304,16 +308,14 @@ void Smoother::findBoundaryExpansion(
   for (double i = 0; i <= expansion.path_end_idx; i++) {
     state_space_->interpolate(from(), to(), i / expansion.path_end_idx, s());
     reals = s.reals();
-    // Make sure in range [0, 2PI)
-    theta = (reals[2] < 0.0) ? (reals[2] + 2.0 * M_PI) : reals[2];
-    theta = (theta > 2.0 * M_PI) ? (theta - 2.0 * M_PI) : theta;
     x = reals[0];
     y = reals[1];
 
     // Check for collision
     unsigned int mx, my;
-    costmap->worldToMap(x, y, mx, my);
-    if (static_cast<float>(costmap->getCost(mx, my)) >= INSCRIBED_COST) {
+    const float cost = costmap->worldToMap(x, y, mx, my) ?
+      static_cast<float>(costmap->getCost(mx, my)) : OCCUPIED_COST;
+    if (cost >= INSCRIBED_COST || exceedsMaxCost(cost, mx, my)) {
       expansion.in_collision = true;
     }
 
@@ -323,7 +325,7 @@ void Smoother::findBoundaryExpansion(
     y_m = y;
 
     // Store point
-    expansion.pts.emplace_back(x, y, theta);
+    expansion.pts.emplace_back(x, y, reals[2]);
   }
 }
 

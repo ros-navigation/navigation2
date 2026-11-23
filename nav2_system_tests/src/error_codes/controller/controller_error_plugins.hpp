@@ -36,25 +36,25 @@ public:
     std::string, nav2::TransformBuffer::SharedPtr,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS>) override {}
 
-  void cleanup() {}
+  void cleanup() override {}
 
-  void activate() {}
+  void activate() override {}
 
-  void deactivate() {}
+  void deactivate() override {}
 
-  void newPathReceived(const nav_msgs::msg::Path &) {}
+  void newPathReceived(const nav_msgs::msg::Path &) override {}
 
-  virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
+  geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped &,
     const geometry_msgs::msg::Twist &,
     nav2_core::GoalChecker *,
     const nav_msgs::msg::Path &,
-    const geometry_msgs::msg::PoseStamped &)
+    const geometry_msgs::msg::PoseStamped &) override
   {
     throw nav2_core::ControllerException("Unknown Error");
   }
 
-  void setSpeedLimit(const double &, const bool &) {}
+  void setSpeedLimit(const double &, const bool &) override {}
 };
 
 class TFErrorController : public UnknownErrorController

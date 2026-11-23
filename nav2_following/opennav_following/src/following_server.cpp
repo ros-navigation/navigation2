@@ -388,7 +388,7 @@ bool FollowingServer::approachObject(
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
     command->header.stamp = now();
     if (!controller_->computeVelocityCommand(
-        target_pose.pose, command->twist, base_to_fixed_transform, true, false))
+        target_pose.pose, target_pose.pose, command->twist, base_to_fixed_transform, true, false))
     {
       throw opennav_docking_core::FailedToControl("Failed to get control");
     }

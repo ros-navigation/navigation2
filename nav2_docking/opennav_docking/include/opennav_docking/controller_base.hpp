@@ -19,6 +19,7 @@
 
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -48,6 +49,10 @@ struct DockingOptions
 
   /// @brief If true robot is docking.
   bool is_docking{true};
+
+  /// @brief Pose for the dock collision threshold and the end of the projected trajectory,
+  /// in the robot's base frame. The target is used when unset.
+  std::optional<geometry_msgs::msg::Pose> collision_pose;
 };
 
 /**
@@ -136,6 +141,7 @@ public:
    */
   std::string getName() {return name_;}
 
+protected:
   /**
    * @brief Declare and read the parameters specific to the derived control law.
    *
@@ -173,18 +179,18 @@ public:
     double dt, const geometry_msgs::msg::Pose & target,
     const geometry_msgs::msg::Pose & current, bool backward) = 0;
 
-protected:
   /**
    * @brief Check if a trajectory is collision free.
    *
    * @param target_pose Target pose, in robot centric coordinates.
+   * @param collision_pose The pose to use for collision checking, if different than target pose.
    * @param base_to_fixed_transform Transform from the robot base to the fixed frame.
    * @param is_docking If true, robot is docking. If false, robot is undocking.
    * @param backward If true, robot will drive backwards to goal.
    * @return True if trajectory is collision free.
    */
   bool isTrajectoryCollisionFree(
-    const geometry_msgs::msg::Pose & target_pose,
+    const geometry_msgs::msg::Pose & target_pose, const geometry_msgs::msg::Pose & collision_pose,
     const geometry_msgs::msg::TransformStamped & base_to_fixed_transform,
     bool is_docking, bool backward = false);
 

@@ -47,7 +47,7 @@ bool GeoJsonGraphFileLoader::loadGraphFromFile(
     return false;
   }
 
-  auto features = json_graph["features"];
+  auto features = json_graph.at("features");
   std::vector<Json> nodes, edges;
   getGraphElements(features, nodes, edges);
 
@@ -58,7 +58,9 @@ bool GeoJsonGraphFileLoader::loadGraphFromFile(
     return false;
   }
 
+  graph.clear();
   graph.resize(nodes.size());
+  graph_to_id_map.clear();
   addNodesToGraph(graph, graph_to_id_map, nodes);
   addEdgesToGraph(graph, graph_to_id_map, edges);
   return true;
@@ -73,11 +75,11 @@ void GeoJsonGraphFileLoader::getGraphElements(
   const Json & features, std::vector<Json> & nodes, std::vector<Json> & edges)
 {
   for (const auto & feature : features) {
-    if (feature["geometry"]["type"] == "Point") {
+    if (feature.at("geometry").at("type") == "Point") {
       nodes.emplace_back(feature);
     } else if (  // NOLINT
-      feature["geometry"]["type"] == "MultiLineString" ||
-      feature["geometry"]["type"] == "LineString")
+      feature.at("geometry").at("type") == "MultiLineString" ||
+      feature.at("geometry").at("type") == "LineString")
     {
       edges.emplace_back(feature);
     }
@@ -89,9 +91,13 @@ void GeoJsonGraphFileLoader::addNodesToGraph(
 {
   int idx = 0;
   for (const auto & node : nodes) {
-    const auto properties = node["properties"];
-    graph[idx].nodeid = properties["id"];
-    graph_to_id_map[graph[idx].nodeid] = idx;
+    const auto properties = node.at("properties");
+    const unsigned int id = properties.at("id");
+    if (!graph_to_id_map.emplace(id, idx).second) {
+      RCLCPP_ERROR(logger_, "Node id %u is repeated, node ids must be unique", id);
+      throw nav2_core::NoValidGraph("Node id is not unique");
+    }
+    graph[idx].nodeid = id;
     graph[idx].coords = convertCoordinatesFromJson(node);
     graph[idx].operations = convertOperationsFromJson(properties);
     graph[idx].metadata = convertMetaDataFromJson(properties);
@@ -104,10 +110,10 @@ void GeoJsonGraphFileLoader::addEdgesToGraph(
 {
   for (const auto & edge : edges) {
     // Required data
-    const auto properties = edge["properties"];
-    unsigned int id = properties["id"];
-    unsigned int start_id = properties["startid"];
-    unsigned int end_id = properties["endid"];
+    const auto properties = edge.at("properties");
+    unsigned int id = properties.at("id");
+    unsigned int start_id = properties.at("startid");
+    unsigned int end_id = properties.at("endid");
 
     if (graph_to_id_map.find(start_id) == graph_to_id_map.end()) {
       RCLCPP_ERROR(logger_, "Start id %u does not exist for edge id %u", start_id, id);
@@ -132,14 +138,14 @@ void GeoJsonGraphFileLoader::addEdgesToGraph(
 Coordinates GeoJsonGraphFileLoader::convertCoordinatesFromJson(const Json & node)
 {
   Coordinates coords;
-  const auto & properties = node["properties"];
+  const auto & properties = node.at("properties");
   if (properties.contains("frame")) {
     coords.frame_id = properties["frame"];
   }
 
-  const auto & coordinates = node["geometry"]["coordinates"];
-  coords.x = coordinates[0];
-  coords.y = coordinates[1];
+  const auto & coordinates = node.at("geometry").at("coordinates");
+  coords.x = coordinates.at(0);
+  coords.y = coordinates.at(1);
 
   return coords;
 }

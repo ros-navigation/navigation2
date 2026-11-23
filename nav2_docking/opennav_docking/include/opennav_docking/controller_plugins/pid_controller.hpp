@@ -54,6 +54,7 @@ public:
    */
   void deactivate() override;
 
+protected:
   /**
    * @brief Declare and read the parameters.
    * @param node Lifecycle node
@@ -128,7 +129,6 @@ public:
    */
   double advance(ControllerState & channel, double error, double dt);
 
-protected:
   /// Hard floor under lookahead_distance_.
   static constexpr double kMinLookahead = 1e-3;
 

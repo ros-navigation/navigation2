@@ -47,6 +47,17 @@ public:
   void cleanup(const rclcpp_lifecycle::State & state) {this->on_cleanup(state);}
   void shutdown(const rclcpp_lifecycle::State & state) {this->on_shutdown(state);}
 
+  geometry_msgs::msg::Twist smoothFromRest()
+  {
+    last_cmd_ = geometry_msgs::msg::TwistStamped();
+    auto command = std::make_shared<geometry_msgs::msg::TwistStamped>();
+    command->twist.linear.x = 0.5;
+    command->twist.angular.z = 1.0;
+    inputCommandStampedCallback(command);
+    smootherTimer();
+    return last_cmd_.twist;
+  }
+
   bool hasCommandMsg() {return last_command_time_.nanoseconds() != 0;}
   geometry_msgs::msg::TwistStamped lastCommandMsg() {return command_;}
 
@@ -730,6 +741,41 @@ TEST(VelocitySmootherTest, testInvalidParamsSize) {
   smoother->declare_parameter("min_velocity", rclcpp::ParameterValue(bad_min_vel));
   rclcpp_lifecycle::State state;
   EXPECT_EQ(smoother->configure(state), nav2::CallbackReturn::FAILURE);
+}
+
+TEST(VelocitySmootherTest, dynamicScaleVelocitiesChangesOutput)
+{
+  auto smoother = std::make_shared<VelSmootherShim>();
+  smoother->declare_parameter("smoothing_frequency", rclcpp::ParameterValue(10.0));
+  smoother->declare_parameter(
+    "max_accel", rclcpp::ParameterValue(std::vector<double>{1.0, 0.0, 10.0}));
+  smoother->declare_parameter(
+    "max_decel", rclcpp::ParameterValue(std::vector<double>{-1.0, 0.0, -10.0}));
+  rclcpp_lifecycle::State state;
+  ASSERT_EQ(smoother->configure(state), nav2::CallbackReturn::SUCCESS);
+  smoother->activate(state);
+
+  auto output = smoother->smoothFromRest();
+  EXPECT_NEAR(output.linear.x, 0.1, 1e-6);
+  EXPECT_NEAR(output.angular.z, 1.0, 1e-6);
+
+  ASSERT_TRUE(smoother->set_parameter(rclcpp::Parameter("scale_velocities", true)).successful);
+  EXPECT_TRUE(smoother->get_parameter("scale_velocities").as_bool());
+  output = smoother->smoothFromRest();
+  EXPECT_NEAR(output.linear.x, 0.1, 1e-6);
+  EXPECT_NEAR(output.angular.z, 0.2, 1e-6);
+
+  auto rejected = smoother->set_parameters_atomically({
+    rclcpp::Parameter("scale_velocities", false),
+    rclcpp::Parameter("smoothing_frequency", -1.0)});
+  ASSERT_FALSE(rejected.successful);
+  EXPECT_TRUE(smoother->get_parameter("scale_velocities").as_bool());
+  EXPECT_NEAR(smoother->smoothFromRest().angular.z, 0.2, 1e-6);
+
+  ASSERT_TRUE(smoother->set_parameter(rclcpp::Parameter("scale_velocities", false)).successful);
+  EXPECT_NEAR(smoother->smoothFromRest().angular.z, 1.0, 1e-6);
+  smoother->deactivate(state);
+  smoother->cleanup(state);
 }
 
 TEST(VelocitySmootherTest, testDynamicParameter)
