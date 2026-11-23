@@ -346,6 +346,8 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 
   geometry_msgs::msg::Twist last_command_vel_;
+  // Velocity predicted one controller period after the last command was computed
+  geometry_msgs::msg::Twist predicted_next_speed_;
 };
 
 }  // namespace mppi

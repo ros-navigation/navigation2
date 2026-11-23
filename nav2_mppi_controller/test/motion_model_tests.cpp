@@ -404,6 +404,83 @@ TEST(MotionModelTests, PropagateInFlight)
   EXPECT_FLOAT_EQ(velocity.wz, 0.35f);
 }
 
+TEST(MotionModelTests, ActuationLagGainAndDeadband)
+{
+  models::State state;
+  state.reset(1, 8);
+  DiffDriveMotionModel model;
+  models::ActuationModel actuation;
+
+  // A first-order lag approaches the command exponentially
+  actuation.vx.time_constant = 0.2f;
+  model.setConstraints(unboundedConstraints(), 0.05f, actuation, false);
+  state.cvx.setConstant(1.0f);
+  model.predict(state);
+  const float alpha = 1.0f - std::exp(-0.05f / 0.2f);
+  for (int i = 0; i < 8; ++i) {
+    EXPECT_NEAR(state.vx(0, i), 1.0f - std::pow(1.0f - alpha, i), 1e-5f) << i;
+  }
+
+  // Commands within the deadband have no effect, others are scaled by the gain
+  actuation.vx = models::AxisResponse();
+  actuation.vx.deadband = 0.1f;
+  actuation.vx.gain = 0.8f;
+  model.setConstraints(unboundedConstraints(), 0.05f, actuation, false);
+  state.reset(2, 4);
+  state.cvx.row(0).setConstant(0.05f);
+  state.cvx.row(1).setConstant(0.5f);
+  model.predict(state);
+  EXPECT_TRUE(state.vx.row(0).rightCols(3).isApproxToConstant(0.0f));
+  EXPECT_TRUE(state.vx.row(1).rightCols(3).isApproxToConstant(0.4f));
+
+  // Commands in flight respond through the same lag
+  actuation.vx = models::AxisResponse();
+  actuation.vx.delay = 0.15f;
+  actuation.vx.time_constant = 0.2f;
+  model.setConstraints(unboundedConstraints(), 0.05f, actuation, false);
+  for (int i = 0; i < 3; ++i) {
+    model.pushCommandHistory(1.0f, 0.0f, 0.0f);
+  }
+  const auto velocity = model.propagateInFlight({0.0f, 0.0f, 0.0f});
+  EXPECT_NEAR(velocity.vx, 1.0f - std::pow(1.0f - alpha, 2), 1e-5f);
+
+  // An ideal response is identical to specifying the delay alone
+  DiffDriveMotionModel ideal, delay_only;
+  models::ActuationModel ideal_actuation;
+  ideal_actuation.vx.delay = 0.15f;
+  ideal.setConstraints(unboundedConstraints(), 0.05f, ideal_actuation, false);
+  delay_only.setConstraints(unboundedConstraints(), 0.05f, 0.15f, 0.0f, 0.0f, false);
+  models::State a, b;
+  a.reset(3, 6);
+  a.cvx.setRandom();
+  b = a;
+  ideal.predict(a);
+  delay_only.predict(b);
+  EXPECT_TRUE((a.vx == b.vx).all());
+}
+
+TEST(MotionModelTests, AccelerationFromRestWithAsymmetricLimits)
+{
+  // Accelerating at 0.5 m/s^2 and slowing at 2 m/s^2: from rest, either direction is speeding up
+  models::ControlConstraints constraints{1.0f, -1.0f, 1.0f, 1.0f, 0.5f, -2.0f, -2.0f, 0.5f, 1.0f};
+  OmniMotionModel model;
+  model.setConstraints(constraints, 0.05f, 0.0f, 0.0f, 0.0f, false);
+  models::State state;
+  state.reset(2, 2);
+  state.cvx.row(0).setConstant(1.0f);
+  state.cvx.row(1).setConstant(-1.0f);
+  state.cvy = state.cvx;
+  model.predict(state);
+  EXPECT_FLOAT_EQ(state.vx(0, 1), 0.025f);
+  EXPECT_FLOAT_EQ(state.vx(1, 1), -0.025f);
+  EXPECT_FLOAT_EQ(state.vy(0, 1), 0.025f);
+  EXPECT_FLOAT_EQ(state.vy(1, 1), -0.025f);
+
+  // As for the control sequence's constraints
+  EXPECT_FLOAT_EQ(utils::clampVelocityByAccel(0.0f, 1.0f, -0.1f, 0.025f), 0.025f);
+  EXPECT_FLOAT_EQ(utils::clampVelocityByAccel(0.0f, -1.0f, -0.1f, 0.025f), -0.025f);
+}
+
 TEST(MotionModelTests, DelayVyIgnoredOnDiffDrive)
 {
   models::State state;

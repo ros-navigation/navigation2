@@ -19,7 +19,7 @@
 // Environment variables:
 //   MPPI_LATENCY_BENCHMARK_FULL=1   run the full plant grid rather than the CI subset
 //   MPPI_BENCH_REPEATS=<n>          repeats of each run, as MPPI's sampling is stochastic
-//   MPPI_BENCH_PLANTS=<text>        only run plants whose names contain the text
+//   MPPI_BENCH_PLANTS=<a,b,...>     only run plants whose names contain any of the texts
 //   MPPI_BENCH_CSV_DIR=<dir>        write a summary and the first repeat's trajectories as CSV
 
 #include <algorithm>
@@ -29,6 +29,8 @@
 #include <fstream>
 #include <memory>
 #include <random>
+#include <stdexcept>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -226,6 +228,12 @@ struct ControllerConfig
   // Acceleration limits, as a robot which cannot accelerate quickly would be configured
   double ax_max{3.0};
   double az_max{3.5};
+  // Which of the plant's other response characteristics the controller models
+  bool model_lag{false};
+  bool model_deadband{false};
+  bool model_gain{false};
+  // Weight of the VelocityDeadbandCritic, using the legged plant's deadbands
+  double deadband_critic_weight{0.0};
 };
 
 struct Scenario
@@ -346,7 +354,7 @@ protected:
       n + "critics", rclcpp::ParameterValue(
         std::vector<std::string>{"ConstraintCritic", "CostCritic", "GoalCritic",
           "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic",
-          "PreferForwardCritic"}));
+          "PreferForwardCritic", "VelocityDeadbandCritic"}));
     declare(n + "ConstraintCritic.cost_weight", rclcpp::ParameterValue(4.0));
     declare(n + "GoalCritic.cost_weight", rclcpp::ParameterValue(5.0));
     declare(n + "GoalCritic.threshold_to_consider", rclcpp::ParameterValue(1.4));
@@ -365,6 +373,16 @@ protected:
     declare(n + "PathAngleCritic.cost_weight", rclcpp::ParameterValue(2.0));
     declare(n + "PathAngleCritic.offset_from_furthest", rclcpp::ParameterValue(4));
     declare(n + "PathAngleCritic.threshold_to_consider", rclcpp::ParameterValue(0.5));
+    // Disabled by weight unless a configuration uses it, with the legged plant's deadbands
+    declare(
+      n + "VelocityDeadbandCritic.deadband_velocities",
+      rclcpp::ParameterValue(std::vector<double>{0.05, 0.0, 0.1}));
+    declare(n + "VelocityDeadbandCritic.cost_weight", rclcpp::ParameterValue(0.0));
+    for (const std::string axis : {"vx", "wz"}) {
+      declare(n + "model_time_constant_" + axis, rclcpp::ParameterValue(0.0));
+      declare(n + "model_deadband_" + axis, rclcpp::ParameterValue(0.0));
+      declare(n + "model_gain_" + axis, rclcpp::ParameterValue(1.0));
+    }
     declare(n + "model_delay_vx", rclcpp::ParameterValue(0.0));
     declare(n + "model_delay_wz", rclcpp::ParameterValue(0.0));
     declare(n + "ax_max", rclcpp::ParameterValue(3.0));
@@ -427,6 +445,14 @@ protected:
         rclcpp::Parameter(n + "ax_max", c.ax_max),
         rclcpp::Parameter(n + "ax_min", -c.ax_max),
         rclcpp::Parameter(n + "az_max", c.az_max),
+        rclcpp::Parameter(n + "model_time_constant_vx", c.model_lag ? p.linear.time_constant : 0.0),
+        rclcpp::Parameter(
+          n + "model_time_constant_wz", c.model_lag ? p.angular.time_constant : 0.0),
+        rclcpp::Parameter(n + "model_deadband_vx", c.model_deadband ? p.linear.deadband : 0.0),
+        rclcpp::Parameter(n + "model_deadband_wz", c.model_deadband ? p.angular.deadband : 0.0),
+        rclcpp::Parameter(n + "model_gain_vx", c.model_gain ? p.linear.gain : 1.0),
+        rclcpp::Parameter(n + "model_gain_wz", c.model_gain ? p.angular.gain : 1.0),
+        rclcpp::Parameter(n + "VelocityDeadbandCritic.cost_weight", c.deadband_critic_weight),
       }))
     {
       ASSERT_TRUE(result.successful) << result.reason;
@@ -640,10 +666,23 @@ nav2::TransformBuffer::SharedPtr MPPILatencyBenchmark::tf_;
 std::shared_ptr<nav2_costmap_2d::Costmap2DROS> MPPILatencyBenchmark::costmap_;
 std::shared_ptr<nav2_mppi_controller::MPPIController> MPPILatencyBenchmark::controller_;
 
-const ControllerConfig kNoModel{"no_model", 0.0};
-const ControllerConfig kDelayModel{"delay_model", 1.0};
-const ControllerConfig kNoModelLowAccel{"no_model_low_acc", 0.0, 0.5, 1.0};
-const ControllerConfig kDelayModelLowAccel{"delay_model_low_acc", 1.0, 0.5, 1.0};
+ControllerConfig config(
+  const std::string & name, double delay_fraction, bool low_accel, bool lag = false,
+  bool deadband = false, bool gain = false, double deadband_critic_weight = 0.0)
+{
+  ControllerConfig c;
+  c.name = name + (low_accel ? "_low_acc" : "");
+  c.delay_model_fraction = delay_fraction;
+  if (low_accel) {
+    c.ax_max = 0.5;
+    c.az_max = 1.0;
+  }
+  c.model_lag = lag;
+  c.model_deadband = deadband;
+  c.model_gain = gain;
+  c.deadband_critic_weight = deadband_critic_weight;
+  return c;
+}
 
 }  // namespace
 
@@ -675,15 +714,35 @@ TEST_F(MPPILatencyBenchmark, swathsAndSCurves)
   plants.push_back(plant("legged", 0.3, 0.3, 0.8, 0.05, 0.1, 0.03, 0.05));
   plants.push_back(plant("legged_no_db", 0.3, 0.3, 0.8, 0.0, 0.0, 0.03, 0.05));
   if (const char * filter = std::getenv("MPPI_BENCH_PLANTS")) {
+    // Comma separated names, matched in part
+    std::vector<std::string> names;
+    std::stringstream stream(filter);
+    for (std::string name; std::getline(stream, name, ',');) {
+      names.push_back(name);
+    }
     plants.erase(
       std::remove_if(
         plants.begin(), plants.end(),
-        [filter](const PlantModel & p) {return p.name.find(filter) == std::string::npos;}),
+        [&names](const PlantModel & p) {
+          return std::none_of(
+            names.begin(), names.end(),
+            [&p](const std::string & name) {return p.name.find(name) != std::string::npos;});
+        }),
       plants.end());
   }
 
-  const std::vector<ControllerConfig> configs = {
-    kNoModel, kDelayModel, kNoModelLowAccel, kDelayModelLowAccel};
+  std::vector<ControllerConfig> configs;
+  for (bool low_accel : {false, true}) {
+    configs.push_back(config("no_model", 0.0, low_accel));
+    configs.push_back(config("delay_model", 1.0, low_accel));
+    configs.push_back(config("full_model", 1.0, low_accel, true, true, true));
+    if (full) {
+      configs.push_back(config("delay_lag", 1.0, low_accel, true));
+      configs.push_back(config("delay_lag_deadband", 1.0, low_accel, true, true));
+      configs.push_back(config("full_critic_deadband", 1.0, low_accel, true, false, true, 35.0));
+      configs.push_back(config("full_delay_-30%", 0.7, low_accel, true, true, true));
+    }
+  }
   const char * repeats_env = std::getenv("MPPI_BENCH_REPEATS");
   const int repeats = repeats_env ? std::max(1, std::atoi(repeats_env)) : 3;
 
@@ -717,15 +776,24 @@ TEST_F(MPPILatencyBenchmark, swathsAndSCurves)
         printRow(s, p, c, aggregate, summary);
       }
 
-      // With a delay model, every path is completed
+      auto result = [&](const std::string & name) -> const Aggregate & {
+          for (size_t i = 0; i < configs.size(); ++i) {
+            if (configs[i].name == name) {
+              return results[i];
+            }
+          }
+          throw std::runtime_error("No configuration " + name);
+        };
       const std::string id = s.name + " " + p.name;
-      const auto & delay_model = results[1];
+
+      // With a delay model, every path is completed
+      const auto & delay_model = result("delay_model");
       EXPECT_EQ(delay_model.successes, delay_model.runs) << id;
 
       // A robot which accelerates slowly is not held back by its lagging measured velocity, nor
       // modeled as reversing its acceleration after the delay, so tracks swaths far better
-      const auto & no_model_low_accel = results[2];
-      const auto & delay_model_low_accel = results[3];
+      const auto & no_model_low_accel = result("no_model_low_acc");
+      const auto & delay_model_low_accel = result("delay_model_low_acc");
       if (s.name == "swath" && p.linear.delay >= 0.3 && p.linear.time_constant >= 0.2) {
         EXPECT_EQ(delay_model_low_accel.successes, delay_model_low_accel.runs) << id;
         EXPECT_LT(delay_model_low_accel.rms_mean, 0.5 * no_model_low_accel.rms_mean) << id;

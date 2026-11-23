@@ -147,6 +147,15 @@ void Optimizer::getParams()
   getParam(s.actuation.vx.delay, "model_delay_vx", 0.0f);
   getParam(s.actuation.vy.delay, "model_delay_vy", 0.0f);
   getParam(s.actuation.wz.delay, "model_delay_wz", 0.0f);
+  getParam(s.actuation.vx.time_constant, "model_time_constant_vx", 0.0f);
+  getParam(s.actuation.vy.time_constant, "model_time_constant_vy", 0.0f);
+  getParam(s.actuation.wz.time_constant, "model_time_constant_wz", 0.0f);
+  getParam(s.actuation.vx.gain, "model_gain_vx", 1.0f);
+  getParam(s.actuation.vy.gain, "model_gain_vy", 1.0f);
+  getParam(s.actuation.wz.gain, "model_gain_wz", 1.0f);
+  getParam(s.actuation.vx.deadband, "model_deadband_vx", 0.0f);
+  getParam(s.actuation.vy.deadband, "model_deadband_vy", 0.0f);
+  getParam(s.actuation.wz.deadband, "model_deadband_wz", 0.0f);
   getParam(s.clamp_raw_controls, "clamp_raw_controls", false);
   getParam(s.time_steps, "time_steps", 56);
   getParam(s.batch_size, "batch_size", 1000);
@@ -205,13 +214,24 @@ void Optimizer::getParams()
 
   s.constraints = s.base_constraints;
 
+  for (auto * response : {&s.actuation.vx, &s.actuation.vy, &s.actuation.wz}) {
+    if (response->gain <= 0.0f) {
+      RCLCPP_WARN(logger_, "model_gain parameters must be positive, defaulting to 1.0");
+      response->gain = 1.0f;
+    }
+  }
+
+  // The robot's response to a command must be well within the horizon for it to be optimized
   const float max_delay = std::max(
     {s.actuation.vx.delay, s.actuation.vy.delay, s.actuation.wz.delay});
-  if (max_delay >= s.time_steps * s.model_dt) {
+  const float max_time_constant = std::max(
+    {s.actuation.vx.time_constant, s.actuation.vy.time_constant, s.actuation.wz.time_constant});
+  const float response_time = max_delay + 3.0f * max_time_constant;
+  if (response_time > 0.0f && response_time >= s.time_steps * s.model_dt) {
     RCLCPP_WARN(
-      logger_, "The model delay of %.2fs is not shorter than the trajectory horizon of %.2fs, "
-      "so commands cannot be optimized. Increase time_steps or model_dt.", max_delay,
-      s.time_steps * s.model_dt);
+      logger_, "The robot's modeled response time of %.2fs is not shorter than the trajectory "
+      "horizon of %.2fs, so commands cannot be optimized. Increase time_steps or model_dt.",
+      response_time, s.time_steps * s.model_dt);
   }
 
   setMotionModel(motion_model_name);
@@ -253,6 +273,7 @@ void Optimizer::reset(bool reset_dynamic_speed_limits, bool clear_command_histor
   control_history_[3] = {0.0f, 0.0f, 0.0f};
 
   last_command_vel_ = geometry_msgs::msg::Twist();
+  predicted_next_speed_ = geometry_msgs::msg::Twist();
 
   if (reset_dynamic_speed_limits) {
     settings_.constraints = settings_.base_constraints;
@@ -377,7 +398,10 @@ void Optimizer::prepare(
   nav2_core::GoalChecker * goal_checker)
 {
   if (settings_.open_loop) {
-    state_.speed = last_command_vel_;
+    // With a delay or lag, the robot isn't yet at the last command, so use the velocity that was
+    // predicted for now
+    state_.speed =
+      motion_model_->hasLatencyModel() ? predicted_next_speed_ : last_command_vel_;
   } else {
     // Predict state one controller_period forward toward the last command to compensate
     // for the latency between measurement and when this command will take effect.
@@ -400,16 +424,17 @@ void Optimizer::prepare(
         robot_speed.linear.y + dt * c.ay_max);
     }
 
-    // With a delay, the measured velocity is the robot's state now, which the commands in flight
-    // carry forward, rather than having already reached the last command
+    // With a delay or lag, the measured velocity is the robot's state now, which the commands
+    // in flight and the lag carry forward, rather than having already reached the last command
     const auto in_flight = motion_model_->getInFlightDuration();
-    if (in_flight.vx > 0.0f) {
+    const auto & actuation = settings_.actuation;
+    if (in_flight.vx > 0.0f || actuation.vx.time_constant > 0.0f) {
       state_.speed.linear.x = robot_speed.linear.x;
     }
-    if (in_flight.vy > 0.0f) {
+    if (in_flight.vy > 0.0f || actuation.vy.time_constant > 0.0f) {
       state_.speed.linear.y = robot_speed.linear.y;
     }
-    if (in_flight.wz > 0.0f) {
+    if (in_flight.wz > 0.0f || actuation.wz.time_constant > 0.0f) {
       state_.speed.angular.z = robot_speed.angular.z;
     }
   }
@@ -452,17 +477,19 @@ void Optimizer::generateNoisedTrajectories()
 
 geometry_msgs::msg::Twist Optimizer::getCommandBaseSpeed() const
 {
-  if (settings_.open_loop) {
-    return state_.speed;
-  }
-
   const auto velocity = motion_model_->propagateInFlight(
     {static_cast<float>(state_.speed.linear.x), static_cast<float>(state_.speed.linear.y),
       static_cast<float>(state_.speed.angular.z)});
+  // With a lag, the robot's velocity trails its commands by design, so commands continue from the
+  // last command rather than being held back to the lagging velocity
+  const auto & actuation = settings_.actuation;
   geometry_msgs::msg::Twist base_speed;
-  base_speed.linear.x = velocity.vx;
-  base_speed.linear.y = velocity.vy;
-  base_speed.angular.z = velocity.wz;
+  base_speed.linear.x =
+    actuation.vx.time_constant > 0.0f ? last_command_vel_.linear.x : velocity.vx;
+  base_speed.linear.y =
+    actuation.vy.time_constant > 0.0f ? last_command_vel_.linear.y : velocity.vy;
+  base_speed.angular.z =
+    actuation.wz.time_constant > 0.0f ? last_command_vel_.angular.z : velocity.wz;
   return base_speed;
 }
 
@@ -689,11 +716,34 @@ Eigen::ArrayXXf Optimizer::getOptimizedTrajectory()
   Eigen::Array<float, Eigen::Dynamic, 3> trajectories =
     Eigen::Array<float, Eigen::Dynamic, 3>(settings_.time_steps, 3);
 
-  sequence.col(0) = control_sequence_.vx;
-  sequence.col(1) = control_sequence_.wz;
+  if (motion_model_->hasLatencyModel()) {
+    // Simulate the optimal controls as the rollouts are, including the commands in flight and the
+    // robot's response, so the trajectory is the one the robot is expected to follow
+    models::State optimal;
+    optimal.reset(1u, settings_.time_steps);
+    optimal.cvx.row(0) = control_sequence_.vx.transpose();
+    optimal.cwz.row(0) = control_sequence_.wz.transpose();
+    optimal.cvy.row(0) = control_sequence_.vy.transpose();
+    updateInitialStateVelocities(optimal);
+    motion_model_->predict(optimal);
+    sequence.col(0) = optimal.vx.row(0).transpose();
+    sequence.col(1) = optimal.wz.row(0).transpose();
+    if (is_holo) {
+      sequence.col(2) = optimal.vy.row(0).transpose();
+    }
 
-  if (is_holo) {
-    sequence.col(2) = control_sequence_.vy;
+    // The velocity one controller period from now is the velocity now on the next cycle
+    const Eigen::Index next = std::min<Eigen::Index>(1, optimal.vx.cols() - 1);
+    const float f = std::min(1.0f, settings_.controller_period / settings_.model_dt);
+    predicted_next_speed_.linear.x = (1.0f - f) * optimal.vx(0, 0) + f * optimal.vx(0, next);
+    predicted_next_speed_.linear.y = (1.0f - f) * optimal.vy(0, 0) + f * optimal.vy(0, next);
+    predicted_next_speed_.angular.z = (1.0f - f) * optimal.wz(0, 0) + f * optimal.wz(0, next);
+  } else {
+    sequence.col(0) = control_sequence_.vx;
+    sequence.col(1) = control_sequence_.wz;
+    if (is_holo) {
+      sequence.col(2) = control_sequence_.vy;
+    }
   }
 
   integrateStateVelocities(trajectories, sequence);
