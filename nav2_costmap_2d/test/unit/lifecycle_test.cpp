@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <chrono>
 #include <limits>
 #include <memory>
 #include <vector>
@@ -49,7 +50,7 @@ TEST(LifecylceTest, CheckInitialTfTimeout) {
   geometry_msgs::msg::TransformStamped transform_global_to_robot{};
   transform_global_to_robot.header.frame_id = costmap->getGlobalFrameID();
   transform_global_to_robot.child_frame_id = costmap->getBaseFrameID();
-  costmap->getTfBuffer()->setTransform(transform_global_to_robot, "test", true);
+  costmap->getTfManager()->getRawBuffer()->setTransform(transform_global_to_robot, "test", true);
   // Now the costmap should successful transition into the active state
   {
     const auto state_after_activate = costmap->activate();
@@ -84,5 +85,81 @@ TEST(LifecylceTest, RejectInvalidCostmapSize) {
     rclcpp::Parameter("resolution", 0.01),
   });
 
+  rclcpp::shutdown();
+}
+
+TEST(LifecylceTest, ObstacleFiltersRetainBufferAfterManagerCleanup) {
+  rclcpp::init(0, nullptr);
+  {
+    rclcpp::NodeOptions options;
+    options.parameter_overrides(
+    {
+      {"plugins", std::vector<std::string>{"obstacle_layer"}},
+      {"obstacle_layer.plugin", "nav2_costmap_2d::ObstacleLayer"},
+      {"obstacle_layer.observation_sources", "scan cloud"},
+      {"obstacle_layer.scan.data_type", "LaserScan"},
+      {"obstacle_layer.cloud.data_type", "PointCloud2"},
+    });
+    auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>(options);
+    EXPECT_EQ(costmap->configure().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+    std::weak_ptr<nav2::TransformManager> manager = costmap->getTfManager();
+    std::weak_ptr<tf2_ros::Buffer> buffer = costmap->getTfManager()->getRawBuffer();
+    auto obstacle_layer = costmap->getLayeredCostmap()->getPlugins()->at(0);
+
+    EXPECT_EQ(costmap->cleanup().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED);
+    EXPECT_TRUE(manager.expired());
+    {
+      const auto retained_buffer = buffer.lock();
+      ASSERT_NE(retained_buffer, nullptr);
+      EXPECT_FALSE(retained_buffer->isUsingDedicatedThread());
+    }
+
+    obstacle_layer.reset();
+    EXPECT_TRUE(buffer.expired());
+  }
+  rclcpp::shutdown();
+}
+
+TEST(LifecylceTest, InternalListenerUsesProcessTfTopics) {
+  const char * argv[] = {
+    "test", "--ros-args", "-r", "__ns:=/robot",
+    "-r", "/tf:=tf", "-r", "/tf_static:=tf_static"};
+  rclcpp::init(8, argv);
+  {
+    auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+      "local_costmap", "/robot", false, rclcpp::NodeOptions());
+    ASSERT_EQ(costmap->configure().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+    EXPECT_STREQ(costmap->get_namespace(), "/robot/local_costmap");
+    auto parent = std::make_shared<rclcpp::Node>("parent");
+    auto broadcaster = nav2::create_transform_manager(parent, false);
+    geometry_msgs::msg::TransformStamped transform;
+    transform.header.frame_id = "parent";
+    transform.child_frame_id = "dynamic_child";
+    transform.header.stamp = parent->now();
+    transform.transform.translation.x = 2.0;
+    auto static_transform = transform;
+    static_transform.child_frame_id = "static_child";
+    static_transform.transform.translation.x = 3.0;
+    broadcaster->sendStaticTransform(static_transform);
+
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    bool received = false;
+    while (std::chrono::steady_clock::now() < deadline) {
+      broadcaster->sendTransform(transform);
+      const auto dynamic_result = costmap->getTfManager()->getLatestTransform(
+        "parent", "dynamic_child", 0.0);
+      const auto static_result = costmap->getTfManager()->getLatestTransform(
+        "parent", "static_child", 0.0);
+      if (dynamic_result && static_result) {
+        EXPECT_DOUBLE_EQ(dynamic_result->transform.translation.x, 2.0);
+        EXPECT_DOUBLE_EQ(static_result->transform.translation.x, 3.0);
+        received = true;
+        break;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    EXPECT_TRUE(received);
+    EXPECT_EQ(costmap->cleanup().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED);
+  }
   rclcpp::shutdown();
 }

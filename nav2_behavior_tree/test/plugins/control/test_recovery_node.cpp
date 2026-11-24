@@ -94,13 +94,13 @@ protected:
   void enableDistanceReset(double distance = 1.0, unsigned int retries = 1)
   {
     // Use a private buffer and direct transforms to keep these tests deterministic.
-    distance_tf_ = nav2::create_transform_buffer(node_);
+    distance_tf_ = nav2::create_transform_manager(node_, false);
     auto config = *config_;
     config.input_ports["number_of_retries"] = std::to_string(retries);
     distance_blackboard_ = BT::Blackboard::create();
     config.blackboard = distance_blackboard_;
     config.blackboard->set("node", node_);
-    config.blackboard->set("tf_buffer", distance_tf_);
+    config.blackboard->set("transform_manager", distance_tf_);
     config.input_ports["reset_distance"] = "{reset_distance}";
     config.input_ports["robot_base_frame"] = "{robot_frame}";
     config.input_ports["global_frame"] = "{global_frame}";
@@ -121,7 +121,7 @@ protected:
     transform.header.stamp = node_->now();
     transform.transform.translation.x = x;
     transform.transform.translation.y = y;
-    ASSERT_TRUE(distance_tf_->setTransform(transform, "test", true));
+    ASSERT_TRUE(distance_tf_->getRawBuffer()->setTransform(transform, "test", true));
   }
 
   BT::NodeStatus retryOnce()
@@ -134,7 +134,7 @@ protected:
   }
 
   BT::Blackboard::Ptr distance_blackboard_;
-  nav2::TransformBuffer::SharedPtr distance_tf_;
+  nav2::TransformManager::SharedPtr distance_tf_;
   static std::shared_ptr<nav2_behavior_tree::RecoveryNode> bt_node_;
   static std::shared_ptr<RecoveryDummy> first_child_;
   static std::shared_ptr<RecoveryDummy> second_child_;
@@ -300,7 +300,7 @@ TEST_F(RecoveryNodeTestFixture, test_missing_transform_preserves_retry_limit)
   enableDistanceReset();
   moveRobot(0.0);
   EXPECT_EQ(retryOnce(), BT::NodeStatus::RUNNING);
-  distance_tf_->clear();
+  distance_tf_->getRawBuffer()->clear();
   EXPECT_EQ(retryOnce(), BT::NodeStatus::FAILURE);
 }
 

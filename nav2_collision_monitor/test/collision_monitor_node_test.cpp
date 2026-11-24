@@ -41,7 +41,7 @@
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/collision_monitor_node.hpp"
@@ -515,8 +515,8 @@ void Tester::setGlobalHeightParams(const std::string & source_name, const double
 
 void Tester::sendTransforms(const rclcpp::Time & stamp)
 {
-  nav2::TransformBroadcaster::SharedPtr tf_broadcaster =
-    nav2::create_transform_broadcaster(cm_);
+  nav2::TransformManager::SharedPtr tf_manager =
+    nav2::create_transform_manager(cm_, false);
 
   geometry_msgs::msg::TransformStamped transform;
   transform.transform.rotation.x = 0.0;
@@ -532,12 +532,12 @@ void Tester::sendTransforms(const rclcpp::Time & stamp)
     // base_frame -> source_frame transform
     transform.header.frame_id = BASE_FRAME_ID;
     transform.child_frame_id = SOURCE_FRAME_ID;
-    tf_broadcaster->sendTransform(transform);
+    tf_manager->sendTransform(transform);
 
     // odom_frame -> base_frame transform
     transform.header.frame_id = ODOM_FRAME_ID;
     transform.child_frame_id = BASE_FRAME_ID;
-    tf_broadcaster->sendTransform(transform);
+    tf_manager->sendTransform(transform);
   }
 }
 

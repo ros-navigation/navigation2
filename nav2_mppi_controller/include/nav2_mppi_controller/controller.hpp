@@ -25,7 +25,7 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_core/controller.hpp"
 #include "nav2_core/goal_checker.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace nav2_mppi_controller
 {
@@ -48,12 +48,12 @@ public:
     * @brief Configure controller on bringup
     * @param parent WeakPtr to node
     * @param name Name of plugin
-    * @param tf TF buffer to use
+    * @param tf_manager Transform manager to use
     * @param costmap_ros Costmap2DROS object of environment
     */
   void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    std::string name, const nav2::TransformBuffer::SharedPtr tf,
+    std::string name, const nav2::TransformManager::SharedPtr tf_manager,
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
   /**
@@ -118,7 +118,7 @@ protected:
   nav2::LifecycleNode::WeakPtr parent_;
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   nav2::Publisher<nav_msgs::msg::Trajectory>::SharedPtr opt_traj_pub_;
 
   Optimizer optimizer_;

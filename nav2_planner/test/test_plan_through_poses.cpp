@@ -15,6 +15,7 @@
 #include <memory>
 
 #include "gtest/gtest.h"
+#include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/logger.hpp"
 #include "rclcpp/logging.hpp"
@@ -30,7 +31,7 @@
 #include "nav2_msgs/action/compute_path_through_poses.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 // Some parameters for planner server
 static const double EXPECTED_PLANNER_FREQ{20.0};
@@ -67,7 +68,7 @@ public:
     ASSERT_EQ(on_shutdown(get_current_state()), nav2::CallbackReturn::SUCCESS);
   }
 
-  nav2_costmap_2d::Costmap2DROS::SharedPtr getCostmapROS()
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> getCostmapROS()
   {
     return costmap_ros_;
   }
@@ -77,6 +78,47 @@ public:
     return costmap_ros_->getCostmap();
   }
 };
+
+class CleanupOrderLayer : public nav2_costmap_2d::Layer
+{
+public:
+  CleanupOrderLayer(std::weak_ptr<nav2::TransformManager> manager, bool & destroyed)
+  : manager_(manager), destroyed_(destroyed)
+  {
+  }
+
+  ~CleanupOrderLayer() override
+  {
+    EXPECT_TRUE(manager_.expired());
+    destroyed_ = true;
+  }
+
+  void reset() override {}
+  bool isClearable() override {return false;}
+  void updateBounds(double, double, double, double *, double *, double *, double *) override {}
+  void updateCosts(nav2_costmap_2d::Costmap2D &, int, int, int, int) override {}
+
+private:
+  std::weak_ptr<nav2::TransformManager> manager_;
+  bool & destroyed_;
+};
+
+TEST(PlannerCleanupTest, ReleasesPluginManagersBeforeCostmapLayers)
+{
+  bool layer_destroyed = false;
+  auto planner = std::make_shared<PlannerServerWrapper>();
+  planner->declare_parameter("planner_plugins", std::vector<std::string>{"GridBased"});
+  planner->declare_parameter("GridBased.plugin", "nav2_navfn_planner::NavfnPlanner");
+  auto costmap = planner->getCostmapROS();
+  costmap->declare_parameter("plugins", std::vector<std::string>{});
+  ASSERT_EQ(planner->configure().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE);
+
+  // Navfn retains the shared manager until its plugin instance is destroyed.
+  costmap->getLayeredCostmap()->addPlugin(
+    std::make_shared<CleanupOrderLayer>(costmap->getTfManager(), layer_destroyed));
+  EXPECT_EQ(planner->cleanup().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED);
+  EXPECT_TRUE(layer_destroyed);
+}
 
 class Tester : public ::testing::Test
 {
@@ -116,7 +158,7 @@ protected:
   nav_msgs::msg::OccupancyGrid map_;
   nav2::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_publisher_;
 
-  nav2::TransformBroadcaster::SharedPtr robot_pose_broadcaster_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   rclcpp::TimerBase::SharedPtr broadcast_timer_;
 
   ActionClient::SharedPtr action_client_;
@@ -134,7 +176,7 @@ Tester::Tester()
   executor_->add_node(tester_node_->get_node_base_interface());
   executor_thread_ = std::make_unique<nav2::NodeThread>(executor_);
 
-  robot_pose_broadcaster_ = nav2::create_transform_broadcaster(tester_node_);
+  tf_manager_ = nav2::create_transform_manager(tester_node_, false);
   action_client_ = tester_node_->create_action_client<Action>("compute_path_through_poses");
 
   map_publisher_ = tester_node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
@@ -149,7 +191,7 @@ Tester::~Tester()
   action_client_.reset();
   broadcast_timer_.reset();
   map_publisher_.reset();
-  robot_pose_broadcaster_.reset();
+  tf_manager_.reset();
   executor_thread_.reset();
   executor_.reset();
   tester_node_.reset();
@@ -316,7 +358,7 @@ void Tester::broadcastRobotPose()
   pose.transform.rotation.z = 0.0;
   pose.transform.rotation.w = 1.0;
 
-  robot_pose_broadcaster_->sendTransform(pose);
+  tf_manager_->sendTransform(pose);
 }
 
 void Tester::publishMap()

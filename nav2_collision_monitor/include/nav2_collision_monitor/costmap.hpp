@@ -29,7 +29,7 @@
 #include "nav2_msgs/msg/costmap.hpp"
 #include <nav2_ros_common/lifecycle_node.hpp>
 #include <nav2_ros_common/subscription.hpp>
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace nav2_collision_monitor
 {
@@ -53,7 +53,7 @@ public:
    * @brief Construct a CostmapSource.
    * @param node Weak pointer to the lifecycle node.
    * @param source_name Logical name of this source instance (for params/logs).
-   * @param tf_buffer Shared TF buffer for frame transforms.
+   * @param tf_manager Shared TF manager for frame transforms.
    * @param base_frame_id Robot base frame (e.g., "base_footprint").
    * @param global_frame_id Global frame of the costmap (e.g., "odom" or "map").
    * @param transform_tolerance Allowed TF age for transforms.
@@ -63,10 +63,10 @@ public:
   CostmapSource(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const nav2::TransformBuffer::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     const rclcpp::Duration & source_timeout,
     const bool base_shift_correction);
 
@@ -90,7 +90,7 @@ public:
    *
    * @details
    * - Returns false if no message has arrived or data are older than @ref source_timeout_.
-   * - Transforms points from costmap frame to @ref base_frame_id using @ref tf_buffer_.
+   * - Transforms points from costmap frame to @ref base_frame_id using @ref tf_manager_.
    * - Applies @ref cost_threshold_ and @ref treat_unknown_as_obstacle_.
    */
   bool getSourceData(

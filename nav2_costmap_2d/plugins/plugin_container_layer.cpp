@@ -60,7 +60,8 @@ void PluginContainerLayer::addPlugin(std::shared_ptr<Layer> plugin, std::string 
 {
   plugins_.push_back(plugin);
   auto node = node_.lock();
-  plugin->initialize(layered_costmap_, name_ + "." + layer_name, tf_, node, callback_group_);
+  plugin->initialize(layered_costmap_, name_ + "." + layer_name, tf_manager_, node,
+      callback_group_);
 }
 
 void PluginContainerLayer::updateBounds(

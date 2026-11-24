@@ -31,7 +31,7 @@
 #include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/parameter.hpp"
@@ -42,7 +42,7 @@ class TestBehavior : public Plugin
 {
 public:
   using ActionType = Action;
-  using Plugin::getCurrentPoseChecked;
+  using Plugin::getLatestPose;
 };
 
 using BehaviorTypes = ::testing::Types<
@@ -65,9 +65,9 @@ protected:
     node_->declare_parameter("transform_staleness_threshold", 10.0);
     // These tests exercise pose acquisition without requiring a costmap.
     node_->declare_parameter("behavior.projection_time", 0.0);
-    tf_ = std::make_shared<nav2::TransformBuffer>(node_->get_clock());
+    tf_manager_ = std::make_shared<nav2::TransformManager>(node_, false);
     behavior_ = std::make_unique<Behavior>();
-    behavior_->configure(node_, "behavior", tf_, nullptr, nullptr);
+    behavior_->configure(node_, "behavior", tf_manager_, nullptr, nullptr);
     behavior_->activate();
   }
 
@@ -79,7 +79,7 @@ protected:
 
   geometry_msgs::msg::TransformStamped setTransform(double age, bool is_static = false)
   {
-    tf_->clear();
+    tf_manager_->getRawBuffer()->clear();
     geometry_msgs::msg::TransformStamped transform;
     transform.header.frame_id = "odom";
     transform.child_frame_id = "base_link";
@@ -87,12 +87,12 @@ protected:
     transform.transform.translation.x = 1.0;
     transform.transform.translation.y = 2.0;
     transform.transform.rotation.w = 1.0;
-    EXPECT_TRUE(tf_->setTransform(transform, "test", is_static));
+    EXPECT_TRUE(tf_manager_->getRawBuffer()->setTransform(transform, "test", is_static));
     return transform;
   }
 
   nav2::LifecycleNode::SharedPtr node_;
-  nav2::TransformBuffer::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   std::unique_ptr<Behavior> behavior_;
 };
 
@@ -101,10 +101,13 @@ TYPED_TEST_SUITE(BehaviorPoseTest, BehaviorTypes);
 TYPED_TEST(BehaviorPoseTest, CheckedPosePreservesTimestampAndRejectsStaleness)
 {
   geometry_msgs::msg::PoseStamped pose;
-  EXPECT_FALSE(this->behavior_->getCurrentPoseChecked(pose));
+  std::string error;
+  EXPECT_FALSE(this->behavior_->getLatestPose(pose, &error));
+  EXPECT_FALSE(error.empty());
 
   const auto transform = this->setTransform(1.0);
-  ASSERT_TRUE(this->behavior_->getCurrentPoseChecked(pose));
+  ASSERT_TRUE(this->behavior_->getLatestPose(pose, &error));
+  EXPECT_TRUE(error.empty());
   EXPECT_EQ(pose.header, transform.header);
   EXPECT_DOUBLE_EQ(pose.pose.position.x, 1.0);
   EXPECT_DOUBLE_EQ(pose.pose.position.y, 2.0);
@@ -112,11 +115,12 @@ TYPED_TEST(BehaviorPoseTest, CheckedPosePreservesTimestampAndRejectsStaleness)
 
   const auto previous_pose = pose;
   this->setTransform(30.0);
-  EXPECT_FALSE(this->behavior_->getCurrentPoseChecked(pose));
+  EXPECT_FALSE(this->behavior_->getLatestPose(pose, &error));
+  EXPECT_NE(error.find("Stale transform"), std::string::npos);
   EXPECT_EQ(pose, previous_pose);
 
   this->setTransform(30.0, true);
-  EXPECT_TRUE(this->behavior_->getCurrentPoseChecked(pose));
+  EXPECT_TRUE(this->behavior_->getLatestPose(pose));
 }
 
 void prepareGoal(nav2_msgs::action::Spin::Goal & goal)
@@ -155,7 +159,7 @@ TYPED_TEST(BehaviorPoseTest, RechecksPoseEachCycle)
   EXPECT_EQ(stale_result.status, nav2_behaviors::Status::FAILED);
   EXPECT_EQ(stale_result.error_code, Action::Result::TF_ERROR);
 
-  this->tf_->clear();
+  this->tf_manager_->getRawBuffer()->clear();
   const auto missing_result = this->behavior_->onCycleUpdate();
   EXPECT_EQ(missing_result.status, nav2_behaviors::Status::FAILED);
   EXPECT_EQ(missing_result.error_code, Action::Result::TF_ERROR);
@@ -179,12 +183,12 @@ TYPED_TEST(BehaviorPoseTest, ZeroThresholdDisablesAgeCheck)
   this->behavior_->deactivate();
   this->behavior_->cleanup();
   this->node_->set_parameter(rclcpp::Parameter("transform_staleness_threshold", 0.0));
-  this->behavior_->configure(this->node_, "behavior", this->tf_, nullptr, nullptr);
+  this->behavior_->configure(this->node_, "behavior", this->tf_manager_, nullptr, nullptr);
   this->behavior_->activate();
 
   this->setTransform(30.0);
   geometry_msgs::msg::PoseStamped pose;
-  EXPECT_TRUE(this->behavior_->getCurrentPoseChecked(pose));
+  EXPECT_TRUE(this->behavior_->getLatestPose(pose));
 }
 
 class DummyCostmapSubscriber : public nav2_costmap_2d::CostmapSubscriber
@@ -216,7 +220,7 @@ TEST(SpinTest, ChecksTheRemainingMotionForCollisions)
   node->declare_parameter("behavior.min_rotational_vel", 0.4);
   node->declare_parameter("behavior.rotational_acc_lim", 3.2);
 
-  auto tf = std::make_shared<nav2::TransformBuffer>(node->get_clock());
+  auto tf_manager = std::make_shared<nav2::TransformManager>(node, false);
   geometry_msgs::msg::TransformStamped transform;
   transform.header.frame_id = "odom";
   transform.child_frame_id = "base_link";
@@ -224,7 +228,7 @@ TEST(SpinTest, ChecksTheRemainingMotionForCollisions)
   transform.transform.translation.x = 5.0;
   transform.transform.translation.y = 5.0;
   transform.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf->setTransform(transform, "test"));
+  ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(transform, "test"));
 
   auto costmap = std::make_shared<nav2_msgs::msg::Costmap>();
   costmap->metadata.resolution = 0.05;
@@ -254,7 +258,7 @@ TEST(SpinTest, ChecksTheRemainingMotionForCollisions)
   ASSERT_FALSE(collision_checker->isCollisionFree(pose));
 
   nav2_behaviors::Spin spin;
-  spin.configure(node, "behavior", tf, collision_checker, nullptr);
+  spin.configure(node, "behavior", tf_manager, collision_checker, nullptr);
   spin.activate();
   auto goal = std::make_shared<nav2_msgs::action::Spin::Goal>();
   goal->target_yaw = 1.0;

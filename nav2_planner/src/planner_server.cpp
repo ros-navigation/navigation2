@@ -85,7 +85,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
     get_logger(), "Costmap size: %d,%d",
     costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
 
-  tf_ = costmap_ros_->getTfBuffer();
+  tf_manager_ = costmap_ros_->getTfManager();
   try {
     param_handler_ = std::make_unique<ParameterHandler>(
       node, get_logger());
@@ -103,7 +103,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & state)
       RCLCPP_INFO(
         get_logger(), "Created global planner plugin %s of type %s",
         params_->planner_ids[i].c_str(), params_->planner_types[i].c_str());
-      planner->configure(node, params_->planner_ids[i], tf_, costmap_ros_);
+      planner->configure(node, params_->planner_ids[i], tf_manager_, costmap_ros_);
       planners_.insert({params_->planner_ids[i], planner});
     } catch (const std::exception & ex) {
       RCLCPP_FATAL(
@@ -216,9 +216,6 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   action_server_pose_.reset();
   action_server_poses_.reset();
   plan_publisher_.reset();
-  tf_.reset();
-
-  costmap_ros_->cleanup();
 
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
@@ -226,6 +223,8 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   }
 
   planners_.clear();
+  tf_manager_.reset();
+  costmap_ros_->cleanup();
   is_path_valid_service_.reset();
   costmap_thread_.reset();
   costmap_ = nullptr;

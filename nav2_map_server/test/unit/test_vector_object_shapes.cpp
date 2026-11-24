@@ -30,7 +30,7 @@
 #include "geometry_msgs/msg/point32.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 #include "nav2_msgs/msg/polygon_object.hpp"
 #include "nav2_msgs/msg/circle_object.hpp"
@@ -104,8 +104,7 @@ protected:
     nav2_msgs::msg::CircleObject::SharedPtr c1,
     nav2_msgs::msg::CircleObject::SharedPtr c2);
 
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   std::shared_ptr<PolygonWrapper> polygon_;
   std::shared_ptr<CircleWrapper> circle_;
@@ -121,10 +120,8 @@ Tester::Tester()
   polygon_ = std::make_shared<PolygonWrapper>(node_);
   circle_ = std::make_shared<CircleWrapper>(node_);
 
-  // Transform buffer and listener initialization
-  tf_buffer_ = nav2::create_transform_buffer(node_);
-  tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_);
+  // Transform manager initialization
+  tf_manager_ = nav2::create_transform_manager(node_);
 }
 
 Tester::~Tester()
@@ -134,8 +131,7 @@ Tester::~Tester()
 
   node_.reset();
 
-  tf_listener_.reset();
-  tf_buffer_.reset();
+  tf_manager_.reset();
 }
 
 void Tester::setPolygonParams(const std::string & uuid)
@@ -266,9 +262,6 @@ nav2_msgs::msg::CircleObject::SharedPtr Tester::makeCircleObject(
 
 rclcpp::Time Tester::sendTransform()
 {
-  nav2::TransformBroadcaster::SharedPtr tf_broadcaster =
-    nav2::create_transform_broadcaster(node_);
-
   geometry_msgs::msg::TransformStamped transform;
 
   // global_frame -> shape_frame transform
@@ -284,8 +277,8 @@ rclcpp::Time Tester::sendTransform()
   transform.transform.rotation.z = 0.0;
   transform.transform.rotation.w = 1.0;
 
-  tf_broadcaster->sendTransform(transform);
-  tf_buffer_->setTransform(transform, "test", false);
+  tf_manager_->sendTransform(transform);
+  tf_manager_->getRawBuffer()->setTransform(transform, "test", false);
 
   return transform.header.stamp;
 }
@@ -576,7 +569,9 @@ TEST_F(Tester, testPolygonDifferentFrame)
   ASSERT_NEAR(poly->points[3].y, -1.0, EPSILON);
 
   // Transform shape coordinates to global frame
-  ASSERT_TRUE(polygon_->toFrame(GLOBAL_FRAME_ID, tf_buffer_, 1.0));
+  std::string error = "previous failure";
+  ASSERT_TRUE(polygon_->toFrame(GLOBAL_FRAME_ID, tf_manager_, 1.0, &error));
+  EXPECT_TRUE(error.empty());
 
   // Verify that shape coordinates were transformed to global frame successfully
   poly = polygon_->getPoly();
@@ -590,7 +585,8 @@ TEST_F(Tester, testPolygonDifferentFrame)
   ASSERT_NEAR(poly->points[3].y, -1.0 + FRAME_SHIFT, EPSILON);
 
   // Try to transform to incorrect frame
-  ASSERT_FALSE(polygon_->toFrame("incorrect_frame", tf_buffer_, 0.1));
+  ASSERT_FALSE(polygon_->toFrame("incorrect_frame", tf_manager_, 0.1, &error));
+  EXPECT_NE(error.find("incorrect_frame"), std::string::npos);
 }
 
 TEST_F(Tester, testPolygonTransformAtTimestamp)
@@ -601,7 +597,7 @@ TEST_F(Tester, testPolygonTransformAtTimestamp)
   polygon_object->header.stamp = transform_stamp;
   ASSERT_TRUE(polygon_->setParams(polygon_object));
 
-  ASSERT_TRUE(polygon_->toFrame(GLOBAL_FRAME_ID, tf_buffer_, 0.1));
+  ASSERT_TRUE(polygon_->toFrame(GLOBAL_FRAME_ID, tf_manager_, 0.1));
 
   const auto poly = polygon_->getPoly();
   ASSERT_NEAR(poly->points[0].x, 1.0 + FRAME_SHIFT, EPSILON);
@@ -615,7 +611,7 @@ TEST_F(Tester, testPolygonTransformAtTimestampFailsWithoutTransform)
   polygon_object->header.stamp = node_->now();
   ASSERT_TRUE(polygon_->setParams(polygon_object));
 
-  ASSERT_FALSE(polygon_->toFrame(GLOBAL_FRAME_ID, tf_buffer_, 0.1));
+  ASSERT_FALSE(polygon_->toFrame(GLOBAL_FRAME_ID, tf_manager_, 0.1));
 }
 
 //---------- Circles testcases ----------
@@ -809,7 +805,9 @@ TEST_F(Tester, testCircleDifferentFrame)
   ASSERT_NEAR(center->x, 0.0, EPSILON);
   ASSERT_NEAR(center->y, 0.0, EPSILON);
   // Transform shape coordinates to global frame
-  ASSERT_TRUE(circle_->toFrame(GLOBAL_FRAME_ID, tf_buffer_, 1.0));
+  std::string error = "previous failure";
+  ASSERT_TRUE(circle_->toFrame(GLOBAL_FRAME_ID, tf_manager_, 1.0, &error));
+  EXPECT_TRUE(error.empty());
 
   // Verify that shape coordinates were transformed to global frame successfully
   center = circle_->getCenter();
@@ -817,7 +815,8 @@ TEST_F(Tester, testCircleDifferentFrame)
   ASSERT_NEAR(center->y, FRAME_SHIFT, EPSILON);
 
   // Try to transform to incorrect frame
-  ASSERT_FALSE(circle_->toFrame("incorrect_frame", tf_buffer_, 0.1));
+  ASSERT_FALSE(circle_->toFrame("incorrect_frame", tf_manager_, 0.1, &error));
+  EXPECT_NE(error.find("incorrect_frame"), std::string::npos);
 }
 
 // Reference implementation: check every cell of the shape's bounding box

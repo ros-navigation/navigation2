@@ -17,8 +17,8 @@
 #include <mutex>
 #include <vector>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_route/goal_intent_extractor.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_route
 {
@@ -29,7 +29,7 @@ void GoalIntentExtractor::configure(
   nav2::LifecycleNode::SharedPtr node,
   Graph & graph,
   GraphToIDMap * id_to_graph_map,
-  nav2::TransformBuffer::SharedPtr tf,
+  nav2::TransformManager::SharedPtr tf_manager,
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
   const std::string & route_frame,
   const std::string & base_frame)
@@ -37,7 +37,7 @@ void GoalIntentExtractor::configure(
   logger_ = node->get_logger();
   id_to_graph_map_ = id_to_graph_map;
   graph_ = &graph;
-  tf_ = tf;
+  tf_manager_ = tf_manager;
   clock_ = node->get_clock();
   costmap_subscriber_ = costmap_subscriber;
   route_frame_ = route_frame;
@@ -80,9 +80,14 @@ geometry_msgs::msg::PoseStamped GoalIntentExtractor::transformPose(
       logger_,
       "Request pose in %s frame. Converting to route server frame: %s.",
       pose.header.frame_id.c_str(), target_frame.c_str());
-    if (!nav2_util::transformPoseInTargetFrame(pose, pose, *tf_, target_frame)) {
-      throw nav2_core::RouteTFError("Failed to transform starting pose to: " + target_frame);
+    std::string pose_result_error;
+    const auto pose_result = tf_manager_->transformStampedPose(
+      target_frame, pose, 0.1, &pose_result_error);
+    if (!pose_result) {
+      throw nav2_core::RouteTFError("Failed to transform starting pose to: " + target_frame + ": " +
+          pose_result_error);
     }
+    pose = *pose_result;
   }
   return pose;
 }
@@ -115,12 +120,14 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
   if (goal->use_start) {
     start_pose = goal->start;
   } else {
-    if (!nav2_util::getFreshPose(
-        *tf_, route_frame_, base_frame_, clock_->now(), transform_staleness_threshold_,
-        start_pose))
-    {
-      throw nav2_core::RouteTFError("Failed to obtain starting pose in: " + route_frame_);
+    std::string tf_error_details;
+    const auto start_pose_result = tf_manager_->getLatestPose(
+      route_frame_, base_frame_, transform_staleness_threshold_, &tf_error_details);
+    if (!start_pose_result) {
+      throw nav2_core::RouteTFError("Failed to obtain starting pose in: " + route_frame_ + ": " +
+          tf_error_details);
     }
+    start_pose = *start_pose_result;
   }
 
   // transform to route_frame

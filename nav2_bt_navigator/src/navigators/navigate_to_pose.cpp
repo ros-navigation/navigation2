@@ -16,6 +16,7 @@
 #include <string>
 #include <memory>
 #include <limits>
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_bt_navigator/navigators/navigate_to_pose.hpp"
 #include "nav2_util/path_utils.hpp"
 #include "nav2_msgs/msg/tracking_feedback.hpp"
@@ -126,14 +127,15 @@ NavigateToPoseNavigator::onLoop()
   auto feedback_msg = std::make_shared<ActionT::Feedback>();
 
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getFreshPose(
-      *feedback_utils_.tf, feedback_utils_.global_frame,
-      feedback_utils_.robot_frame, clock_->now(),
-      transform_staleness_threshold_, current_pose))
-  {
-    RCLCPP_ERROR(logger_, "Robot pose is not available.");
+  std::string tf_error_details;
+  const auto current_pose_result = feedback_utils_.tf_manager->getLatestPose(
+    feedback_utils_.global_frame, feedback_utils_.robot_frame, transform_staleness_threshold_,
+      &tf_error_details);
+  if (!current_pose_result) {
+    RCLCPP_ERROR(logger_, "Robot pose is not available: %s", tf_error_details.c_str());
     return;
   }
+  current_pose = *current_pose_result;
 
   auto blackboard = bt_action_server_->getBlackboard();
 
@@ -225,37 +227,36 @@ NavigateToPoseNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
 bool
 NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
 {
-  geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getFreshPose(
-      *feedback_utils_.tf, feedback_utils_.global_frame,
-      feedback_utils_.robot_frame, clock_->now(),
-      transform_staleness_threshold_, current_pose))
-  {
+  std::string current_pose_error;
+  const auto current_pose = feedback_utils_.tf_manager->getLatestPose(
+    feedback_utils_.global_frame, feedback_utils_.robot_frame, transform_staleness_threshold_,
+      &current_pose_error);
+  if (!current_pose) {
     bt_action_server_->setInternalError(
       ActionT::Result::TF_ERROR,
-      "Initial robot pose is not available.");
+      "Initial robot pose is not available: " + current_pose_error);
     return false;
   }
 
-  geometry_msgs::msg::PoseStamped goal_pose;
-  if (!nav2_util::transformPoseInTargetFrame(
-      goal->pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
-      feedback_utils_.transform_tolerance))
-  {
+  std::string goal_pose_error;
+  const auto goal_pose = feedback_utils_.tf_manager->transformStampedPose(
+    feedback_utils_.global_frame, goal->pose,
+    feedback_utils_.transform_tolerance, &goal_pose_error);
+  if (!goal_pose) {
     bt_action_server_->setInternalError(
       ActionT::Result::TF_ERROR,
       "Failed to transform a goal pose provided with frame_id '" +
       goal->pose.header.frame_id +
       "' to the global frame '" +
       feedback_utils_.global_frame +
-      "'.");
+      "': " + goal_pose_error);
     return false;
   }
 
   RCLCPP_INFO(
     logger_, "Begin navigating from current location (%.2f, %.2f) to (%.2f, %.2f)",
-    current_pose.pose.position.x, current_pose.pose.position.y,
-    goal_pose.pose.position.x, goal_pose.pose.position.y);
+    current_pose->pose.position.x, current_pose->pose.position.y,
+    goal_pose->pose.position.x, goal_pose->pose.position.y);
 
   // Reset state for new action feedback
   start_time_ = clock_->now();
@@ -264,7 +265,7 @@ NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
   previous_path_ = nav_msgs::msg::Path();
 
   // Update the goal pose and path on the blackboard
-  blackboard->set(goal_blackboard_id_, goal_pose);
+  blackboard->set(goal_blackboard_id_, *goal_pose);
   blackboard->set(path_blackboard_id_, nav_msgs::msg::Path());
 
   return true;
