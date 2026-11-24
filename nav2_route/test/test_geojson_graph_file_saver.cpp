@@ -14,6 +14,7 @@
 
 #include <gtest/gtest.h>
 #include <fstream>
+#include <limits>
 #include <string>
 #include <nlohmann/json.hpp>
 
@@ -343,6 +344,34 @@ TEST(GeoJsonGraphFileSaver, sample_graph)
   std::string type;
   type = operations[1].metadata.getValue("type", type);
   EXPECT_EQ(type, "jpg");
+}
+
+TEST(GeoJsonGraphFileSaver, test_deleted_node_edges)
+{
+  Graph graph;
+  graph.resize(4);
+  for (unsigned int i = 0; i != graph.size(); i++) {
+    graph[i].nodeid = i + 1;
+    graph[i].coords.x = static_cast<float>(i);
+    graph[i].coords.frame_id = "map";
+  }
+  EdgeCost edge_cost;
+  edge_cost.cost = 1.0f;
+  graph[0].addEdge(edge_cost, &graph[1], 1);
+  graph[1].addEdge(edge_cost, &graph[2], 2);
+  graph[2].addEdge(edge_cost, &graph[3], 3);
+  graph[1].nodeid = std::numeric_limits<int>::max();
+
+  const std::string file_path = "deleted_node_graph.geojson";
+  GeoJsonGraphFileSaver saver;
+  ASSERT_TRUE(saver.saveGraphToFile(graph, file_path));
+
+  Graph loaded;
+  GraphToIDMap ids;
+  GeoJsonGraphFileLoader loader;
+  EXPECT_NO_THROW(loader.loadGraphFromFile(loaded, ids, file_path));
+  EXPECT_EQ(loaded.size(), 3u);
+  std::filesystem::remove(file_path);
 }
 
 int main(int argc, char ** argv)
