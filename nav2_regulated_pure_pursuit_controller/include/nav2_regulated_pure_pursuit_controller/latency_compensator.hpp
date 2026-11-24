@@ -19,6 +19,7 @@
 
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "rclcpp/time.hpp"
 #include "nav2_regulated_pure_pursuit_controller/parameter_handler.hpp"
@@ -80,21 +81,14 @@ public:
     const rclcpp::Time & now) const;
 
 protected:
-  struct StampedCommand
-  {
-    double stamp;
-    double linear;
-    double angular;
-  };
-
   /**
    * @brief Get the command acting on an axis at a time, issued at or before the time less the
    * axis delay
    */
-  const StampedCommand * commandAt(double t, double delay) const;
+  const geometry_msgs::msg::Twist * commandAt(double t, double delay) const;
 
   Parameters * params_;
-  std::deque<StampedCommand> history_;
+  std::deque<geometry_msgs::msg::TwistStamped> history_;
 };
 
 /**

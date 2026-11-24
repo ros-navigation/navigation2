@@ -44,31 +44,37 @@ void LatencyCompensator::recordCommand(
   const geometry_msgs::msg::Twist & cmd, const rclcpp::Time & stamp)
 {
   const double t = stamp.seconds();
-  if (!history_.empty() && t < history_.back().stamp) {
+  const double last_t =
+    history_.empty() ? 0.0 : rclcpp::Time(history_.back().header.stamp).seconds();
+  if (!history_.empty() && t < last_t) {
     // Time jumped backwards (e.g. bag or simulation restart), so history is meaningless
     history_.clear();
   }
 
-  if (!history_.empty() && t == history_.back().stamp) {
-    history_.back() = {t, cmd.linear.x, cmd.angular.z};
+  geometry_msgs::msg::TwistStamped stamped_cmd;
+  stamped_cmd.header.stamp = stamp;
+  stamped_cmd.twist = cmd;
+  if (!history_.empty() && t == last_t) {
+    history_.back() = stamped_cmd;
   } else {
-    history_.push_back({t, cmd.linear.x, cmd.angular.z});
+    history_.push_back(stamped_cmd);
   }
 
   // Keep the newest command older than the max delay, as it is still acting on the robot
   const double oldest_needed =
     t - std::max(params_->model_delay_vx, params_->model_delay_wz) - 1.0;
-  while (history_.size() >= 2 && history_[1].stamp <= oldest_needed) {
+  while (history_.size() >= 2 &&
+    rclcpp::Time(history_[1].header.stamp).seconds() <= oldest_needed)
+  {
     history_.pop_front();
   }
 }
 
-const LatencyCompensator::StampedCommand * LatencyCompensator::commandAt(
-  double t, double delay) const
+const geometry_msgs::msg::Twist * LatencyCompensator::commandAt(double t, double delay) const
 {
   for (auto it = history_.rbegin(); it != history_.rend(); ++it) {
-    if (it->stamp <= t - delay + 1e-9) {
-      return &(*it);
+    if (rclcpp::Time(it->header.stamp).seconds() <= t - delay + 1e-9) {
+      return &it->twist;
     }
   }
   return nullptr;
@@ -105,10 +111,10 @@ PredictedState LatencyCompensator::predict(
       double target_v = v;
       double target_w = w;
       if (const auto * cmd = commandAt(t, params_->model_delay_vx)) {
-        target_v = cmd->linear;
+        target_v = cmd->linear.x;
       }
       if (const auto * cmd = commandAt(t, params_->model_delay_wz)) {
-        target_w = cmd->angular;
+        target_w = cmd->angular.z;
       }
 
       const double v_next = v + alpha_v * (target_v - v);
