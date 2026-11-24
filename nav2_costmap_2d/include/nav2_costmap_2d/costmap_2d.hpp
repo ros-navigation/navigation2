@@ -183,6 +183,17 @@ public:
   void mapToWorldNoBounds(int mx, int my, double & wx, double & wy) const;
 
   /**
+   * @brief  Convert from continuous map coordinates to world coordinates, the inverse of
+   *         worldToMapContinuous. Cell (i, j) spans [i, i + 1) x [j, j + 1), so integer
+   *         coordinates give the cell corner rather than its center
+   * @param  mx The continuous x map coordinate
+   * @param  my The continuous y map coordinate
+   * @param  wx Will be set to the associated world x coordinate
+   * @param  wy Will be set to the associated world y coordinate
+   */
+  void mapToWorldContinuous(float mx, float my, double & wx, double & wy) const;
+
+  /**
    * @brief  Convert from world coordinates to map coordinates
    * @param  wx The x world coordinate
    * @param  wy The y world coordinate
