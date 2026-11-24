@@ -2,9 +2,6 @@
 nav2_add_gtest(test_task_executors
   test_task_executors.cpp
 )
-get_target_property(nav2_core_include_dirs
-  nav2_core::nav2_core INTERFACE_INCLUDE_DIRECTORIES)
-target_include_directories(test_task_executors BEFORE PRIVATE ${nav2_core_include_dirs})
 target_link_libraries(test_task_executors
   ${library_name}
   wait_at_waypoint

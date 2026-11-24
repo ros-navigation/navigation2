@@ -6,9 +6,6 @@ nav2_add_gtest(test_regulated_pp
   test_dwpp_functions.cpp
   path_utils/path_utils.cpp
 )
-get_target_property(nav2_controller_include_dirs
-  nav2_controller::simple_goal_checker INTERFACE_INCLUDE_DIRECTORIES)
-target_include_directories(test_regulated_pp BEFORE PRIVATE ${nav2_controller_include_dirs})
 target_link_libraries(test_regulated_pp
   ${library_name}
   geometry_msgs::geometry_msgs

@@ -43,10 +43,9 @@
 #include <string>
 #include <vector>
 
-#include "nav2_costmap_2d/layer.hpp"
+#include "nav2_costmap_2d/costmap_layer.hpp"
 #include "action_msgs/msg/goal_status_array.hpp"
 #include "geometry_msgs/msg/point.hpp"
-#include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/path.hpp"
 
 namespace nav2_costmap_2d
@@ -55,23 +54,26 @@ namespace nav2_costmap_2d
  * @class RouteCorridorLayer
  * @brief Builds a path corridor and applies costs to its three-pixel boundary.
  */
-class RouteCorridorLayer : public Layer
+class RouteCorridorLayer : public CostmapLayer
 {
 public:
   /**
-   * @brief Load parameters and initialize the path subscription and mask publisher.
+   * @brief Load parameters and initialize the path subscription and layer costmap.
    */
   void onInitialize() override;
 
   /**
    * @brief Keep the latest path across costmap clears and resets.
    */
-  void reset() override {}
+  void reset() override;
+
+  /** @brief Match the master costmap size and invalidate the corridor mask. */
+  void matchSize() override;
 
   /**
    * @brief Report that this layer does not support clearing operations.
    */
-  bool isClearable() override {return false;}
+  bool isClearable() override {return true;}
 
   /**
    * @brief Record the robot pose and expand update bounds to the full costmap.
@@ -108,10 +110,10 @@ protected:
   void goalStatusCallback(const action_msgs::msg::GoalStatusArray::SharedPtr status);
 
   /** @brief Reset the master costmap and the other plugins and filters. */
-  void clearCostmaps(Costmap2D & master);
+  void resetCorridorStates(Costmap2D & master);
 
   /**
-   * @brief Build and publish the masks.
+   * @brief Build the corridor mask and layer costmap.
    * @param master Costmap providing the mask dimensions, resolution, and origin
    */
   void buildMask(Costmap2D & master);
@@ -137,7 +139,6 @@ protected:
   bool goal_clear_pending_{false};
   std::mutex mutex_;
   std::vector<Segment> path_segments_;
-  nav_msgs::msg::OccupancyGrid mask_;
   std::vector<bool> corridor_cells_;
   std::vector<size_t> boundary_indices_;
   double max_deviation_{1.0};
@@ -146,7 +147,6 @@ protected:
   double robot_y_{0.0};
   bool pose_valid_{false};
   unsigned char recovery_cost_{200};
-  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>::SharedPtr mask_pub_;
 };
 }  // namespace nav2_costmap_2d
 #endif  // NAV2_COSTMAP_2D__ROUTE_CORRIDOR_LAYER_HPP_

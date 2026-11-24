@@ -232,10 +232,7 @@ def generate_launch_description() -> LaunchDescription:
 
     remove_temp_sdf_file = RegisterEventHandler(event_handler=OnShutdown(
         on_shutdown=[
-            OpaqueFunction(
-                function=lambda _: os.remove(world_sdf)
-                if os.path.exists(world_sdf) else None
-            )
+            OpaqueFunction(function=lambda _: os.remove(world_sdf))
         ]))
 
     gazebo_client = IncludeLaunchDescription(

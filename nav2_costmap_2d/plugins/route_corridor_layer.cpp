@@ -24,24 +24,12 @@
 
 PLUGINLIB_EXPORT_CLASS(nav2_costmap_2d::RouteCorridorLayer, nav2_costmap_2d::Layer)
 
+using nav2_costmap_2d::FREE_SPACE;
 using nav2_costmap_2d::LETHAL_OBSTACLE;
 using nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
 
 namespace nav2_costmap_2d
 {
-
-// Convert a world coordinate to a cell index.
-int world_to_cell(double world, double origin, double resolution, int limit)
-{
-  int cell = std::clamp(std::ceil((world - origin) / resolution - 0.5), 0.0, static_cast<double>(limit));
-  return cell;
-}
-
-// Convert a cell index to a world coordinate (center of the cell).
-double cell_to_world(int cell, double origin, double resolution)
-{
-  return origin + (cell + 0.5) * resolution;
-}
 
 void RouteCorridorLayer::onInitialize()
 {
@@ -54,8 +42,6 @@ void RouteCorridorLayer::onInitialize()
   enabled_ =                      node->declare_or_get_parameter(name_ + ".enabled", true);
   const auto path_topic =         node->declare_or_get_parameter<std::string>(
                                     name_ + ".path_topic", "/plan");
-  const auto map_topic =          node->declare_or_get_parameter<std::string>(
-                                    name_ + ".map_topic", "~/" + name_ + "/map");
   max_deviation_ =                node->declare_or_get_parameter(name_ + ".max_deviation", 1.0);
   const auto recovery_cost =      node->declare_or_get_parameter(name_ + ".recovery_cost", 200);
   const auto goal_status_topics = node->declare_or_get_parameter(
@@ -72,10 +58,8 @@ void RouteCorridorLayer::onInitialize()
   recovery_cost_ = static_cast<unsigned char>(recovery_cost);
   current_ = true;
 
-  // Create corridor map publisher
-  mask_pub_ = node->create_publisher<nav_msgs::msg::OccupancyGrid>(
-    map_topic, rclcpp::QoS(1).transient_local().reliable());
-  mask_pub_->on_activate();
+  default_value_ = FREE_SPACE;
+  matchSize();
 
   // Path subscriber and pathCallback
   path_sub_ = node->create_subscription<nav_msgs::msg::Path>(
@@ -91,6 +75,13 @@ void RouteCorridorLayer::onInitialize()
         std::bind(&RouteCorridorLayer::goalStatusCallback, this, std::placeholders::_1),
         rclcpp::QoS(1).reliable().transient_local(), callback_group_));
   }
+}
+
+void RouteCorridorLayer::matchSize()
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+  CostmapLayer::matchSize();
+  built_ = false;
 }
 
 void RouteCorridorLayer::pathCallback(const nav_msgs::msg::Path::SharedPtr path)
@@ -169,20 +160,16 @@ void RouteCorridorLayer::goalStatusCallback(
   path_segments_.clear();
   boundary_indices_.clear();
   std::fill(corridor_cells_.begin(), corridor_cells_.end(), false);
-  std::fill(mask_.data.begin(), mask_.data.end(), 0);
+  std::lock_guard<Costmap2D::mutex_t> grid_lock(*getMutex());
+  resetMaps();
   built_ = false;
-  if (!mask_.data.empty()) {
-    mask_.header.stamp = clock_->now();
-    mask_.info.map_load_time = mask_.header.stamp;
-    mask_pub_->publish(mask_);
-  }
   RCLCPP_INFO(
     logger_, "Navigation goal %s: cleared corridor mask; costmap reset queued",
     newest->status == GoalStatus::STATUS_SUCCEEDED ? "succeeded" : "aborted");
 }
 
 // Clear costmaps
-void RouteCorridorLayer::clearCostmaps(Costmap2D & master)
+void RouteCorridorLayer::resetCorridorStates(Costmap2D & master)
 {
   // The caller runs in the costmap update thread with the costmap locked.
   master.resetMap(0, 0, master.getSizeInCellsX(), master.getSizeInCellsY());
@@ -202,32 +189,34 @@ void RouteCorridorLayer::clearCostmaps(Costmap2D & master)
 void RouteCorridorLayer::updateCosts(
   Costmap2D & master, int min_i, int min_j, int max_i, int max_j)
 {
-  // Assign high cost to the corridor
+  
   std::lock_guard<std::mutex> lock(mutex_);
   if (!enabled_) {
     return;
   }
   if (goal_clear_pending_) {
-    clearCostmaps(master);
+    resetCorridorStates(master);
   }
-  if (!built_ || mask_.info.width != master.getSizeInCellsX() ||
-    mask_.info.height != master.getSizeInCellsY() ||
-    mask_.info.resolution != static_cast<float>(master.getResolution()) ||
-    mask_.info.origin.position.x != master.getOriginX() ||
-    mask_.info.origin.position.y != master.getOriginY())
+  std::lock_guard<Costmap2D::mutex_t> grid_lock(*getMutex());
+  if (!built_ || getSizeInCellsX() != master.getSizeInCellsX() ||
+    getSizeInCellsY() != master.getSizeInCellsY() ||
+    getResolution() != master.getResolution() ||
+    getOriginX() != master.getOriginX() ||
+    getOriginY() != master.getOriginY())
   {
     buildMask(master);
   }
-  const unsigned char outside_cost = pose_valid_ && !insideCorridor(robot_x_, robot_y_) ?
+  const unsigned char outside_cost = pose_valid_ && !insideCorridor(robot_x_, robot_y_) ? // Assign high cost to the corridor
     recovery_cost_ : LETHAL_OBSTACLE;
   // The mask is rebuilt whenever the master geometry changes, so indices match.
   for (const size_t index : boundary_indices_) {
-    const int x = static_cast<int>(index % mask_.info.width);
-    const int y = static_cast<int>(index / mask_.info.width);
+    const int x = static_cast<int>(index % getSizeInCellsX());
+    const int y = static_cast<int>(index / getSizeInCellsX());
+    costmap_[index] = outside_cost;
     if (x >= min_i && x < max_i && y >= min_j && y < max_j) {
-      // Hard restriction includes unknown space. Recovery preserves all source costs.
+      
       master.setCost(x, y, outside_cost == LETHAL_OBSTACLE ? LETHAL_OBSTACLE :
-        std::max(master.getCost(x, y), outside_cost));
+        std::max(master.getCost(x, y), outside_cost));  //Preserve the original cost outside the corridor
     }
   }
 }
@@ -235,22 +224,12 @@ void RouteCorridorLayer::updateCosts(
 void RouteCorridorLayer::buildMask(Costmap2D & master)
 {
   const auto build_start = std::chrono::steady_clock::now();
-  mask_.header.frame_id = layered_costmap_->getGlobalFrameID();
-  mask_.header.stamp = clock_->now();
-  mask_.info.map_load_time = mask_.header.stamp;
-  mask_.info.resolution = master.getResolution();
-  mask_.info.width = master.getSizeInCellsX();
-  mask_.info.height = master.getSizeInCellsY();
-  mask_.info.origin.position.x = master.getOriginX();
-  mask_.info.origin.position.y = master.getOriginY();
-  mask_.info.origin.orientation.w = 1.0;
-  const int width = static_cast<int>(mask_.info.width);
-  const int height = static_cast<int>(mask_.info.height);
-  const double resolution = master.getResolution();
-  const double origin_x = master.getOriginX();
-  const double origin_y = master.getOriginY();
+  resizeMap(
+    master.getSizeInCellsX(), master.getSizeInCellsY(), master.getResolution(),
+    master.getOriginX(), master.getOriginY());
+  const int width = static_cast<int>(getSizeInCellsX());
+  const int height = static_cast<int>(getSizeInCellsY());
   const size_t cell_count = static_cast<size_t>(width) * height;
-  mask_.data.assign(cell_count, 0);
   corridor_cells_.assign(cell_count, false); // a boolean mask of corridor cells.
   std::vector<size_t> corridor_indices;
   // Fewer than two segments: publish a clear mask and reset costmaps.
@@ -259,25 +238,28 @@ void RouteCorridorLayer::buildMask(Costmap2D & master)
   //   built_ = true;
 
   //   path_segments_.clear();
-  //   mask_pub_->publish(mask_);
   //   RCLCPP_INFO(
   //     logger_, "Cleared corridor mask (%u x %u cells; excludes publishing)",
-  //     mask_.info.width, mask_.info.height);
-  //   clearCostmaps(master);
+  //     getSizeInCellsX(), getSizeInCellsY());
+  //   resetCorridorStates(master);
   //   return;
   // }
   for (const auto & segment : path_segments_) {
     const double dx = segment.end.x - segment.start.x;
     const double dy = segment.end.y - segment.start.y;
     const double length_sq = dx * dx + dy * dy;
-    const int min_y = world_to_cell(
-      std::min(segment.start.y, segment.end.y) - max_deviation_, origin_y, resolution, height);
-    const int max_y = world_to_cell(
-      std::max(segment.start.y, segment.end.y) + max_deviation_, origin_y, resolution, height);
+    int unused_x, min_y, max_y;
+    master.worldToMapEnforceBounds(
+      master.getOriginX(), std::min(segment.start.y, segment.end.y) - max_deviation_,
+      unused_x, min_y);
+    master.worldToMapEnforceBounds(
+      master.getOriginX(), std::max(segment.start.y, segment.end.y) + max_deviation_,
+      unused_x, max_y);
 
     // Iterate only the regin near the segments to save compute. Mark corridor cells and cache their indices for later boundary expansion.
     for (int y = min_y; y < height && y <= max_y; ++y) {
-      const double wy = cell_to_world(y, origin_y, resolution); // Center of the cell in world coordinates.
+      double wx, wy;
+      master.mapToWorld(0, y, wx, wy); // Center of the cell in world coordinates.
       double t_min = 0.0; 
       double t_max = 1.0;
       if (dy != 0.0) {
@@ -288,16 +270,17 @@ void RouteCorridorLayer::buildMask(Costmap2D & master)
       }
       const double x1 = segment.start.x + t_min * dx;
       const double x2 = segment.start.x + t_max * dx;
-      const int min_x = world_to_cell(
-        std::min(x1, x2) - max_deviation_, origin_x, resolution, width);
-      const int max_x = world_to_cell(
-        std::max(x1, x2) + max_deviation_, origin_x, resolution, width);
+      int min_x, max_x, unused_y;
+      master.worldToMapEnforceBounds(
+        std::min(x1, x2) - max_deviation_, wy, min_x, unused_y);
+      master.worldToMapEnforceBounds(
+        std::max(x1, x2) + max_deviation_, wy, max_x, unused_y);
       for (int x = min_x; x < width && x <= max_x; ++x) {
         const size_t index = static_cast<size_t>(y) * width + x;
         if (corridor_cells_[index]) {
           continue;
         }
-        const double wx = cell_to_world(x, origin_x, resolution);
+        master.mapToWorld(x, y, wx, wy);
         const double t = length_sq > 0.0 ? std::clamp(
           ((wx - segment.start.x) * dx + (wy - segment.start.y) * dy) / length_sq,
           0.0, 1.0) : 0.0;
@@ -326,8 +309,8 @@ void RouteCorridorLayer::buildMask(Costmap2D & master)
           continue;
         }
         const size_t neighbor = static_cast<size_t>(ny) * width + nx;
-        if (!corridor_cells_[neighbor] && mask_.data[neighbor] == 0) {
-          mask_.data[neighbor] = 100;
+        if (!corridor_cells_[neighbor] && costmap_[neighbor] == FREE_SPACE) {
+          costmap_[neighbor] = LETHAL_OBSTACLE;
           boundary_indices_.push_back(neighbor);
         }
       }
@@ -338,11 +321,10 @@ void RouteCorridorLayer::buildMask(Costmap2D & master)
   // Measure construction time.
   const double build_ms = std::chrono::duration<double, std::milli>(
     std::chrono::steady_clock::now() - build_start).count();
-  mask_pub_->publish(mask_);
   RCLCPP_INFO(
     logger_, "Built corridor mask in %.3f ms (%u x %u cells, "
     "%zu corridor cells, %zu boundary cells; excludes publishing)",
-    build_ms, mask_.info.width, mask_.info.height,
+    build_ms, getSizeInCellsX(), getSizeInCellsY(),
     corridor_indices.size(), boundary_indices_.size());
 }
 
@@ -351,10 +333,13 @@ bool RouteCorridorLayer::insideCorridor(double wx, double wy) const
   if (!std::isfinite(wx) || !std::isfinite(wy)) {
     return false;
   }
-  const double mx = std::floor((wx - mask_.info.origin.position.x) / mask_.info.resolution);
-  const double my = std::floor((wy - mask_.info.origin.position.y) / mask_.info.resolution);
-  return mx >= 0 && my >= 0 && mx < mask_.info.width && my < mask_.info.height &&
-         corridor_cells_[static_cast<size_t>(my) * mask_.info.width + static_cast<size_t>(mx)];
+  unsigned int mx, my;
+  const auto * costmap = layered_costmap_->getCostmap();
+  if (!costmap->worldToMap(wx, wy, mx, my)) {
+    return false;
+  }
+  const auto index = static_cast<std::size_t>(my) * getSizeInCellsX() + mx;
+  return corridor_cells_[index];
 }
 
 // Update the bounds to include the entire master costmap
@@ -374,5 +359,18 @@ void RouteCorridorLayer::updateBounds(
   *min_y = std::min(*min_y, map->getOriginY());
   *max_x = std::max(*max_x, map->getOriginX() + map->getSizeInMetersX());
   *max_y = std::max(*max_y, map->getOriginY() + map->getSizeInMetersY());
+}
+
+// Reset clears path segments, empty both masks
+void RouteCorridorLayer::reset()
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+  path_segments_.clear();
+  built_ = false;
+  // Not sure if needed, needs testing
+  boundary_indices_.clear();
+  std::fill(corridor_cells_.begin(), corridor_cells_.end(), false);
+  std::lock_guard<Costmap2D::mutex_t> grid_lock(*getMutex());
+  resetMaps();
 }
 }  // namespace nav2_costmap_2d
