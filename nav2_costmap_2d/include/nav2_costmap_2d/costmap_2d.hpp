@@ -186,7 +186,10 @@ public:
    * @brief  Convert from continuous map coordinates to world coordinates, the inverse of
    *         worldToMapContinuous. Cell (i, j) spans [i, i + 1) x [j, j + 1), so integer
    *         coordinates give the cell corner rather than its center
-   * @param  mx The continuous x map coordinate
+   * @brief  Convert from continuous map coordinates to world coordinates, the inverse of
+   *         worldToMapContinuous. Cell (i, j) spans [i, i + 1) x [j, j + 1), so integer
+   *         coordinates give the cell corner rather than its center.
+   *         Pair only with algorithms providing continuous cell positioning.
    * @param  my The continuous y map coordinate
    * @param  wx Will be set to the associated world x coordinate
    * @param  wy Will be set to the associated world y coordinate
