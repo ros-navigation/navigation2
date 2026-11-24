@@ -98,11 +98,12 @@ public:
   void recordCommand(const geometry_msgs::msg::Twist & cmd, const rclcpp::Time & stamp);
 
   /**
-   * @brief Predict the robot state when a command issued at `now` takes effect
+   * @brief Predict the robot state when an angular command issued at `now` takes effect
    * @param measured_speed Robot velocity measured at measurement_time
    * @param measurement_time Time of the measured robot state
    * @param now Time the next command is issued, on the same clock as the recorded commands.
-   * The robot is simulated from measurement_time until the command takes effect at now + delay.
+   * The robot is simulated from measurement_time until now + the angular delay, when path
+   * tracking's turning command takes effect. Each axis replays its own command history.
    * @return State relative to the robot base frame at measurement_time
    */
   PredictedState predict(

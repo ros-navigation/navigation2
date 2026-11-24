@@ -95,9 +95,11 @@ PredictedState LatencyCompensator::predict(
   state.linear_vel = measured_speed.linear.x;
   state.angular_vel = measured_speed.angular.z;
 
-  // Commands issued since the measurement act on the robot too, so simulate from the measurement
+  // Commands issued since the measurement act on the robot too, so simulate from the measurement.
+  // Path tracking acts through the turning rate, so predict to when an angular command issued now
+  // takes effect, rather than a longer linear delay, which would track from too far ahead.
   const double age = std::max(0.0, (now - measurement_time).seconds());
-  const double horizon = age + std::max(linear_.delay, angular_.delay);
+  const double horizon = age + angular_.delay;
   if (horizon <= 0.0) {
     return state;
   }

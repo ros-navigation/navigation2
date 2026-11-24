@@ -216,6 +216,23 @@ TEST(LatencyCompensatorTest, modulateDeadband)
   EXPECT_DOUBLE_EQ(comp.modulateDeadband(0.05, d), 0.0);
 }
 
+TEST(LatencyCompensatorTest, predictsToTheAngularDelay)
+{
+  // A robot whose speed responds slowly but which turns promptly is predicted to when a turning
+  // command takes effect, not to the longer linear delay
+  AxisModel linear, angular;
+  linear.delay = 0.4;
+  angular.delay = 0.1;
+  LatencyCompensator comp(linear, angular);
+  comp.recordCommand(twist(1.0, 0.0), stamp(5.0));
+  EXPECT_NEAR(comp.predict(twist(1.0, 0.0), stamp(10.0), stamp(10.0)).x, 0.1, 1e-6);
+
+  // Without an angular delay the turning command acts at once, so only the pose's age is predicted
+  angular.delay = 0.0;
+  EXPECT_NEAR(comp.predict(twist(1.0, 0.0), stamp(10.0), stamp(10.0)).x, 0.0, 1e-9);
+  EXPECT_NEAR(comp.predict(twist(1.0, 0.0), stamp(10.0), stamp(10.05)).x, 0.05, 1e-6);
+}
+
 TEST(LatencyCompensatorTest, predictsFromMeasurementTime)
 {
   AxisModel model;
