@@ -273,14 +273,6 @@ static void configureDelays(MotionModel & model, float delay_vx, float delay_vy,
   model.on_configure(&param_handler, name, name + ".model");
 }
 
-static geometry_msgs::msg::Twist command(float vx, float vy, float wz)
-{
-  geometry_msgs::msg::Twist cmd;
-  cmd.linear.x = vx;
-  cmd.linear.y = vy;
-  cmd.angular.z = wz;
-  return cmd;
-}
 
 TEST(MotionModelTests, DelayReplayAllAxes)
 {
@@ -297,9 +289,9 @@ TEST(MotionModelTests, DelayReplayAllAxes)
 
   // Ring-buffer size of vx/vy/wz = 2/2/3 steps
   // After 3 pushes per axis the rings hold the most-recent 2/2/3 values.
-  model.onCommandSent(command(1.0f, 2.0f, 3.0f));
-  model.onCommandSent(command(5.0f, 6.0f, 7.0f));
-  model.onCommandSent(command(9.0f, 8.0f, 4.0f));
+  model.pushCommandHistory(1.0f, 2.0f, 3.0f);
+  model.pushCommandHistory(5.0f, 6.0f, 7.0f);
+  model.pushCommandHistory(9.0f, 8.0f, 4.0f);
 
   model.predict(state);
 
@@ -332,8 +324,8 @@ TEST(MotionModelTests, DelayVyIgnoredOnDiffDrive)
   DiffDriveMotionModel model;
   configureDelays(model, 0.0f, 0.10f, 0.0f);
   model.setConstraints(unboundedConstraints(), 0.05f, false);
-  model.onCommandSent(command(0.0f, 99.0f, 0.0f));
-  model.onCommandSent(command(0.0f, 99.0f, 0.0f));
+  model.pushCommandHistory(0.0f, 99.0f, 0.0f);
+  model.pushCommandHistory(0.0f, 99.0f, 0.0f);
 
   EXPECT_NO_THROW(model.predict(state));
   EXPECT_TRUE(state.vy.isApprox(Eigen::ArrayXXf::Zero(8, 20)));
@@ -347,8 +339,8 @@ TEST(MotionModelTests, DelayClearCommandHistory)
   DiffDriveMotionModel model;
   configureDelays(model, 0.10f, 0.0f, 0.15f);
   model.setConstraints(unboundedConstraints(), 0.05f, false);
-  model.onCommandSent(command(7.0f, 0.0f, 7.0f));
-  model.reset();
+  model.pushCommandHistory(7.0f, 0.0f, 7.0f);
+  model.clearCommandHistory();
   model.predict(state);
 
   EXPECT_TRUE(state.vx.col(1).isApproxToConstant(0.0f));
@@ -367,7 +359,7 @@ TEST(MotionModelTests, DelayCommandBaseSpeed)
   OmniMotionModel model;
   configureDelays(model, 0.0f, 0.0f, 0.0f);
   model.setConstraints(unboundedConstraints(), 0.05f, false);
-  model.onCommandSent(command(1.0f, 2.0f, 3.0f));
+  model.pushCommandHistory(1.0f, 2.0f, 3.0f);
   auto base_speed = model.getControlStart(speed);
   EXPECT_DOUBLE_EQ(base_speed.linear.x, 0.1);
   EXPECT_DOUBLE_EQ(base_speed.linear.y, 0.2);
@@ -377,8 +369,8 @@ TEST(MotionModelTests, DelayCommandBaseSpeed)
   // with a delay of a single model_dt, continues from the current speed
   configureDelays(model, 0.15f, 0.10f, 0.05f);
   model.setConstraints(unboundedConstraints(), 0.05f, false);
-  model.onCommandSent(command(1.0f, 2.0f, 3.0f));
-  model.onCommandSent(command(4.0f, 5.0f, 6.0f));
+  model.pushCommandHistory(1.0f, 2.0f, 3.0f);
+  model.pushCommandHistory(4.0f, 5.0f, 6.0f);
   base_speed = model.getControlStart(speed);
   EXPECT_DOUBLE_EQ(base_speed.linear.x, 4.0);
   EXPECT_DOUBLE_EQ(base_speed.linear.y, 5.0);
@@ -388,8 +380,8 @@ TEST(MotionModelTests, DelayCommandBaseSpeed)
   DiffDriveMotionModel diff_drive;
   configureDelays(diff_drive, 0.0f, 0.10f, 0.0f);
   diff_drive.setConstraints(unboundedConstraints(), 0.05f, false);
-  diff_drive.onCommandSent(command(0.0f, 2.0f, 0.0f));
-  diff_drive.onCommandSent(command(0.0f, 5.0f, 0.0f));
+  diff_drive.pushCommandHistory(0.0f, 2.0f, 0.0f);
+  diff_drive.pushCommandHistory(0.0f, 5.0f, 0.0f);
   EXPECT_DOUBLE_EQ(diff_drive.getControlStart(speed).linear.y, 0.2);
 }
 
@@ -470,7 +462,7 @@ TEST(MotionModelTests, DelayZeroSkipsShift)
   DiffDriveMotionModel model;
   configureDelays(model, 0.0f, 0.0f, 0.0f);
   model.setConstraints(unboundedConstraints(), 0.05f, false);
-  EXPECT_NO_THROW(model.onCommandSent(command(123.0f, 0.0f, 0.0f)));
+  EXPECT_NO_THROW(model.pushCommandHistory(123.0f, 0.0f, 0.0f));
   model.predict(state);
 
   EXPECT_TRUE(state.vx.isApproxToConstant(2.0f));

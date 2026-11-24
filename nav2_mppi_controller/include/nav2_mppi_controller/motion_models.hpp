@@ -99,20 +99,20 @@ public:
   }
 
   /**
-    * @brief Inform the model of the command sent to the robot, once per control cycle
-    * @param cmd Command sent
+    * @brief Push the most recently published command to the per-axis history
+    *        ring buffers. Called once per controller cycle from the optimizer.
     */
-  void onCommandSent(const geometry_msgs::msg::Twist & cmd)
+  void pushCommandHistory(float vx, float vy, float wz)
   {
-    pushOne(history_vx_, static_cast<float>(cmd.linear.x));
-    pushOne(history_vy_, static_cast<float>(cmd.linear.y));
-    pushOne(history_wz_, static_cast<float>(cmd.angular.z));
+    pushOne(history_vx_, vx);
+    pushOne(history_vy_, vy);
+    pushOne(history_wz_, wz);
   }
 
   /**
-    * @brief Forget the commands sent, when the robot's motion is no longer a continuation of them
+    * @brief Zero the ring buffers
     */
-  void reset()
+  void clearCommandHistory()
   {
     std::fill(history_vx_.begin(), history_vx_.end(), 0.0f);
     std::fill(history_vy_.begin(), history_vy_.end(), 0.0f);

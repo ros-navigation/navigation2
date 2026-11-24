@@ -885,10 +885,7 @@ TEST(OptimizerTests, CommandsInFlightTests)
   state.speed.linear.x = 0.1;
   state.speed.angular.z = 0.2;
   for (int i = 0; i < 3; ++i) {
-    geometry_msgs::msg::Twist cmd;
-    cmd.linear.x = 0.4;
-    cmd.angular.z = 0.6;
-    optimizer_tester.getMotionModel()->onCommandSent(cmd);
+    optimizer_tester.getMotionModel()->pushCommandHistory(0.4f, 0.0f, 0.6f);
   }
 
   // So the next command continues from the last command rather than the measured velocity
@@ -1253,7 +1250,7 @@ TEST(OptimizerTests, SoftResetKeepsCommandsAndSpeedLimitTests)
   geometry_msgs::msg::Twist moving;
   moving.linear.x = 0.5;
   for (int i = 0; i < 3; ++i) {
-    optimizer_tester.getMotionModel()->onCommandSent(moving);
+    optimizer_tester.getMotionModel()->pushCommandHistory(0.5f, 0.0f, 0.0f);
   }
   optimizer_tester.prepareWrapper(moving, moving);
   EXPECT_NEAR(optimizer_tester.grabState().speed.linear.x, 0.5, 1e-6);

@@ -264,12 +264,8 @@ void runPredictBenchmark(
   mppi::models::ControlConstraints constraints{0.5f, -0.35f, 0.5f, 1.9f, ax_max, ax_min, ax_min,
     ax_max, 3.5f};
   model.setConstraints(constraints, 0.05f, false);
-  for (double v : {0.1, 0.2, 0.3, 0.4}) {
-    geometry_msgs::msg::Twist cmd;
-    cmd.linear.x = v;
-    cmd.linear.y = v;
-    cmd.angular.z = v;
-    model.onCommandSent(cmd);
+  for (float v : {0.1f, 0.2f, 0.3f, 0.4f}) {
+    model.pushCommandHistory(v, v, v);
   }
 
   mppi::models::State s;

@@ -216,7 +216,6 @@ void Optimizer::getParams()
   s.constraints = s.base_constraints;
 
   setMotionModel(motion_model_name);
-  // Parameter updates keep the active speed limit and the commands already sent
   parameters_handler_->addPostCallback([this]() {reset(false, false);});
 
   double controller_frequency;
@@ -250,8 +249,8 @@ void Optimizer::reset(bool reset_dynamic_speed_limits, bool reset_command_histor
   state_.reset(settings_.batch_size, settings_.time_steps);
   control_sequence_.reset(settings_.time_steps);
 
-  // Commands already sent are being executed or are still in flight. Soft resets (fallbacks,
-  // parameter updates) keep them so that the next command continues feasibly from them
+  // Commands already sent are being executed or are still in flight. Soft resets keep them so
+  // that the next command continues feasibly from them
   if (reset_command_history) {
     control_history_.fill({0.0f, 0.0f, 0.0f});
     last_command_vel_ = geometry_msgs::msg::Twist();
@@ -268,7 +267,7 @@ void Optimizer::reset(bool reset_dynamic_speed_limits, bool reset_command_histor
   // Rebuild the constraints from the base constraints, which a parameter update may have changed
   applySpeedLimit();
   if (reset_command_history) {
-    motion_model_->reset();
+    motion_model_->clearCommandHistory();
   }
   trajectory_validator_->initialize(
     parent_, name_ + ".TrajectoryValidator",
@@ -734,11 +733,14 @@ geometry_msgs::msg::TwistStamped Optimizer::getControlFromSequenceAsTwist(
   auto wz = control_sequence_.wz(offset);
   auto vy = isHolonomic() ? control_sequence_.vy(offset) : 0.0f;
 
-  auto cmd = isHolonomic() ?
-    utils::toTwistStamped(vx, vy, wz, stamp, costmap_ros_->getBaseFrameID()) :
-    utils::toTwistStamped(vx, wz, stamp, costmap_ros_->getBaseFrameID());
-  motion_model_->onCommandSent(cmd.twist);
-  return cmd;
+  // Update the command history for the motion model's latency compensation mechanism
+  motion_model_->pushCommandHistory(vx, vy, wz);
+
+  if (isHolonomic()) {
+    return utils::toTwistStamped(vx, vy, wz, stamp, costmap_ros_->getBaseFrameID());
+  }
+
+  return utils::toTwistStamped(vx, wz, stamp, costmap_ros_->getBaseFrameID());
 }
 
 void Optimizer::setMotionModel(const std::string & motion_model_name)
