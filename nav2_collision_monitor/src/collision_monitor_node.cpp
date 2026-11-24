@@ -456,6 +456,7 @@ void CollisionMonitor::process(const Velocity & cmd_vel_in, const std_msgs::msg:
       {
         action_polygon = nullptr;
         robot_action.polygon_name = "invalid source";
+        robot_action.invalid_source = source->getSourceName();
         robot_action.action_type = STOP;
         robot_action.req_vel.x = 0.0;
         robot_action.req_vel.y = 0.0;
@@ -648,9 +649,10 @@ void CollisionMonitor::notifyActionState(
     if (robot_action.polygon_name == "invalid source") {
       RCLCPP_WARN(
         get_logger(),
-        "Robot to stop due to invalid source."
+        "Robot to stop due to invalid source: %s."
         " Either due to data not published yet, or to lack of new data received within the"
-        " sensor timeout, or if impossible to transform data to base frame");
+        " sensor timeout, or if impossible to transform data to base frame",
+        robot_action.invalid_source.c_str());
     } else if (!action_polygon->isShapeSet()) {
       RCLCPP_WARN(
         get_logger(),
@@ -661,25 +663,30 @@ void CollisionMonitor::notifyActionState(
     } else {
       RCLCPP_INFO(
         get_logger(),
-        "Robot to stop due to %s polygon",
-        action_polygon->getName().c_str());
+        "Robot to stop due to %s polygon, triggered by: %s",
+        action_polygon->getName().c_str(),
+        summariseTriggeringSources(robot_action.triggering_points).c_str());
     }
   } else if (robot_action.action_type == SLOWDOWN) {
     RCLCPP_INFO(
       get_logger(),
-      "Robot to slowdown for %f percents due to %s polygon",
+      "Robot to slowdown for %f percents due to %s polygon, triggered by: %s",
       action_polygon->getSlowdownRatio() * 100,
-      action_polygon->getName().c_str());
+      action_polygon->getName().c_str(),
+      summariseTriggeringSources(robot_action.triggering_points).c_str());
   } else if (robot_action.action_type == LIMIT) {
     RCLCPP_INFO(
       get_logger(),
-      "Robot to limit speed due to %s polygon",
-      action_polygon->getName().c_str());
+      "Robot to limit speed due to %s polygon, triggered by: %s",
+      action_polygon->getName().c_str(),
+      summariseTriggeringSources(robot_action.triggering_points).c_str());
   } else if (robot_action.action_type == APPROACH) {
     RCLCPP_INFO(
       get_logger(),
-      "Robot to approach for %f seconds away from collision",
-      action_polygon->getTimeBeforeCollision());
+      "Robot to approach for %f seconds away from collision due to %s polygon, triggered by: %s",
+      action_polygon->getTimeBeforeCollision(),
+      action_polygon->getName().c_str(),
+      summariseTriggeringSources(robot_action.triggering_points).c_str());
   } else {  // robot_action.action_type == DO_NOTHING
     RCLCPP_INFO(
       get_logger(),
