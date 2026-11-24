@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <memory>
 #include <mutex>
 
@@ -459,6 +460,7 @@ geometry_msgs::msg::Twist GracefulController::rotateToTarget(double angle_to_tar
   vel.angular.z = std::copysign(1.0, vel.angular.z) * std::max(
     abs(vel.angular.z),
     params_->v_angular_min_in_place);
+  vel.angular.z = std::clamp(vel.angular.z, -params_->v_angular_max, params_->v_angular_max);
   return vel;
 }
 
