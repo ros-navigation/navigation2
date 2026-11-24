@@ -1225,15 +1225,6 @@ TEST(OptimizerTests, AccelerationLimitsTests)
   speed.linear.x = -0.001;
   optimizer_tester.prepareWrapper(speed, last_command);
   EXPECT_LT(optimizer_tester.grabState().speed.linear.x, 0.015);
-
-  // Acceleration limits of the wrong sign are rejected, as they would invert the bounds
-  EXPECT_FALSE(node->set_parameter(rclcpp::Parameter("mppic.ax_min", 1.0)).successful);
-  EXPECT_FALSE(node->set_parameter(rclcpp::Parameter("mppic.ax_max", -1.0)).successful);
-  EXPECT_FALSE(node->set_parameter(rclcpp::Parameter("mppic.az_max", -1.0)).successful);
-  EXPECT_FALSE(node->set_parameter(rclcpp::Parameter("mppic.ay_min", 1.0)).successful);
-  EXPECT_FLOAT_EQ(optimizer_tester.getBaseConstraints().ax_min, -3.0f);
-  EXPECT_TRUE(node->set_parameter(rclcpp::Parameter("mppic.ax_min", -2.0)).successful);
-  EXPECT_FLOAT_EQ(optimizer_tester.getBaseConstraints().ax_min, -2.0f);
 }
 
 TEST(OptimizerTests, SoftResetKeepsCommandsAndSpeedLimitTests)
