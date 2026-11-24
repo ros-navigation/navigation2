@@ -19,6 +19,7 @@
 #include <Eigen/Dense>
 
 #include <cmath>
+#include <cstdlib>  // D1TOGGLE
 #include <cstdint>
 #include <limits>
 #include <string>
@@ -174,7 +175,7 @@ public:
     * @param velocity Current velocity
     * @return Velocity after the in-flight commands
     */
-  models::Control propagateInFlight(const models::Control & velocity)
+  geometry_msgs::msg::Twist propagateInFlight(const geometry_msgs::msg::Twist & velocity)
   {
     const unsigned int delay_vx = inFlightSteps(cmd_history_vx_);
     const unsigned int delay_vy = isHolonomic() ? inFlightSteps(cmd_history_vy_) : 0u;
@@ -182,11 +183,15 @@ public:
 
     models::State state;
     state.reset(1u, std::max({delay_vx, delay_vy, delay_wz}) + 1u);
-    state.vx(0, 0) = velocity.vx;
-    state.vy(0, 0) = velocity.vy;
-    state.wz(0, 0) = velocity.wz;
+    state.vx(0, 0) = static_cast<float>(velocity.linear.x);
+    state.vy(0, 0) = static_cast<float>(velocity.linear.y);
+    state.wz(0, 0) = static_cast<float>(velocity.angular.z);
     predict(state);
-    return {state.vx(0, delay_vx), state.vy(0, delay_vy), state.wz(0, delay_wz)};
+    geometry_msgs::msg::Twist propagated;
+    propagated.linear.x = state.vx(0, delay_vx);
+    propagated.linear.y = state.vy(0, delay_vy);
+    propagated.angular.z = state.wz(0, delay_wz);
+    return propagated;
   }
 
   /**
@@ -206,28 +211,21 @@ public:
 
     // Velocity limits by acceleration from the last step, which differ when slowing down
     // From rest, either direction is speeding up
-    auto accel_limit_vx = [&](auto && vel, const auto & last_vel, const auto & target) {
-        vel = target
-          .cwiseMax(
-          (last_vel > 0).select(
-            last_vel + min_delta_vx,
-            (last_vel < 0).select(last_vel - max_delta_vx, -max_delta_vx)))
-          .cwiseMin(
-          (last_vel > 0).select(
-            last_vel + max_delta_vx,
-            (last_vel < 0).select(last_vel - min_delta_vx, max_delta_vx)));
+    auto make_accel_limit = [](float min_delta, float max_delta) {
+        return [min_delta, max_delta](auto && vel, const auto & last_vel, const auto & target) {
+                 vel = target
+                   .cwiseMax(
+                   (last_vel > 0).select(
+                     last_vel + min_delta,
+                     (last_vel < 0).select(last_vel - max_delta, -max_delta)))
+                   .cwiseMin(
+                   (last_vel > 0).select(
+                     last_vel + max_delta,
+                     (last_vel < 0).select(last_vel - min_delta, max_delta)));
+               };
       };
-    auto accel_limit_vy = [&](auto && vel, const auto & last_vel, const auto & target) {
-        vel = target
-          .cwiseMax(
-          (last_vel > 0).select(
-            last_vel + min_delta_vy,
-            (last_vel < 0).select(last_vel - max_delta_vy, -max_delta_vy)))
-          .cwiseMin(
-          (last_vel > 0).select(
-            last_vel + max_delta_vy,
-            (last_vel < 0).select(last_vel - min_delta_vy, max_delta_vy)));
-      };
+    const auto accel_limit_vx = make_accel_limit(min_delta_vx, max_delta_vx);
+    const auto accel_limit_vy = make_accel_limit(min_delta_vy, max_delta_vy);
     auto accel_limit_wz = [&](auto && vel, const auto & last_vel, const auto & target) {
         vel = target.cwiseMax(last_vel - max_delta_wz).cwiseMin(last_vel + max_delta_wz);
       };
@@ -251,6 +249,35 @@ public:
           controls.col(c) = vel.col(i);
         }
       };
+
+    static const bool kOffD1 = std::getenv("MPPI_OFF_D1") != nullptr;  // D1TOGGLE
+    if (kOffD1) {
+      // Upstream: roll out from the controls, then shift by the delay and fill the window
+      for (unsigned int i = 1; i < n_cols; i++) {
+        accel_limit_vx(state.vx.col(i), state.vx.col(i - 1), state.cvx.col(i - 1));
+        if (clamp_raw_controls_) {state.cvx.col(i - 1) = state.vx.col(i);}
+        accel_limit_wz(state.wz.col(i), state.wz.col(i - 1), state.cwz.col(i - 1));
+        if (clamp_raw_controls_) {state.cwz.col(i - 1) = state.wz.col(i);}
+        if (is_holo) {
+          accel_limit_vy(state.vy.col(i), state.vy.col(i - 1), state.cvy.col(i - 1));
+          if (clamp_raw_controls_) {state.cvy.col(i - 1) = state.vy.col(i);}
+        }
+      }
+      auto shift = [](Eigen::ArrayXXf & velocities, unsigned int offset,
+        const std::vector<float> & history) {
+          const unsigned int cols = static_cast<unsigned int>(velocities.cols());
+          if (offset == 0u || cols == 0u) {return;}
+          for (unsigned int k = (offset < cols) ? cols - offset : 0u; k > 0; --k) {
+            velocities.col(offset + k - 1) = velocities.col(k);
+          }
+          const unsigned int end = std::min(offset, cols);
+          for (unsigned int j = 1; j < end; ++j) {velocities.col(j).setConstant(history[j]);}
+        };
+      shift(state.vx, cmd_history_vx_.size(), cmd_history_vx_);
+      shift(state.wz, cmd_history_wz_.size(), cmd_history_wz_);
+      if (is_holo) {shift(state.vy, cmd_history_vy_.size(), cmd_history_vy_);}
+      return;
+    }
 
     // Set dynamic limits to the platform velocities from the raw controls sampling
     for (unsigned int i = 1; i < n_cols; i++) {

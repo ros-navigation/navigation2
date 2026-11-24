@@ -77,9 +77,11 @@ public:
 
   void rotateToHeadingWrapper(
     double & linear_vel, double & angular_vel,
-    const double & angle_to_path, const geometry_msgs::msg::Twist & curr_speed)
+    const double & angle_to_path, const geometry_msgs::msg::Twist & curr_speed,
+    const double & predicted_angular_vel = 0.0)
   {
-    return rotateToHeading(linear_vel, angular_vel, angle_to_path, curr_speed);
+    return rotateToHeading(
+      linear_vel, angular_vel, angle_to_path, curr_speed, predicted_angular_vel);
   }
 
   void applyConstraintsWrapper(
@@ -90,8 +92,6 @@ public:
       curvature, curr_speed, pose_cost, path,
       linear_vel, sign);
   }
-
-  nav2_regulated_pure_pursuit_controller::Parameters * getParams() {return params_;}
 
   bool isCollisionImminentWrapper(
     const geometry_msgs::msg::PoseStamped & robot_pose,
@@ -733,48 +733,7 @@ TEST(RegulatedPurePursuitTest, testParameterWarnings)
   ctrl->cleanup();
 }
 
-TEST(RegulatedPurePursuitTest, latencyCompensationParameters)
-{
-  auto ctrl = std::make_shared<BasicAPIRPP>();
-  auto node = std::make_shared<nav2::LifecycleNode>("testRPPLatencyParams");
-  std::string name = "PathFollower";
-  auto tf = nav2::create_transform_buffer(node);
-  auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
-  rclcpp_lifecycle::State state;
-  costmap->on_configure(state);
-
-  // Invalid values at startup are corrected
-  node->declare_parameter(name + ".latency_compensation.linear_delay", -0.2);
-  node->declare_parameter(name + ".latency_compensation.angular_gain", 0.0);
-  ctrl->configure(node, name, tf, costmap);
-  ctrl->activate();
-  auto params = ctrl->getParams();
-  EXPECT_FALSE(params->use_latency_compensation);
-  EXPECT_DOUBLE_EQ(params->linear_model.delay, 0.0);
-  EXPECT_DOUBLE_EQ(params->angular_model.gain, 1.0);
-
-  // Invalid dynamic updates are rejected
-  const std::string lc = name + ".latency_compensation.";
-  EXPECT_FALSE(node->set_parameter(rclcpp::Parameter(lc + "linear_gain", 0.0)).successful);
-  EXPECT_FALSE(node->set_parameter(rclcpp::Parameter(lc + "angular_delay", -0.1)).successful);
-  EXPECT_FALSE(
-    node->set_parameter(rclcpp::Parameter(lc + "linear_time_constant", -0.1)).successful);
-
-  // Valid dynamic updates apply
-  EXPECT_TRUE(node->set_parameter(rclcpp::Parameter(lc + "enabled", true)).successful);
-  EXPECT_TRUE(node->set_parameter(rclcpp::Parameter(lc + "angular_delay", 0.3)).successful);
-  EXPECT_TRUE(node->set_parameter(rclcpp::Parameter(lc + "angular_gain", 0.8)).successful);
-  EXPECT_TRUE(node->set_parameter(rclcpp::Parameter(lc + "invert_actuation", true)).successful);
-  EXPECT_TRUE(params->use_latency_compensation);
-  EXPECT_DOUBLE_EQ(params->angular_model.delay, 0.3);
-  EXPECT_DOUBLE_EQ(params->angular_model.gain, 0.8);
-  EXPECT_TRUE(params->invert_actuation);
-
-  ctrl->deactivate();
-  ctrl->cleanup();
-}
-
-TEST(RegulatedPurePursuitTest, latencyCompensationComputeVelocity)
+TEST(RegulatedPurePursuitTest, latencyCompensation)
 {
   auto ctrl = std::make_shared<BasicAPIRPP>();
   auto node = std::make_shared<nav2::LifecycleNode>("testRPPLatency");
@@ -794,10 +753,16 @@ TEST(RegulatedPurePursuitTest, latencyCompensationComputeVelocity)
   nav2_controller::SimpleGoalChecker checker;
   checker.initialize(node, "checker", costmap);
 
-  rclcpp::Time stamp(100, 0, RCL_ROS_TIME);
-  auto compute = [&](const nav_msgs::msg::Path & plan, const geometry_msgs::msg::Twist & speed) {
+  // Negative model values are rejected
+  EXPECT_FALSE(
+    node->set_parameter(rclcpp::Parameter(name + ".model_delay_wz", -0.1)).successful);
+
+  rcl_clock_t * clock = node->get_clock()->get_clock_handle();
+  ASSERT_EQ(rcl_enable_ros_time_override(clock), RCL_RET_OK);
+  auto compute = [&](double t, const nav_msgs::msg::Path & plan) {
+      EXPECT_EQ(rcl_set_ros_time_override(clock, static_cast<int64_t>(t * 1e9)), RCL_RET_OK);
       geometry_msgs::msg::TransformStamped map_to_base;
-      map_to_base.header.stamp = stamp;
+      map_to_base.header.stamp = node->now();
       map_to_base.header.frame_id = "map";
       map_to_base.child_frame_id = "base_link";
       map_to_base.transform.translation.x = 1.0;
@@ -805,11 +770,12 @@ TEST(RegulatedPurePursuitTest, latencyCompensationComputeVelocity)
       map_to_base.transform.rotation.w = 1.0;
       tf->setTransform(map_to_base, "latency-test");
       geometry_msgs::msg::PoseStamped robot_pose;
-      robot_pose.header.frame_id = "map";
-      robot_pose.header.stamp = stamp;
+      robot_pose.header = map_to_base.header;
       robot_pose.pose.position.x = 1.0;
       robot_pose.pose.position.y = 1.0;
       robot_pose.pose.orientation.w = 1.0;
+      geometry_msgs::msg::Twist speed;
+      speed.linear.x = 0.5;
       path_handler.setPlan(plan);
       auto [closest_point, pruned_plan_end] = path_handler.findPlanSegment(robot_pose);
       auto local_plan = path_handler.transformLocalPlan(closest_point, pruned_plan_end);
@@ -822,32 +788,40 @@ TEST(RegulatedPurePursuitTest, latencyCompensationComputeVelocity)
   start.pose.position.x = 1.0;
   start.pose.position.y = 1.0;
   start.pose.orientation.w = 1.0;
-  geometry_msgs::msg::Twist speed;
-  speed.linear.x = 0.5;
-  speed.angular.z = 0.2;
-
-  // Compensation with an ideal model does not change the command
+  auto straight = path_utils::generate_path(
+    start, 0.05, {std::make_unique<path_utils::Straight>(3.0)});
   auto curve = path_utils::generate_path(
-    start, 0.05, {std::make_unique<path_utils::LeftTurn>(1.5)});
-  ctrl->reset();
-  auto baseline_cmd = compute(curve, speed);
-  const std::string lc = name + ".latency_compensation.";
-  node->set_parameter(rclcpp::Parameter(lc + "enabled", true));
-  ctrl->reset();
-  auto ideal_cmd = compute(curve, speed);
-  EXPECT_DOUBLE_EQ(ideal_cmd.linear.x, baseline_cmd.linear.x);
-  EXPECT_DOUBLE_EQ(ideal_cmd.angular.z, baseline_cmd.angular.z);
-  EXPECT_NE(baseline_cmd.angular.z, 0.0);
+    start, 0.05, {std::make_unique<path_utils::LeftTurn>(1.0)});
 
-  // With inversion, the command is scaled up for a robot which under-turns
-  node->set_parameter(rclcpp::Parameter(lc + "angular_gain", 0.8));
-  node->set_parameter(rclcpp::Parameter(lc + "invert_actuation", true));
+  // Without a model, a robot on a straight path is commanded straight
+  auto baseline_cmd = compute(100.0, straight);
+  EXPECT_NEAR(baseline_cmd.angular.z, 0.0, 1e-3);
+
+  // Left turn commands still in flight will turn the robot off the path, so it steers right
+  node->set_parameter(rclcpp::Parameter(name + ".model_delay_wz", 0.3));
   ctrl->reset();
-  auto inverted_cmd = compute(curve, speed);
-  EXPECT_DOUBLE_EQ(inverted_cmd.linear.x, baseline_cmd.linear.x);
-  EXPECT_NEAR(inverted_cmd.angular.z, baseline_cmd.angular.z / 0.8, 1e-9);
-  node->set_parameter(rclcpp::Parameter(lc + "angular_gain", 1.0));
-  node->set_parameter(rclcpp::Parameter(lc + "invert_actuation", false));
+  for (int i = 0; i < 6; ++i) {
+    EXPECT_GT(compute(100.0 + 0.05 * i, curve).angular.z, 0.0);
+  }
+  EXPECT_LT(compute(100.3, straight).angular.z, -0.05);
+
+  // Rotations slow down earlier by the rotation still to come from the lagging response
+  node->set_parameter(rclcpp::Parameter(name + ".model_time_constant_wz", 0.3));
+  geometry_msgs::msg::Twist rotating;
+  rotating.angular.z = 1.0;
+  double lin_v = 0.0, ang_v = 0.0;
+  ctrl->rotateToHeadingWrapper(lin_v, ang_v, 0.4, rotating, 0.0);
+  const double no_lag_vel = ang_v;
+  ctrl->rotateToHeadingWrapper(lin_v, ang_v, 0.4, rotating, 1.0);
+  EXPECT_LT(ang_v, no_lag_vel);
+  // Already carried past the target by the lag, so command no further rotation
+  ctrl->rotateToHeadingWrapper(lin_v, ang_v, 0.2, rotating, 1.0);
+  EXPECT_DOUBLE_EQ(ang_v, 0.0);
+  node->set_parameter(rclcpp::Parameter(name + ".model_time_constant_wz", 0.0));
+
+  // Resetting clears the commands in flight
+  ctrl->reset();
+  EXPECT_NEAR(compute(100.35, straight).angular.z, baseline_cmd.angular.z, 1e-3);
 
   ctrl->deactivate();
   ctrl->cleanup();

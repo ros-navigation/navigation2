@@ -16,6 +16,7 @@
 #include "nav2_mppi_controller/optimizer.hpp"
 
 #include <algorithm>
+#include <cstdlib>  // D1TOGGLE
 #include <limits>
 #include <memory>
 #include <stdexcept>
@@ -253,7 +254,6 @@ void Optimizer::reset(bool reset_dynamic_speed_limits, bool clear_command_histor
   control_history_[3] = {0.0f, 0.0f, 0.0f};
 
   last_command_vel_ = geometry_msgs::msg::Twist();
-  predicted_next_speed_ = geometry_msgs::msg::Twist();
 
   if (reset_dynamic_speed_limits) {
     settings_.constraints = settings_.base_constraints;
@@ -378,10 +378,7 @@ void Optimizer::prepare(
   nav2_core::GoalChecker * goal_checker)
 {
   if (settings_.open_loop) {
-    // With a delay, the robot isn't yet at the last command, so use the velocity that was
-    // predicted for now
-    state_.speed =
-      motion_model_->hasLatencyModel() ? predicted_next_speed_ : last_command_vel_;
+    state_.speed = last_command_vel_;
   } else {
     // Predict state one controller_period forward toward the last command to compensate
     // for the latency between measurement and when this command will take effect.
@@ -406,7 +403,8 @@ void Optimizer::prepare(
 
     // With a delay, the measured velocity is the robot's state now, which the commands in flight
     // carry forward, rather than having reached the last command
-    const auto in_flight = motion_model_->getInFlightDuration();
+    auto in_flight = motion_model_->getInFlightDuration();
+    if (std::getenv("MPPI_OFF_PREP")) {in_flight = {0.0f, 0.0f, 0.0f};}  // D1TOGGLE
     if (in_flight.vx > 0.0f) {
       state_.speed.linear.x = robot_speed.linear.x;
     }
@@ -454,18 +452,6 @@ void Optimizer::generateNoisedTrajectories()
   integrateStateVelocities(generated_trajectories_, state_);
 }
 
-geometry_msgs::msg::Twist Optimizer::getCommandBaseSpeed() const
-{
-  const auto velocity = motion_model_->propagateInFlight(
-    {static_cast<float>(state_.speed.linear.x), static_cast<float>(state_.speed.linear.y),
-      static_cast<float>(state_.speed.angular.z)});
-  geometry_msgs::msg::Twist base_speed;
-  base_speed.linear.x = velocity.vx;
-  base_speed.linear.y = velocity.vy;
-  base_speed.angular.z = velocity.wz;
-  return base_speed;
-}
-
 void Optimizer::applyControlSequenceInterIterationConstraints()
 {
   // Enforce t=0 to be dynamically feasible from the current speed for inter-iteration feasibility
@@ -478,7 +464,9 @@ void Optimizer::applyControlSequenceInterIterationConstraints()
   float min_delta_vy = first_dt * s.constraints.ay_min;
   float max_delta_wz = first_dt * s.constraints.az_max;
 
-  const auto base_speed = getCommandBaseSpeed();
+  // Commands take effect after those in flight, so continue from the velocity they bring the
+  // robot to, rather than its lagging measured velocity
+  const auto base_speed = motion_model_->propagateInFlight(state_.speed);
   float speed_vx = static_cast<float>(base_speed.linear.x);
   float speed_wz = static_cast<float>(base_speed.angular.z);
   if (s.shift_control_sequence) {
@@ -518,8 +506,9 @@ void Optimizer::applyControlSequenceConstraints()
   float min_delta_vy = first_dt * s.constraints.ay_min;
   float max_delta_wz = first_dt * s.constraints.az_max;
 
-  // Initialize as the current speed to create inter-iteration dynamic feasibility
-  const auto base_speed = getCommandBaseSpeed();
+  // Initialize as the current speed to create inter-iteration dynamic feasibility. Commands take
+  // effect after those in flight, so this is the velocity they bring the robot to.
+  const auto base_speed = motion_model_->propagateInFlight(state_.speed);
   float vx_last = static_cast<float>(base_speed.linear.x);
   float wz_last = static_cast<float>(base_speed.angular.z);
   float vy_last = isHolonomic() ? static_cast<float>(base_speed.linear.y) : 0.0f;
@@ -689,7 +678,7 @@ Eigen::ArrayXXf Optimizer::getOptimizedTrajectory()
   Eigen::Array<float, Eigen::Dynamic, 3> trajectories =
     Eigen::Array<float, Eigen::Dynamic, 3>(settings_.time_steps, 3);
 
-  if (motion_model_->hasLatencyModel()) {
+  if (motion_model_->hasLatencyModel() && !std::getenv("MPPI_OFF_A5")) {  // D1TOGGLE
     // Simulate the optimal controls as the rollouts are, including the commands in flight, so the
     // trajectory is the one the robot is expected to follow
     models::State optimal;
@@ -705,13 +694,6 @@ Eigen::ArrayXXf Optimizer::getOptimizedTrajectory()
     if (is_holo) {
       sequence.col(2) = optimal.vy.row(0).transpose();
     }
-
-    // The velocity one controller period from now is the velocity now on the next cycle
-    const Eigen::Index next = std::min<Eigen::Index>(1, optimal.vx.cols() - 1);
-    const float f = std::min(1.0f, settings_.controller_period / settings_.model_dt);
-    predicted_next_speed_.linear.x = (1.0f - f) * optimal.vx(0, 0) + f * optimal.vx(0, next);
-    predicted_next_speed_.linear.y = (1.0f - f) * optimal.vy(0, 0) + f * optimal.vy(0, next);
-    predicted_next_speed_.angular.z = (1.0f - f) * optimal.wz(0, 0) + f * optimal.wz(0, next);
   } else {
     sequence.col(0) = control_sequence_.vx;
     sequence.col(1) = control_sequence_.wz;
@@ -782,7 +764,11 @@ geometry_msgs::msg::TwistStamped Optimizer::getControlFromSequenceAsTwist(
   auto vy = isHolonomic() ? control_sequence_.vy(offset) : 0.0f;
 
   // Update the command history for the motion model's latency compensation mechanism
-  motion_model_->pushCommandHistory(vx, vy, wz, settings_.controller_period);
+  if (std::getenv("MPPI_OFF_D2")) {  // D1TOGGLE
+    motion_model_->pushCommandHistory(vx, vy, wz);
+  } else {
+    motion_model_->pushCommandHistory(vx, vy, wz, settings_.controller_period);
+  }
 
   if (isHolonomic()) {
     return utils::toTwistStamped(vx, vy, wz, stamp, costmap_ros_->getBaseFrameID());

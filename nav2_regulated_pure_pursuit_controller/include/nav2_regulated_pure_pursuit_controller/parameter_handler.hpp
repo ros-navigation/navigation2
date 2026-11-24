@@ -26,7 +26,6 @@
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/parameter_handler.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_regulated_pure_pursuit_controller/latency_compensator.hpp"
 
 namespace nav2_regulated_pure_pursuit_controller
 {
@@ -65,10 +64,10 @@ struct Parameters
   bool use_collision_detection;
   bool use_dynamic_window;
   bool allow_obstacle_checking_beyond_goal;
-  bool use_latency_compensation;
-  AxisModel linear_model, angular_model;
-  bool use_lead_compensation;
-  bool invert_actuation;
+  double model_delay_vx;
+  double model_delay_wz;
+  double model_time_constant_vx;
+  double model_time_constant_wz;
 };
 
 /**

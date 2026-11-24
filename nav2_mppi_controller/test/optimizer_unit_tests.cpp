@@ -756,42 +756,6 @@ TEST(OptimizerTests, OptimalTrajectoryIncludesCommandsInFlight)
   optimizer_tester.shutdown();
 }
 
-TEST(OptimizerTests, OpenLoopStartsFromPredictedVelocity)
-{
-  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
-  OptimizerTester optimizer_tester;
-  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(20.0));
-  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(10));
-  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(10));
-  node->declare_parameter("mppic.open_loop", rclcpp::ParameterValue(true));
-  node->declare_parameter("mppic.model_delay_vx", rclcpp::ParameterValue(0.15));
-  node->declare_parameter(
-    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
-  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
-    "dummy_costmap", "", true);
-  std::string name = "test";
-  ParametersHandler param_handler(node, name);
-  costmap_ros->on_configure(rclcpp_lifecycle::State{});
-  auto tf_buffer = nav2::create_transform_buffer(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
-
-  // Commands of 0.4 m/s have been sent from rest, but are still in flight
-  auto motion_model = optimizer_tester.getMotionModel();
-  for (int i = 0; i < 3; ++i) {
-    motion_model->pushCommandHistory(0.4f, 0.0f, 0.0f);
-  }
-  geometry_msgs::msg::Twist unmeasured, last_command;
-  last_command.linear.x = 0.4;
-  optimizer_tester.prepareWrapper(unmeasured, last_command);
-  EXPECT_DOUBLE_EQ(optimizer_tester.grabState().speed.linear.x, 0.0);
-
-  // So the robot is predicted to have accelerated by one step, rather than reached the command
-  optimizer_tester.getOptimizedTrajectory();
-  optimizer_tester.prepareWrapper(unmeasured, last_command);
-  EXPECT_NEAR(optimizer_tester.grabState().speed.linear.x, 0.15, 1e-6);
-  optimizer_tester.shutdown();
-}
-
 TEST(OptimizerTests, PrepareTests)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("my_node");

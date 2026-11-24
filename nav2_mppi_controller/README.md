@@ -385,6 +385,8 @@ The `model_delay_*` parameters model the delay from a command being sent to the 
 
 To identify the delay, command steps in velocity on each axis and record the commanded and measured velocities. The delay is the time from a command being sent to the measured velocity starting to change. Use a high percentile of repeated steps rather than the mean, as underestimating the delay degrades tracking more than overestimating it. For legged robots, average velocities over whole gait cycles first. The trajectory horizon (`time_steps * model_dt`) should be several times longer than the delay.
 
+The delay model benefits closed-loop control (`open_loop: false`), which starts from the measured velocity. With `open_loop: true`, the measured velocity isn't used, and modeling the delay did not improve tracking in benchmarks.
+
 A velocity lag, gain error or deadband is not modeled. In benchmarks, modeling them predicted the robot's motion more accurately but did not improve path tracking without retuning the sampling and critics.
 
 In a simulated benchmark (`test/latency_benchmark.cpp`) with low acceleration limits, modeling the delay reduced the RMS cross track error on swath paths from 37cm to 4.0cm for a legged-like robot with a 0.3s delay, 0.3s lag, 80% angular gain, deadbands and gait noise, and from 37cm to 3.5cm for a robot with a 0.4s delay and 0.2s lag.

@@ -200,14 +200,6 @@ protected:
   void getParams();
 
   /**
-   * @brief Get the velocity the next command continues from. Commands take effect after those in
-   * flight, so this is the velocity those commands bring the robot to, rather than its lagging
-   * measured velocity.
-   * @return Command velocity
-   */
-  geometry_msgs::msg::Twist getCommandBaseSpeed() const;
-
-  /**
    * @brief Apply the constraints and delays to the motion model
    */
   void setMotionModelConstraints();
@@ -346,8 +338,6 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 
   geometry_msgs::msg::Twist last_command_vel_;
-  // Velocity predicted one controller period after the last command was computed
-  geometry_msgs::msg::Twist predicted_next_speed_;
 };
 
 }  // namespace mppi

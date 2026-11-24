@@ -387,9 +387,12 @@ TEST(MotionModelTests, PropagateInFlight)
   model.setConstraints(constraints, 0.05f, 0.0f, 0.0f, 0.0f, false);
   EXPECT_FLOAT_EQ(model.getInFlightDuration().vx, 0.0f);
   EXPECT_FLOAT_EQ(model.getInFlightDuration().wz, 0.0f);
-  auto velocity = model.propagateInFlight({0.2f, 0.0f, 0.1f});
-  EXPECT_FLOAT_EQ(velocity.vx, 0.2f);
-  EXPECT_FLOAT_EQ(velocity.wz, 0.1f);
+  geometry_msgs::msg::Twist current;
+  current.linear.x = 0.2;
+  current.angular.z = 0.1;
+  auto velocity = model.propagateInFlight(current);
+  EXPECT_FLOAT_EQ(velocity.linear.x, 0.2f);
+  EXPECT_FLOAT_EQ(velocity.angular.z, 0.1f);
 
   // Two in-flight steps, limited by acceleration from the current velocity
   model.setConstraints(constraints, 0.05f, 0.15f, 0.0f, 0.15f, false);
@@ -399,9 +402,10 @@ TEST(MotionModelTests, PropagateInFlight)
   model.pushCommandHistory(0.0f, 0.0f, 0.0f);
   model.pushCommandHistory(0.5f, 0.0f, 1.0f);
   model.pushCommandHistory(0.5f, 0.0f, 1.0f);
-  velocity = model.propagateInFlight({0.2f, 0.0f, 0.0f});
-  EXPECT_FLOAT_EQ(velocity.vx, 0.5f);
-  EXPECT_FLOAT_EQ(velocity.wz, 0.35f);
+  current.angular.z = 0.0;
+  velocity = model.propagateInFlight(current);
+  EXPECT_FLOAT_EQ(velocity.linear.x, 0.5f);
+  EXPECT_FLOAT_EQ(velocity.angular.z, 0.35f);
 }
 
 TEST(MotionModelTests, AccelerationFromRestWithAsymmetricLimits)

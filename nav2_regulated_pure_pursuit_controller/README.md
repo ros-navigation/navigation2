@@ -68,32 +68,15 @@ Unlike conventional Pure Pursuit variants, DWPP computes command velocities that
 
 - Fumiya Ohnishi and Masaki Takahashi, **DWPP: Dynamic Window Pure Pursuit Considering Velocity and Acceleration Constraints**, arXiv:2601.15006., 2026. https://arxiv.org/abs/2601.15006
 
-## Latency Compensation Features
+## Latency Compensation
 
-Pure Pursuit assumes that the robot executes a velocity command immediately and exactly. Robots with execution latency, a lagged velocity response, a velocity gain error, or deadbands (for example legged robots driven by learned locomotion policies, or robots with long transport and drive-controller chains) violate this. Typical symptoms are weaving down straight paths that worsens with shorter lookaheads, overshoot after turns, and rotations to heading that overshoot or are declared complete before in-flight commands have finished turning the robot.
+Pure Pursuit assumes the robot executes each velocity command immediately. Robots with significant execution latency or a slow velocity response, such as legged robots and large industrial vehicles, weave on straight paths, overshoot after turns and overshoot rotations to heading, and need long lookahead distances to stay stable.
 
-Optional latency compensation (`latency_compensation.enabled`) models the robot's command response per axis in Hammerstein form: `command -> deadband -> gain -> pure delay -> first-order lag -> velocity`. It then:
+Setting any of the `model_delay_*` or `model_time_constant_*` parameters models the robot's response on each axis as a pure delay followed by a first-order lag. The commands already sent are replayed through this model to predict the robot's pose and velocity when a command issued now takes effect (a Smith predictor), accounting for the age of the robot pose up to `transform_tolerance`. The path is tracked from the predicted state rather than the measured one. Rotations to heading accelerate from the last command rather than the lagging measured velocity, and slow down earlier for the rotation still to come from the lag, so the robot stops on the target heading. This matches the `model_delay_*` parameters of the MPPI controller.
 
-- **Predicts the robot state when the new command takes effect** (a Smith predictor). The commands already sent but not yet executed are replayed through the model to predict the robot's pose and velocity when an angular command issued now takes effect, after the pose's age and the angular delay. Path tracking acts through the turning rate, so a longer linear delay is not predicted over, which would track the path from too far ahead; each axis still replays its own delayed commands. Path tracking (lookahead point, curvature, regulation, collision checking) and the decision to rotate to the path heading then use the predicted pose rather than the measured one.
-- **Stops rotations on the target heading.** Rotations to heading use the predicted heading, ramp from the last commanded rather than the lagged measured angular velocity, and slow down for the extra rotation that the lag will cause, so that the robot comes to rest on the target heading.
-- **Inverts the gain and deadband** (`latency_compensation.invert_actuation`) so that the robot achieves the desired velocity, for example by commanding more angular velocity to a robot which under-turns. Angular commands within the deadband are rounded to the deadband edge or zero, as path tracking raises a correction rounded to zero. Linear commands within the deadband are modulated between the deadband edge and zero, carrying the rounding error forward (sigma-delta), so that they average to the desired velocity rather than stalling the robot short of the goal.
-- **Optionally inverts the lag** (`latency_compensation.use_lead_compensation`) by commanding a lead which aims to reach the desired velocity within the lag's time constant. The lead never reverses the linear direction, but may brake rotation against the desired direction.
+To identify the parameters, record the commanded and measured velocities while commanding steps on each axis. The delay is the time from a command to the measured velocity beginning to change, including transport, actuation and odometry latency, and the time constant is the further time to reach 63% of the step. Under-estimating the delay causes rotations to overshoot, while over-estimating it degrades tracking, so if uncertain err high by no more than about 30%. Only model the timing of the response: if the robot does not achieve the velocities commanded, that should be fixed on the robot.
 
-This is similar to the `model_delay_*` parameters of the MPPI controller, extended with the lag, gain and deadband of the response. The model parameters should be identified from step responses of the robot, and the delay should include transport, actuation and odometry latency. The age of the robot pose, up to the `transform_tolerance`, is accounted for automatically, so odometry slower than the controller does not degrade the prediction. This assumes the clocks of the robot and controller are synchronized, as TF requires.
-
-Identify the delay as accurately as possible. Under-estimating it causes rotations to overshoot their target heading, while over-estimating it degrades path tracking. If uncertain, err high by no more than about 30%.
-
-The deadband is modeled as a cut-off: commands with magnitude below it produce no motion, and commands above it pass through unshifted. This matches drive controllers and locomotion policies which zero small commands. Shifted dead-zones, where the response starts from zero at the deadband edge (for example hydraulics or stiction), are not inverted, so such robots may stop short of tight goal tolerances.
-
-With an accurate model, compensation removes the latency-induced oscillation which otherwise forces long lookahead distances on these robots. Shorter lookahead distances can then be used, reducing Pure Pursuit's corner cutting. On a simulated robot with a 0.3s delay, 0.3s lag, 80% angular gain, and deadbands, root mean squared cross track error on swath and S-curve paths reduced from 4.0 cm and 5.9 cm (at the best performing lookahead of 0.6m for each) to 0.5 cm and 0.9 cm (at a lookahead of 0.3m). With a 0.4s delay and 0.4s lag, the overshoot of the final rotation to the goal heading reduced from 24 degrees to 0.1 degrees.
-
-Latency compensation is not beneficial in all cases. For short, pure delays, the delay slows Pure Pursuit's turning response and partially offsets its tendency to cut corners, so the uncompensated controller may track slightly better.
-
-Lead compensation removes the remaining lag, which allows a still shorter lookahead distance. Each at their best lookahead distance, lead compensation approximately halved the path tracking error of compensation without it on robots with a lagged response (0.2-0.3m against 0.3-0.45m lookaheads), and was robust to 50% time constant error, 30% delay error and velocity noise. It brings no benefit to pure delays, and at the same lookahead distance as compensation without it, it can increase tracking error. It commands larger and more frequently changing velocities, so it is disabled by default and should be validated on the robot.
-
-At high speeds, the robot travels far during the delay and while braking, so it cannot stop at the goal unless it slows in advance. Set `approach_velocity_scaling_dist` to at least the distance traveled during the delay and lag plus the braking distance. Approximately 2 seconds of travel at `max_linear_vel` stopped every simulated robot at the goal from up to 5 m/s, while the default of 0.6m overshot by up to several meters.
-
-The closed-loop benchmark `test/test_latency_benchmark.cpp` runs this controller on a simulated robot with configurable latency, lag, gain, deadband and noise over swath and S-curve paths. Set `RPP_LATENCY_BENCHMARK_FULL=1` to run the full grid of robot models, and `RPP_BENCH_CSV_DIR` to a directory to export the trajectories. `nav2_loopback_sim` can also simulate these effects for full-system testing.
+With compensation, shorter lookahead distances become stable, reducing Pure Pursuit's corner cutting. On a simulated legged robot with a 0.3s delay, 0.3s lag, an unmodeled 80% turning gain, deadbands and gait sway, the RMS cross track error on swath and S-curve paths reduced from 4.0 cm and 5.9 cm (at the best lookahead of 0.6m) to 1.4 cm and 2.2 cm (at a lookahead of 0.3m). With a 0.4s delay and lag, the overshoot of the final rotation to heading reduced from 24 to 0.1 degrees. For short, pure delays there is little benefit. At high speeds, set `approach_velocity_scaling_dist` to at least the distance traveled during the delay and while braking so the robot can stop at the goal.
 
 ## Configuration
 
@@ -132,17 +115,10 @@ The closed-loop benchmark `test/test_latency_benchmark.cpp` runs this controller
 | `min_distance_to_obstacle` | The shortest distance at which the robot is allowed to be from an obstacle along its trajectory. Set <= 0.0 to disable. It is limited to maximum distance of lookahead distance selected. |
 | `use_dynamic_window` | Whether to use the Dynamic Window Pure Pursuit (DWPP) Algorithm. This algorithm computes optimal path tracking velocity commands under velocity and acceleration constraints. |
 | `allow_obstacle_checking_beyond_goal` | Whether to continue obstacle checking past the goal position up to `min_distance_to_obstacle`. When enabled, obstacles located beyond the goal along the projected trajectory may prevent motion. Requires `use_velocity_scaled_lookahead_dist` to be enabled and `min_distance_to_obstacle` > 0.0. |
-| `latency_compensation.enabled` | Whether to compensate for the robot's execution latency and velocity response using the model below. |
-| `latency_compensation.linear_delay` | Delay (s) from a linear velocity command being sent to the robot beginning to respond, including transport, actuation and odometry latency. |
-| `latency_compensation.angular_delay` | Delay (s) from an angular velocity command being sent to the robot beginning to respond, including transport, actuation and odometry latency. |
-| `latency_compensation.linear_time_constant` | Time constant (s) of the robot's first-order linear velocity response, after the delay. |
-| `latency_compensation.angular_time_constant` | Time constant (s) of the robot's first-order angular velocity response, after the delay. |
-| `latency_compensation.linear_gain` | Ratio of achieved to commanded linear velocity at steady state. |
-| `latency_compensation.angular_gain` | Ratio of achieved to commanded angular velocity at steady state. |
-| `latency_compensation.linear_deadband` | Linear velocity command magnitude (m/s) below which the robot does not move. |
-| `latency_compensation.angular_deadband` | Angular velocity command magnitude (rad/s) below which the robot does not rotate. |
-| `latency_compensation.invert_actuation` | Whether to scale commands by the inverse of the gains, round angular commands within the deadband to the deadband edge or zero, and modulate linear commands within the deadband between the deadband edge and zero to average to the desired velocity. |
-| `latency_compensation.use_lead_compensation` | Whether to command a lead which inverts the first-order lag. Use with a shorter lookahead distance than compensation without it, and validate on the robot. |
+| `model_delay_vx` | Delay (s) from a linear velocity command being sent to the robot's velocity beginning to respond, including transport, actuation and odometry latency. See [Latency Compensation](#latency-compensation). |
+| `model_delay_wz` | Delay (s) from an angular velocity command being sent to the robot's velocity beginning to respond, including transport, actuation and odometry latency. |
+| `model_time_constant_vx` | Time constant (s) of the robot's first-order linear velocity response, after the delay. |
+| `model_time_constant_wz` | Time constant (s) of the robot's first-order angular velocity response, after the delay. |
 
 Example fully-described XML with default parameter values:
 
@@ -200,18 +176,10 @@ controller_server:
       inflation_cost_scaling_factor: 3.0
       use_dynamic_window: false
       allow_obstacle_checking_beyond_goal: false
-      latency_compensation:
-        enabled: false
-        linear_delay: 0.0
-        angular_delay: 0.0
-        linear_time_constant: 0.0
-        angular_time_constant: 0.0
-        linear_gain: 1.0
-        angular_gain: 1.0
-        linear_deadband: 0.0
-        angular_deadband: 0.0
-        invert_actuation: false
-        use_lead_compensation: false
+      model_delay_vx: 0.0
+      model_delay_wz: 0.0
+      model_time_constant_vx: 0.0
+      model_time_constant_wz: 0.0
 ```
 
 ## Topics

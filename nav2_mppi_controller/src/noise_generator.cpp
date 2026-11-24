@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "nav2_mppi_controller/tools/noise_generator.hpp"
+#include <cstdlib>  // D1TOGGLE
 
 #include <memory>
 #include <mutex>
@@ -27,6 +28,9 @@ void NoiseGenerator::initialize(
   settings_ = settings;
   is_holonomic_ = is_holonomic;
   active_ = true;
+  if (const char * seed = std::getenv("MPPI_SEED")) {  // D1TOGGLE
+    generator_.seed(std::atoi(seed));
+  }
 
   ndistribution_vx_ = std::normal_distribution(0.0f, settings_.sampling_std.vx);
   ndistribution_vy_ = std::normal_distribution(0.0f, settings_.sampling_std.vy);
