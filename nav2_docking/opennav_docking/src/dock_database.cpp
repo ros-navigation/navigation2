@@ -288,8 +288,8 @@ bool DockDatabase::getDockPlugins(
       dock->configure(node, docks_plugins[i], tf);
       // Type-level controller selection. An individual dock instance may override this;
       // when both are empty the server's default controller is used.
-      type_controllers_[docks_plugins[i]] =
-        node->declare_or_get_parameter(docks_plugins[i] + ".controller", std::string(""));
+      type_controllers_[docks_plugins[i]] = node->declare_or_get_parameter(
+        docks_plugins[i] + ".controller", std::string(kDefaultControllerId));
       dock_plugins_.insert({docks_plugins[i], dock});
     } catch (const std::exception & ex) {
       RCLCPP_FATAL(
