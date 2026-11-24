@@ -191,12 +191,12 @@ TEST(GoalIntentExtractorTest, test_start_goal_finder)
   raw_goal.goal.pose.position.x = 1.6;
   goal = std::make_shared<const nav2_msgs::action::ComputeRoute::Goal>(raw_goal);
   ASSERT_TRUE(node->set_parameter(rclcpp::Parameter("enable_nn_search", true)).successful);
-  extractor.configure(node, graph, &id_map, tf, costmap_subscriber, "map", "base_link");
+  extractor.configure(node, graph, &id_map, tf_manager, costmap_subscriber, "map", "base_link");
   EXPECT_EQ(extractor.findStartandGoal(goal).second, 4u);
 
   // With one iteration, the goal search falls back to the Euclidean nearest node.
   ASSERT_TRUE(node->set_parameter(rclcpp::Parameter("max_nn_search_iterations", 1)).successful);
-  extractor.configure(node, graph, &id_map, tf, costmap_subscriber, "map", "base_link");
+  extractor.configure(node, graph, &id_map, tf_manager, costmap_subscriber, "map", "base_link");
   EXPECT_EQ(extractor.findStartandGoal(goal).second, 7u);
 }
 

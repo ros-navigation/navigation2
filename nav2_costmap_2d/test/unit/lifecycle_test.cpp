@@ -108,8 +108,11 @@ TEST(LifecylceTest, ObstacleFiltersRetainBufferAfterManagerCleanup) {
 
     EXPECT_EQ(costmap->cleanup().id(), lifecycle_msgs::msg::State::PRIMARY_STATE_UNCONFIGURED);
     EXPECT_TRUE(manager.expired());
-    ASSERT_FALSE(buffer.expired());
-    EXPECT_FALSE(buffer.lock()->isUsingDedicatedThread());
+    {
+      const auto retained_buffer = buffer.lock();
+      ASSERT_NE(retained_buffer, nullptr);
+      EXPECT_FALSE(retained_buffer->isUsingDedicatedThread());
+    }
 
     obstacle_layer.reset();
     EXPECT_TRUE(buffer.expired());
