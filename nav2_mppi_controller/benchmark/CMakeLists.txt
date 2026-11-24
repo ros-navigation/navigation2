@@ -23,3 +23,16 @@ foreach(name IN LISTS BENCHMARK_NAMES)
     ${PROJECT_SOURCE_DIR}/test/utils
   )
 endforeach()
+
+# Closed-loop path tracking on simulated robots with execution delay, run manually
+ament_add_gtest_executable(latency_benchmark latency_benchmark.cpp)
+target_link_libraries(latency_benchmark
+  mppi_controller
+  geometry_msgs::geometry_msgs
+  nav_msgs::nav_msgs
+  nav2_core::nav2_core
+  nav2_costmap_2d::nav2_costmap_2d_core
+  nav2_util::nav2_util_core
+  rclcpp::rclcpp
+  rclcpp_lifecycle::rclcpp_lifecycle
+)

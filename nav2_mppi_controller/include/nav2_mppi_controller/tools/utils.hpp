@@ -677,14 +677,10 @@ inline float clampVelocityByAccel(
   const float last_vel, const float curr_vel,
   const float min_delta, const float max_delta)
 {
-  if (last_vel > 0) {
+  if (last_vel >= 0) {
     return clamp(last_vel + min_delta, last_vel + max_delta, curr_vel);
   }
-  if (last_vel < 0) {
-    return clamp(last_vel - max_delta, last_vel - min_delta, curr_vel);
-  }
-  // From rest, either direction is speeding up
-  return clamp(-max_delta, max_delta, curr_vel);
+  return clamp(last_vel - max_delta, last_vel - min_delta, curr_vel);
 }
 
 /**

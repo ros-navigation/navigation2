@@ -17,7 +17,7 @@
 // straight paths, with and without the robot's delay modeled, and reports tracking metrics.
 //
 // Environment variables:
-//   MPPI_LATENCY_BENCHMARK_FULL=1   run the full plant grid rather than the CI subset
+//   MPPI_LATENCY_BENCHMARK_FULL=1   run the full plant grid rather than the default subset
 //   MPPI_BENCH_REPEATS=<n>          repeats of each run, as MPPI's sampling is stochastic
 //   MPPI_BENCH_PLANTS=<a,b,...>     only run plants with any of the names, where a trailing *
 //                                   matches any ending
@@ -54,7 +54,7 @@
 namespace
 {
 
-const double kControlDt = std::getenv("MPPI_BENCH_RATE") ? 1.0 / std::atof(std::getenv("MPPI_BENCH_RATE")) : 0.05;  // D1TOGGLE
+constexpr double kControlDt = 0.05;
 constexpr int kPlantSubsteps = 5;
 constexpr double kStartTime = 100.0;
 constexpr double kLocalPlanLength = 2.0;
@@ -357,7 +357,7 @@ protected:
       };
     // The Nav2 bringup configuration
     declare(n + "time_steps", rclcpp::ParameterValue(56));
-    declare(n + "model_dt", rclcpp::ParameterValue(0.05));  // D1TOGGLE
+    declare(n + "model_dt", rclcpp::ParameterValue(kControlDt));
     declare(n + "batch_size", rclcpp::ParameterValue(1000));
     declare(n + "vx_max", rclcpp::ParameterValue(0.5));
     declare(n + "vx_std", rclcpp::ParameterValue(0.2));
@@ -768,7 +768,6 @@ TEST_F(MPPILatencyBenchmark, swathsAndSCurves)
   // Legged-like: large delay and lag, under-turning, deadbands and gait sway
   plants.push_back(plant("legged", 0.3, 0.3, 0.8, 0.05, 0.1, 0.03, 0.05));
   plants.push_back(plant("legged_no_db", 0.3, 0.3, 0.8, 0.0, 0.0, 0.03, 0.05));
-  plants.push_back(plant("legged_calibrated", 0.3, 0.3, 1.0, 0.05, 0.1, 0.03, 0.05));  // D1TOGGLE
   filterByName(plants, "MPPI_BENCH_PLANTS");
   filterByName(scenarios, "MPPI_BENCH_PATHS");
 

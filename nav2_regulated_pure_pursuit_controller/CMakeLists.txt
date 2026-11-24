@@ -17,6 +17,7 @@ find_package(rcl_interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 find_package(nav2_ros_common REQUIRED)
 
 nav2_package()
@@ -26,6 +27,7 @@ set(library_name nav2_regulated_pure_pursuit_controller)
 add_library(${library_name} SHARED
   src/regulated_pure_pursuit_controller.cpp
   src/collision_checker.cpp
+  src/latency_compensator.cpp
   src/parameter_handler.cpp)
 target_include_directories(${library_name}
   PUBLIC
@@ -49,6 +51,7 @@ target_link_libraries(${library_name} PUBLIC
 )
 target_link_libraries(${library_name} PRIVATE
   angles::angles
+  tf2_geometry_msgs::tf2_geometry_msgs
 )
 
 install(TARGETS ${library_name}

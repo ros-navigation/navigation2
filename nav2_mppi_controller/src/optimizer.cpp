@@ -15,8 +15,6 @@
 
 #include "nav2_mppi_controller/optimizer.hpp"
 
-#include <algorithm>
-#include <cstdlib>  // D1TOGGLE
 #include <limits>
 #include <memory>
 #include <stdexcept>
@@ -206,15 +204,6 @@ void Optimizer::getParams()
 
   s.constraints = s.base_constraints;
 
-  // The robot's response to a command must be within the horizon for it to be optimized
-  const float max_delay = std::max({s.model_delay_vx, s.model_delay_vy, s.model_delay_wz});
-  if (max_delay > 0.0f && max_delay >= s.time_steps * s.model_dt) {
-    RCLCPP_WARN(
-      logger_, "The modeled delay of %.2fs is not shorter than the trajectory horizon of %.2fs, "
-      "so commands cannot be optimized. Increase time_steps or model_dt.",
-      max_delay, s.time_steps * s.model_dt);
-  }
-
   setMotionModel(motion_model_name);
   parameters_handler_->addPostCallback([this]() {reset();});
 
@@ -244,7 +233,7 @@ void Optimizer::setOffset(double controller_period)
   }
 }
 
-void Optimizer::reset(bool reset_dynamic_speed_limits, bool clear_command_history)
+void Optimizer::reset(bool reset_dynamic_speed_limits)
 {
   state_.reset(settings_.batch_size, settings_.time_steps);
   control_sequence_.reset(settings_.time_steps);
@@ -263,10 +252,10 @@ void Optimizer::reset(bool reset_dynamic_speed_limits, bool clear_command_histor
   generated_trajectories_.reset(settings_.batch_size, settings_.time_steps);
 
   noise_generator_.reset(settings_, isHolonomic());
-  setMotionModelConstraints();
-  if (clear_command_history) {
-    motion_model_->clearCommandHistory();
-  }
+  motion_model_->setConstraints(settings_.constraints, settings_.model_dt,
+    settings_.model_delay_vx, settings_.model_delay_vy, settings_.model_delay_wz,
+    settings_.clamp_raw_controls);
+  motion_model_->clearCommandHistory();
   trajectory_validator_->initialize(
     parent_, name_ + ".TrajectoryValidator",
     costmap_ros_, parameters_handler_, tf_buffer_, settings_);
@@ -302,33 +291,25 @@ std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> Optimizer::evalCon
   Eigen::ArrayXXf optimal_trajectory;
   bool trajectory_valid = true;
 
-  try {
-    do {
-      optimize();
-      optimal_trajectory = getOptimizedTrajectory();
-      switch (trajectory_validator_->validateTrajectory(
-          optimal_trajectory, control_sequence_, robot_pose, robot_speed, plan, goal))
-      {
-        case mppi::ValidationResult::SOFT_RESET:
-          trajectory_valid = false;
-          RCLCPP_WARN(logger_, "Soft reset triggered by trajectory validator");
-          break;
-        case mppi::ValidationResult::FAILURE:
-          throw nav2_core::NoValidControl(
-                  "Trajectory validator failed to validate trajectory, hard reset triggered.");
-        case mppi::ValidationResult::SUCCESS:
-        default:
-          trajectory_valid = true;
-          break;
-      }
-    } while (fallback(critics_data_.fail_flag || !trajectory_valid));
-  } catch (const nav2_core::NoValidControl &) {
-    // The controller server stops the robot when no valid control is found, so record that
-    // zero command as sent for the delay model's commands in flight and the next state
-    motion_model_->pushCommandHistory(0.0f, 0.0f, 0.0f, settings_.controller_period);
-    last_command_vel_ = geometry_msgs::msg::Twist();
-    throw;
-  }
+  do {
+    optimize();
+    optimal_trajectory = getOptimizedTrajectory();
+    switch (trajectory_validator_->validateTrajectory(
+        optimal_trajectory, control_sequence_, robot_pose, robot_speed, plan, goal))
+    {
+      case mppi::ValidationResult::SOFT_RESET:
+        trajectory_valid = false;
+        RCLCPP_WARN(logger_, "Soft reset triggered by trajectory validator");
+        break;
+      case mppi::ValidationResult::FAILURE:
+        throw nav2_core::NoValidControl(
+                "Trajectory validator failed to validate trajectory, hard reset triggered.");
+      case mppi::ValidationResult::SUCCESS:
+      default:
+        trajectory_valid = true;
+        break;
+    }
+  } while (fallback(critics_data_.fail_flag || !trajectory_valid));
 
   auto control = getControlFromSequenceAsTwist(plan.header.stamp);
 
@@ -359,8 +340,7 @@ bool Optimizer::fallback(bool fail)
     return false;
   }
 
-  // Don't reset zone-based speed limits, nor forget the commands still in flight, after fallback
-  reset(false, false);
+  reset(false /*Don't reset zone-based speed limits after fallback*/);
 
   if (++fallback_count_ > settings_.retry_attempt_limit) {
     fallback_count_ = 0;
@@ -400,20 +380,6 @@ void Optimizer::prepare(
         robot_speed.linear.y + dt * c.ay_min,
         robot_speed.linear.y + dt * c.ay_max);
     }
-
-    // With a delay, the measured velocity is the robot's state now, which the commands in flight
-    // carry forward, rather than having reached the last command
-    auto in_flight = motion_model_->getInFlightDuration();
-    if (std::getenv("MPPI_OFF_PREP")) {in_flight = {0.0f, 0.0f, 0.0f};}  // D1TOGGLE
-    if (in_flight.vx > 0.0f) {
-      state_.speed.linear.x = robot_speed.linear.x;
-    }
-    if (in_flight.vy > 0.0f) {
-      state_.speed.linear.y = robot_speed.linear.y;
-    }
-    if (in_flight.wz > 0.0f) {
-      state_.speed.angular.z = robot_speed.angular.z;
-    }
   }
 
   state_.pose = robot_pose;
@@ -452,6 +418,28 @@ void Optimizer::generateNoisedTrajectories()
   integrateStateVelocities(generated_trajectories_, state_);
 }
 
+bool Optimizer::hasCommandsInFlight(float model_delay) const
+{
+  // A delay of a single model_dt is the latency inherent to the trajectories
+  return std::floor((model_delay / settings_.model_dt) + 0.5) >= 2.0;
+}
+
+geometry_msgs::msg::Twist Optimizer::getCommandBaseSpeed() const
+{
+  const auto & s = settings_;
+  geometry_msgs::msg::Twist base_speed = state_.speed;
+  if (hasCommandsInFlight(s.model_delay_vx)) {
+    base_speed.linear.x = last_command_vel_.linear.x;
+  }
+  if (hasCommandsInFlight(s.model_delay_vy)) {
+    base_speed.linear.y = last_command_vel_.linear.y;
+  }
+  if (hasCommandsInFlight(s.model_delay_wz)) {
+    base_speed.angular.z = last_command_vel_.angular.z;
+  }
+  return base_speed;
+}
+
 void Optimizer::applyControlSequenceInterIterationConstraints()
 {
   // Enforce t=0 to be dynamically feasible from the current speed for inter-iteration feasibility
@@ -464,9 +452,7 @@ void Optimizer::applyControlSequenceInterIterationConstraints()
   float min_delta_vy = first_dt * s.constraints.ay_min;
   float max_delta_wz = first_dt * s.constraints.az_max;
 
-  // Commands take effect after those in flight, so continue from the velocity they bring the
-  // robot to, rather than its lagging measured velocity
-  const auto base_speed = motion_model_->propagateInFlight(state_.speed);
+  const auto base_speed = getCommandBaseSpeed();
   float speed_vx = static_cast<float>(base_speed.linear.x);
   float speed_wz = static_cast<float>(base_speed.angular.z);
   if (s.shift_control_sequence) {
@@ -506,9 +492,8 @@ void Optimizer::applyControlSequenceConstraints()
   float min_delta_vy = first_dt * s.constraints.ay_min;
   float max_delta_wz = first_dt * s.constraints.az_max;
 
-  // Initialize as the current speed to create inter-iteration dynamic feasibility. Commands take
-  // effect after those in flight, so this is the velocity they bring the robot to.
-  const auto base_speed = motion_model_->propagateInFlight(state_.speed);
+  // Initialize as the current speed to create inter-iteration dynamic feasibility
+  const auto base_speed = getCommandBaseSpeed();
   float vx_last = static_cast<float>(base_speed.linear.x);
   float wz_last = static_cast<float>(base_speed.angular.z);
   float vy_last = isHolonomic() ? static_cast<float>(base_speed.linear.y) : 0.0f;
@@ -678,9 +663,18 @@ Eigen::ArrayXXf Optimizer::getOptimizedTrajectory()
   Eigen::Array<float, Eigen::Dynamic, 3> trajectories =
     Eigen::Array<float, Eigen::Dynamic, 3>(settings_.time_steps, 3);
 
-  if (motion_model_->hasLatencyModel() && !std::getenv("MPPI_OFF_A5")) {  // D1TOGGLE
-    // Simulate the optimal controls as the rollouts are, including the commands in flight, so the
-    // trajectory is the one the robot is expected to follow
+  sequence.col(0) = control_sequence_.vx;
+  sequence.col(1) = control_sequence_.wz;
+
+  if (is_holo) {
+    sequence.col(2) = control_sequence_.vy;
+  }
+
+  const auto & s = settings_;
+  if (hasCommandsInFlight(s.model_delay_vx) || hasCommandsInFlight(s.model_delay_wz) ||
+    (is_holo && hasCommandsInFlight(s.model_delay_vy)))
+  {
+    // Include the commands in flight, as the trajectories do, for the motion the robot will take
     models::State optimal;
     optimal.reset(1u, settings_.time_steps);
     optimal.cvx.row(0) = control_sequence_.vx.transpose();
@@ -693,12 +687,6 @@ Eigen::ArrayXXf Optimizer::getOptimizedTrajectory()
     sequence.col(1) = optimal.wz.row(0).transpose();
     if (is_holo) {
       sequence.col(2) = optimal.vy.row(0).transpose();
-    }
-  } else {
-    sequence.col(0) = control_sequence_.vx;
-    sequence.col(1) = control_sequence_.wz;
-    if (is_holo) {
-      sequence.col(2) = control_sequence_.vy;
     }
   }
 
@@ -764,11 +752,7 @@ geometry_msgs::msg::TwistStamped Optimizer::getControlFromSequenceAsTwist(
   auto vy = isHolonomic() ? control_sequence_.vy(offset) : 0.0f;
 
   // Update the command history for the motion model's latency compensation mechanism
-  if (std::getenv("MPPI_OFF_D2")) {  // D1TOGGLE
-    motion_model_->pushCommandHistory(vx, vy, wz);
-  } else {
-    motion_model_->pushCommandHistory(vx, vy, wz, settings_.controller_period);
-  }
+  motion_model_->pushCommandHistory(vx, vy, wz);
 
   if (isHolonomic()) {
     return utils::toTwistStamped(vx, vy, wz, stamp, costmap_ros_->getBaseFrameID());
@@ -792,7 +776,9 @@ void Optimizer::setMotionModel(const std::string & motion_model_name)
     plugin_type = nav2::get_plugin_type_param(node, plugin_ns);
     motion_model_ = motion_model_loader_->createSharedInstance(plugin_type);
     motion_model_->initialize(parameters_handler_, plugin_ns);
-    setMotionModelConstraints();
+    motion_model_->setConstraints(settings_.constraints, settings_.model_dt,
+      settings_.model_delay_vx, settings_.model_delay_vy, settings_.model_delay_wz,
+      settings_.clamp_raw_controls);
   } catch (const pluginlib::PluginlibException & ex) {
     throw nav2_core::ControllerException(
             std::string("Failed to load motion model plugin '") + motion_model_name +
@@ -800,14 +786,6 @@ void Optimizer::setMotionModel(const std::string & motion_model_name)
   }
 
   RCLCPP_INFO(logger_, "Loaded motion model plugin: %s", plugin_type.c_str());
-}
-
-void Optimizer::setMotionModelConstraints()
-{
-  // With shifting, the first control is the current velocity rather than a command to send
-  motion_model_->setConstraints(
-    settings_.constraints, settings_.model_dt, settings_.model_delay_vx, settings_.model_delay_vy,
-    settings_.model_delay_wz, settings_.clamp_raw_controls, !settings_.shift_control_sequence);
 }
 
 void Optimizer::setSpeedLimit(double speed_limit, bool percentage)
@@ -846,7 +824,9 @@ void Optimizer::setSpeedLimit(double speed_limit, bool percentage)
       s.constraints.wz = s.base_constraints.wz * ratio;
     }
   }
-  setMotionModelConstraints();
+  motion_model_->setConstraints(settings_.constraints, settings_.model_dt,
+    settings_.model_delay_vx, settings_.model_delay_vy, settings_.model_delay_wz,
+    settings_.clamp_raw_controls);
 }
 
 models::Trajectories & Optimizer::getGeneratedTrajectories()

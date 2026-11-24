@@ -28,6 +28,7 @@
 #include "nav2_util/controller_utils.hpp"
 #include "nav2_util/path_utils.hpp"
 #include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
 using std::hypot;
@@ -65,6 +66,9 @@ void RegulatedPurePursuitController::configure(
 
   // Checks for imminent collisions
   collision_checker_ = std::make_unique<CollisionChecker>(node, costmap_ros_, params_);
+
+  // Predicts the robot state when commands take effect, for latency compensation
+  latency_compensator_ = std::make_unique<LatencyCompensator>(params_);
 
   double control_frequency = 20.0;
 
@@ -115,7 +119,7 @@ void RegulatedPurePursuitController::deactivate()
   is_rotating_to_heading_pub_->on_deactivate();
   param_handler_->deactivate();
   last_command_velocity_ = geometry_msgs::msg::Twist();
-  command_history_.clear();
+  latency_compensator_->reset();
 }
 
 std::unique_ptr<geometry_msgs::msg::PointStamped> RegulatedPurePursuitController::createCarrotMsg(
@@ -184,17 +188,15 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
   // With latency compensation, track the path from the state the robot is predicted to be in
   // when this command takes effect, rather than the measured state (Smith predictor)
-  const bool compensate_latency =
-    params_->model_delay_vx > 0.0 || params_->model_delay_wz > 0.0 ||
-    params_->model_time_constant_vx > 0.0 || params_->model_time_constant_wz > 0.0;
-  const double now = clock_->now().seconds();
+  const bool compensate_latency = latency_compensator_->isEnabled();
+  const rclcpp::Time now = clock_->now();
   geometry_msgs::msg::PoseStamped tracking_pose = pose;
   geometry_msgs::msg::Twist tracking_speed = speed;
-  latency_compensation::PredictedState prediction;
+  geometry_msgs::msg::TransformStamped predicted_to_base;
   if (compensate_latency) {
     // Predict from the pose's measurement time, so commands issued since a stale pose count too
-    double measurement_time = rclcpp::Time(pose.header.stamp).seconds();
-    const double pose_age = now - measurement_time;
+    rclcpp::Time measurement_time(pose.header.stamp, now.get_clock_type());
+    const double pose_age = (now - measurement_time).seconds();
     if (pose_age < 0.0 || pose_age > costmap_ros_->getTransformTolerance()) {
       RCLCPP_WARN_THROTTLE(
         logger_, *clock_, 5000, "Robot pose is %.3fs old, outside of [0, transform_tolerance]. "
@@ -202,26 +204,24 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
         pose_age);
       measurement_time = now;
     }
-    prediction = latency_compensation::predictState(
-      command_history_, speed, measurement_time, now,
-      params_->model_delay_vx, params_->model_delay_wz,
-      params_->model_time_constant_vx, params_->model_time_constant_wz);
-    transformed_plan = latency_compensation::transformPlanToPredictedFrame(
-      transformed_plan, prediction);
+    const PredictedState prediction =
+      latency_compensator_->predict(speed, measurement_time, now);
+    transformed_plan = transformPlanToPredictedFrame(transformed_plan, prediction);
 
-    const double yaw = tf2::getYaw(pose.pose.orientation);
-    tracking_pose.pose.position.x += prediction.x * cos(yaw) - prediction.y * sin(yaw);
-    tracking_pose.pose.position.y += prediction.x * sin(yaw) + prediction.y * cos(yaw);
-    tracking_speed.linear.x = prediction.linear_vel;
-    tracking_speed.angular.z = prediction.angular_vel;
+    tf2::Transform global_to_base, base_to_predicted;
+    tf2::fromMsg(pose.pose, global_to_base);
+    tf2::fromMsg(prediction.pose, base_to_predicted);
+    tf2::toMsg(global_to_base * base_to_predicted, tracking_pose.pose);
+    predicted_to_base.transform = tf2::toMsg(base_to_predicted);
+    tracking_speed = prediction.velocity;
   }
 
   // Express a pose in the predicted frame in the robot base frame for visualization
-  auto toBaseFrame = [&](geometry_msgs::msg::PoseStamped p) {
-      const double x = p.pose.position.x, y = p.pose.position.y;
-      p.pose.position.x = prediction.x + x * cos(prediction.yaw) - y * sin(prediction.yaw);
-      p.pose.position.y = prediction.y + x * sin(prediction.yaw) + y * cos(prediction.yaw);
-      return p;
+  auto toBaseFrame = [&](const geometry_msgs::msg::PoseStamped & p) {
+      geometry_msgs::msg::PoseStamped out;
+      tf2::doTransform(p, out, predicted_to_base);
+      out.header = p.header;
+      return out;
     };
 
   // Find look ahead distance and point on path and publish
@@ -338,13 +338,18 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
   const double dist_to_path_end =
     nav2_util::geometry_utils::calculate_path_length(transformed_plan);
   const double & carrot_dist = hypot(carrot_pose.pose.position.x, carrot_pose.pose.position.y);
+  // With latency compensation, check from the predicted pose, as the robot follows the commands
+  // in flight to it, and further by the rest of its lagging response before a stop takes effect
+  double stopping_dist = 0.0;
+  if (compensate_latency) {
+    stopping_dist = fabs(linear_vel) * (params_->model_time_constant_vx +
+      std::max(0.0, params_->model_delay_vx - params_->model_delay_wz) + control_duration_);
+  }
   if (params_->use_collision_detection &&
-    collision_checker_->isCollisionImminent(pose, linear_vel, angular_vel, carrot_dist,
-    dist_to_path_end))
+    collision_checker_->isCollisionImminent(tracking_pose, linear_vel, angular_vel,
+    carrot_dist + stopping_dist, dist_to_path_end + stopping_dist))
   {
-    latency_compensation::recordCommand(
-      command_history_, geometry_msgs::msg::Twist(), now,
-      std::max(params_->model_delay_vx, params_->model_delay_wz));
+    latency_compensator_->recordCommand(geometry_msgs::msg::Twist(), now);
     throw nav2_core::NoValidControl("RegulatedPurePursuitController detected collision ahead!");
   }
 
@@ -361,9 +366,7 @@ geometry_msgs::msg::TwistStamped RegulatedPurePursuitController::computeVelocity
 
   // For dynamic window scaling in open-loop speed control
   last_command_velocity_ = cmd_vel.twist;
-  latency_compensation::recordCommand(
-    command_history_, cmd_vel.twist, now,
-    std::max(params_->model_delay_vx, params_->model_delay_wz));
+  latency_compensator_->recordCommand(cmd_vel.twist, now);
 
   return cmd_vel;
 }
@@ -493,7 +496,7 @@ void RegulatedPurePursuitController::reset()
   cancelling_ = false;
   finished_cancelling_ = false;
   last_command_velocity_ = geometry_msgs::msg::Twist();
-  command_history_.clear();
+  latency_compensator_->reset();
 }
 }  // namespace nav2_regulated_pure_pursuit_controller
 

@@ -29,10 +29,10 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include "nav2_regulated_pure_pursuit_controller/collision_checker.hpp"
+#include "nav2_regulated_pure_pursuit_controller/latency_compensator.hpp"
 #include "nav2_regulated_pure_pursuit_controller/parameter_handler.hpp"
 #include "nav2_regulated_pure_pursuit_controller/regulation_functions.hpp"
 #include "nav2_regulated_pure_pursuit_controller/dynamic_window_pure_pursuit_functions.hpp"
-#include "nav2_regulated_pure_pursuit_controller/latency_compensation_functions.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_regulated_pure_pursuit_controller
@@ -200,7 +200,6 @@ protected:
   bool finished_cancelling_ = false;
   bool is_rotating_to_heading_ = false;
   geometry_msgs::msg::Twist last_command_velocity_;
-  latency_compensation::CommandHistory command_history_;
 
   nav2::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr carrot_pub_;
   nav2::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr curvature_carrot_pub_;
@@ -208,6 +207,7 @@ protected:
   nav2::Publisher<nav_msgs::msg::Path>::SharedPtr carrot_arc_pub_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::ParameterHandler> param_handler_;
   std::unique_ptr<nav2_regulated_pure_pursuit_controller::CollisionChecker> collision_checker_;
+  std::unique_ptr<nav2_regulated_pure_pursuit_controller::LatencyCompensator> latency_compensator_;
 };
 
 }  // namespace nav2_regulated_pure_pursuit_controller

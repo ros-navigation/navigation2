@@ -154,11 +154,9 @@ public:
 
   /**
    * @brief Reset the optimization problem to initial conditions
-   * @param reset_dynamic_speed_limits Whether to reset the constraints to its base values
-   * @param clear_command_history Whether to forget the commands sent, which are modeled as
-   * in flight when there is a delay
+   * @param Whether to reset the constraints to its base values
    */
-  void reset(bool reset_dynamic_speed_limits = true, bool clear_command_history = true);
+  void reset(bool reset_dynamic_speed_limits = true);
 
   /**
    * @brief Check if a dynamic speed limit is currently active
@@ -200,9 +198,19 @@ protected:
   void getParams();
 
   /**
-   * @brief Apply the constraints and delays to the motion model
+   * @brief Whether commands sent on an axis are still in flight when the next is sent,
+   * due to the axis's modeled delay
+   * @param model_delay Delay (s) of the axis
+   * @return If commands are in flight
    */
-  void setMotionModelConstraints();
+  bool hasCommandsInFlight(float model_delay) const;
+
+  /**
+   * @brief Get the velocity the next command continues from. With commands in flight, it takes
+   * effect after them, so it continues from the last command rather than the measured velocity.
+   * @return Velocity
+   */
+  geometry_msgs::msg::Twist getCommandBaseSpeed() const;
 
   /**
    * @brief Set the motion model of the vehicle platform

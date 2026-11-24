@@ -379,17 +379,11 @@ Once you have your obstacle avoidance behavior tuned and matched with an appropr
 
 ### Modeling the Robot's Delay
 
-By default, MPPI models the robot as achieving each velocity command within its acceleration limits, one control period after it is sent. Robots with significant execution latency (for example legged robots driven by learned locomotion policies) violate this, which causes weaving, overshoot, and slow acceleration.
+Robots with significant execution latency, such as legged robots driven by learned locomotion policies, respond to each command well after it is sent. The `model_delay_*` parameters model this delay on each axis. The trajectories replay the commands still in flight before the new commands take effect, the new commands continue from the last command sent rather than from the robot's lagging measured velocity, and the optimal trajectory includes the commands in flight.
 
-The `model_delay_*` parameters model the delay from a command being sent to the robot's velocity starting to respond on each axis. The commands already sent are still in flight during the delay, so the trajectory rollouts replay them before the new commands take effect, and the new commands continue from the velocity those bring the robot to, rather than from its lagging measured velocity. The optimal trajectory published and checked by the trajectory validator includes the commands in flight.
+To identify the delay, command steps in velocity and measure the time until the measured velocity starts to change. Prefer a high percentile of repeated steps over the mean, as underestimating the delay degrades tracking more than overestimating it. The delay only has an effect when it is at least 1.5 `model_dt`, and should be well within the trajectory horizon (`time_steps * model_dt`).
 
-To identify the delay, command steps in velocity on each axis and record the commanded and measured velocities. The delay is the time from a command being sent to the measured velocity starting to change. Use a high percentile of repeated steps rather than the mean, as underestimating the delay degrades tracking more than overestimating it. For legged robots, average velocities over whole gait cycles first. The trajectory horizon (`time_steps * model_dt`) should be several times longer than the delay.
-
-The delay model benefits closed-loop control (`open_loop: false`), which starts from the measured velocity. With `open_loop: true`, the measured velocity isn't used, and modeling the delay did not improve tracking in benchmarks.
-
-A velocity lag, gain error or deadband is not modeled. In benchmarks, modeling them predicted the robot's motion more accurately but did not improve path tracking without retuning the sampling and critics.
-
-In a simulated benchmark (`test/latency_benchmark.cpp`) with low acceleration limits, modeling the delay reduced the RMS cross track error on swath paths from 37cm to 4.0cm for a legged-like robot with a 0.3s delay, 0.3s lag, 80% angular gain, deadbands and gait noise, and from 37cm to 3.5cm for a robot with a 0.4s delay and 0.2s lag.
+In a simulated benchmark (`benchmark/latency_benchmark.cpp`) of a robot with a 0.4s delay and a 0.2s velocity lag, and low acceleration limits, this reduced the RMS cross track error from 36cm without the delay modeled to 3.9cm on swath paths, and from 31cm to 6.5cm on S-curves.
 
 ### Critic costs debugging
 

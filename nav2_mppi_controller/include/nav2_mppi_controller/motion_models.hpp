@@ -18,10 +18,7 @@
 
 #include <Eigen/Dense>
 
-#include <cmath>
-#include <cstdlib>  // D1TOGGLE
 #include <cstdint>
-#include <limits>
 #include <string>
 #include <algorithm>
 #include <vector>
@@ -66,74 +63,32 @@ public:
     * @brief Initialize motion model on bringup and set required variables
     * @param control_constraints Constraints on control
     * @param model_dt duration of a time step
-    * @param model_delay_vx Delay (s) of the robot's response to vx commands
-    * @param model_delay_vy Delay (s) of the robot's response to vy commands
-    * @param model_delay_wz Delay (s) of the robot's response to wz commands
-    * @param clamp_raw_controls Whether to clamp the sampled controls to the feasible velocities
-    * @param first_control_sent Whether the first control of a sequence is sent, rather than
-    *        pinned to the current velocity
     */
   void setConstraints(
     const models::ControlConstraints & control_constraints, float model_dt,
-    float model_delay_vx, float model_delay_vy, float model_delay_wz, bool clamp_raw_controls,
-    bool first_control_sent = true)
+    float model_delay_vx, float model_delay_vy, float model_delay_wz, bool clamp_raw_controls)
   {
     control_constraints_ = control_constraints;
     model_dt_ = model_dt;
+    model_delay_vx_ = model_delay_vx;
+    model_delay_vy_ = model_delay_vy;
+    model_delay_wz_ = model_delay_wz;
     clamp_raw_controls_ = clamp_raw_controls;
-    first_control_sent_ = first_control_sent;
 
-    cmd_history_vx_.resize(offsetSteps(model_delay_vx), 0.0f);
-    cmd_history_vy_.resize(offsetSteps(model_delay_vy), 0.0f);
-    cmd_history_wz_.resize(offsetSteps(model_delay_wz), 0.0f);
+    cmd_history_vx_.resize(offsetSteps(model_delay_vx_), 0.0f);
+    cmd_history_vy_.resize(offsetSteps(model_delay_vy_), 0.0f);
+    cmd_history_wz_.resize(offsetSteps(model_delay_wz_), 0.0f);
   }
 
   /**
     * @brief Push the most recently published command to the per-axis history
-    *        ring buffers, as one model_dt step.
+    *        ring buffers. Called once per controller cycle from the optimizer.
     */
   void pushCommandHistory(float vx, float vy, float wz)
   {
     pushOne(cmd_history_vx_, vx);
     pushOne(cmd_history_vy_, vy);
     pushOne(cmd_history_wz_, wz);
-  }
-
-  /**
-    * @brief Push the most recently published command to the per-axis history ring buffers.
-    *        Called once per controller cycle from the optimizer. Each buffer element holds the
-    *        last command published within a model_dt step, so that the history is replayed with
-    *        the correct timing when the controller runs faster than model_dt.
-    * @param period Time (s) since the previous command was published
-    */
-  void pushCommandHistory(float vx, float vy, float wz, float period)
-  {
-    if (!std::isfinite(history_step_elapsed_) || model_dt_ <= 0.0f) {
-      history_step_elapsed_ = 0.0;
-      pushCommandHistory(vx, vy, wz);
-      return;
-    }
-
-    history_step_elapsed_ += period;
-    const int64_t steps = std::lround(history_step_elapsed_ / model_dt_);
-    if (steps == 0) {
-      // Still within the current step, so this command supersedes the last
-      overwriteNewest(cmd_history_vx_, vx);
-      overwriteNewest(cmd_history_vy_, vy);
-      overwriteNewest(cmd_history_wz_, wz);
-      return;
-    }
-
-    // The last command was held through any skipped steps
-    const int64_t max_steps = static_cast<int64_t>(std::max(
-        {cmd_history_vx_.size(), cmd_history_vy_.size(), cmd_history_wz_.size()}));
-    for (int64_t i = 1; i < std::min(steps, max_steps + 1); ++i) {
-      holdNewest(cmd_history_vx_);
-      holdNewest(cmd_history_vy_);
-      holdNewest(cmd_history_wz_);
-    }
-    pushCommandHistory(vx, vy, wz);
-    history_step_elapsed_ -= steps * model_dt_;
   }
 
   /**
@@ -144,54 +99,6 @@ public:
     std::fill(cmd_history_vx_.begin(), cmd_history_vx_.end(), 0.0f);
     std::fill(cmd_history_vy_.begin(), cmd_history_vy_.end(), 0.0f);
     std::fill(cmd_history_wz_.begin(), cmd_history_wz_.end(), 0.0f);
-    history_step_elapsed_ = std::numeric_limits<double>::quiet_NaN();
-  }
-
-  /**
-    * @brief Get the duration per axis over which commands already sent are modeled as in flight
-    *        when a new command is sent, due to delay
-    * @return Duration (s) per axis
-    */
-  models::Control getInFlightDuration() const
-  {
-    return {
-      model_dt_ * inFlightSteps(cmd_history_vx_),
-      isHolonomic() ? model_dt_ * inFlightSteps(cmd_history_vy_) : 0.0f,
-      model_dt_ * inFlightSteps(cmd_history_wz_)};
-  }
-
-  /**
-    * @brief Whether the robot's response to commands is modeled as delayed
-    */
-  bool hasLatencyModel() const
-  {
-    const auto in_flight = getInFlightDuration();
-    return in_flight.vx > 0.0f || in_flight.vy > 0.0f || in_flight.wz > 0.0f;
-  }
-
-  /**
-    * @brief Predict the velocity when the next command takes effect, by replaying the
-    *        in-flight commands from the current velocity
-    * @param velocity Current velocity
-    * @return Velocity after the in-flight commands
-    */
-  geometry_msgs::msg::Twist propagateInFlight(const geometry_msgs::msg::Twist & velocity)
-  {
-    const unsigned int delay_vx = inFlightSteps(cmd_history_vx_);
-    const unsigned int delay_vy = isHolonomic() ? inFlightSteps(cmd_history_vy_) : 0u;
-    const unsigned int delay_wz = inFlightSteps(cmd_history_wz_);
-
-    models::State state;
-    state.reset(1u, std::max({delay_vx, delay_vy, delay_wz}) + 1u);
-    state.vx(0, 0) = static_cast<float>(velocity.linear.x);
-    state.vy(0, 0) = static_cast<float>(velocity.linear.y);
-    state.wz(0, 0) = static_cast<float>(velocity.angular.z);
-    predict(state);
-    geometry_msgs::msg::Twist propagated;
-    propagated.linear.x = state.vx(0, delay_vx);
-    propagated.linear.y = state.vy(0, delay_vy);
-    propagated.angular.z = state.wz(0, delay_wz);
-    return propagated;
   }
 
   /**
@@ -207,85 +114,55 @@ public:
     float min_delta_vy = model_dt_ * control_constraints_.ay_min;
     float max_delta_wz = model_dt_ * control_constraints_.az_max;
     unsigned int n_cols = state.vx.cols();
-    const auto n_rows = state.vx.rows();
-
-    // Velocity limits by acceleration from the last step, which differ when slowing down
-    // From rest, either direction is speeding up
-    auto make_accel_limit = [](float min_delta, float max_delta) {
-        return [min_delta, max_delta](auto && vel, const auto & last_vel, const auto & target) {
-                 vel = target
-                   .cwiseMax(
-                   (last_vel > 0).select(
-                     last_vel + min_delta,
-                     (last_vel < 0).select(last_vel - max_delta, -max_delta)))
-                   .cwiseMin(
-                   (last_vel > 0).select(
-                     last_vel + max_delta,
-                     (last_vel < 0).select(last_vel - min_delta, max_delta)));
-               };
-      };
-    const auto accel_limit_vx = make_accel_limit(min_delta_vx, max_delta_vx);
-    const auto accel_limit_vy = make_accel_limit(min_delta_vy, max_delta_vy);
-    auto accel_limit_wz = [&](auto && vel, const auto & last_vel, const auto & target) {
-        vel = target.cwiseMax(last_vel - max_delta_wz).cwiseMin(last_vel + max_delta_wz);
-      };
-
-    // Commands sent before this one are still in flight over the first steps due to the delay,
-    // so the sampled controls take effect after them, continuing from their velocity. When the
-    // first control isn't sent, being pinned to the current velocity, the first sent control
-    // follows those in flight so that it takes effect after exactly the delay.
-    const auto n_controls = state.cvx.cols();
-    auto step = [&](unsigned int i, Eigen::ArrayXXf & vel, Eigen::ArrayXXf & controls,
-      const std::vector<float> & history, auto && accel_limit) {
-        const unsigned int delay = inFlightSteps(history);
-        if (i - 1 < delay) {
-          accel_limit(vel.col(i), vel.col(i - 1), Eigen::ArrayXf::Constant(n_rows, history[i]));
-          return;
-        }
-        const unsigned int skip = (delay > 0u && !first_control_sent_) ? 1u : 0u;
-        const auto c = std::min<Eigen::Index>(i - 1 - delay + skip, n_controls - 1);
-        accel_limit(vel.col(i), vel.col(i - 1), controls.col(c));
-        if (clamp_raw_controls_) {
-          controls.col(c) = vel.col(i);
-        }
-      };
-
-    static const bool kOffD1 = std::getenv("MPPI_OFF_D1") != nullptr;  // D1TOGGLE
-    if (kOffD1) {
-      // Upstream: roll out from the controls, then shift by the delay and fill the window
-      for (unsigned int i = 1; i < n_cols; i++) {
-        accel_limit_vx(state.vx.col(i), state.vx.col(i - 1), state.cvx.col(i - 1));
-        if (clamp_raw_controls_) {state.cvx.col(i - 1) = state.vx.col(i);}
-        accel_limit_wz(state.wz.col(i), state.wz.col(i - 1), state.cwz.col(i - 1));
-        if (clamp_raw_controls_) {state.cwz.col(i - 1) = state.wz.col(i);}
-        if (is_holo) {
-          accel_limit_vy(state.vy.col(i), state.vy.col(i - 1), state.cvy.col(i - 1));
-          if (clamp_raw_controls_) {state.cvy.col(i - 1) = state.vy.col(i);}
-        }
-      }
-      auto shift = [](Eigen::ArrayXXf & velocities, unsigned int offset,
-        const std::vector<float> & history) {
-          const unsigned int cols = static_cast<unsigned int>(velocities.cols());
-          if (offset == 0u || cols == 0u) {return;}
-          for (unsigned int k = (offset < cols) ? cols - offset : 0u; k > 0; --k) {
-            velocities.col(offset + k - 1) = velocities.col(k);
-          }
-          const unsigned int end = std::min(offset, cols);
-          for (unsigned int j = 1; j < end; ++j) {velocities.col(j).setConstant(history[j]);}
-        };
-      shift(state.vx, cmd_history_vx_.size(), cmd_history_vx_);
-      shift(state.wz, cmd_history_wz_.size(), cmd_history_wz_);
-      if (is_holo) {shift(state.vy, cmd_history_vy_.size(), cmd_history_vy_);}
-      return;
-    }
 
     // Set dynamic limits to the platform velocities from the raw controls sampling
     for (unsigned int i = 1; i < n_cols; i++) {
-      step(i, state.vx, state.cvx, cmd_history_vx_, accel_limit_vx);
-      step(i, state.wz, state.cwz, cmd_history_wz_, accel_limit_wz);
-      if (is_holo) {
-        step(i, state.vy, state.cvy, cmd_history_vy_, accel_limit_vy);
+      auto lower_bound_vx = (state.vx.col(i - 1) >
+        0).select(
+        state.vx.col(i - 1) + min_delta_vx,
+        state.vx.col(i - 1) - max_delta_vx);
+      auto upper_bound_vx = (state.vx.col(i - 1) >
+        0).select(
+        state.vx.col(i - 1) + max_delta_vx,
+        state.vx.col(i - 1) - min_delta_vx);
+      state.vx.col(i) = state.cvx.col(i - 1)
+        .cwiseMax(lower_bound_vx)
+        .cwiseMin(upper_bound_vx);
+      if (clamp_raw_controls_) {
+        state.cvx.col(i - 1) = state.vx.col(i);
       }
+
+      state.wz.col(i) = state.cwz.col(i - 1)
+        .cwiseMax(state.wz.col(i - 1) - max_delta_wz)
+        .cwiseMin(state.wz.col(i - 1) + max_delta_wz);
+      if (clamp_raw_controls_) {
+        state.cwz.col(i - 1) = state.wz.col(i);
+      }
+
+      if (is_holo) {
+        auto lower_bound_vy = (state.vy.col(i - 1) >
+          0).select(
+          state.vy.col(i - 1) + min_delta_vy,
+          state.vy.col(i - 1) - max_delta_vy);
+        auto upper_bound_vy = (state.vy.col(i - 1) >
+          0).select(
+          state.vy.col(i - 1) + max_delta_vy,
+          state.vy.col(i - 1) - min_delta_vy);
+        state.vy.col(i) = state.cvy.col(i - 1)
+          .cwiseMax(lower_bound_vy)
+          .cwiseMin(upper_bound_vy);
+        if (clamp_raw_controls_) {
+          state.cvy.col(i - 1) = state.vy.col(i);
+        }
+      }
+    }
+
+    const unsigned int offset_vx = std::floor((model_delay_vx_ / model_dt_) + 0.5);
+    const unsigned int offset_vy = std::floor((model_delay_vy_ / model_dt_) + 0.5);
+    const unsigned int offset_wz = std::floor((model_delay_wz_ / model_dt_) + 0.5);
+
+    if (offset_vx > 0u || offset_wz > 0u || (is_holo && offset_vy > 0u)) {
+      applyDelayShift(state, is_holo, offset_vx, offset_vy, offset_wz);
     }
   }
 
@@ -303,12 +180,39 @@ public:
 
 protected:
   /**
-    * @brief Number of rollout steps over which commands already sent are still in flight. A
-    *        delay of a single step is the latency inherent to the rollouts, so is not replayed.
+    * @brief Apply the per-axis input-delay shift to velocity rollout.
+    *
+    * For j in [1, offset) — the delay window — fill `dst` with history[j]
     */
-  static unsigned int inFlightSteps(const std::vector<float> & history)
+  void applyDelayShift(
+    models::State & state, bool is_holo,
+    unsigned int offset_vx, unsigned int offset_vy, unsigned int offset_wz) const
   {
-    return history.size() > 1u ? static_cast<unsigned int>(history.size() - 1u) : 0u;
+    auto shift = [](Eigen::ArrayXXf & velocities, unsigned int offset,
+      const std::vector<float> & history) {
+        const unsigned int cols = static_cast<unsigned int>(velocities.cols());
+        if (offset == 0u || cols == 0u) {
+          return;
+        }
+
+        // Shift cols in-place right-to-left by offset
+        for (unsigned int k = (offset < cols) ? cols - offset : 0u; k > 0; --k) {
+          velocities.col(offset + k - 1) = velocities.col(k);
+        }
+
+        // Fill delay window cols with the in-flight commands from history.
+        const unsigned int end = std::min(offset, cols);
+        for (unsigned int j = 1; j < end; ++j) {
+          velocities.col(j).setConstant(history[j]);
+        }
+      };
+
+    shift(state.vx, offset_vx, cmd_history_vx_);
+    shift(state.wz, offset_wz, cmd_history_wz_);
+
+    if (is_holo) {
+      shift(state.vy, offset_vy, cmd_history_vy_);
+    }
   }
 
   /**
@@ -332,32 +236,11 @@ protected:
     buf.back() = v;
   }
 
-  /**
-    * @brief Replace the newest value of a ring buffer.
-    */
-  static void overwriteNewest(std::vector<float> & buf, float v)
-  {
-    if (!buf.empty()) {
-      buf.back() = v;
-    }
-  }
-
-  /**
-    * @brief Push a repeat of the newest value of a ring buffer.
-    */
-  static void holdNewest(std::vector<float> & buf)
-  {
-    if (!buf.empty()) {
-      pushOne(buf, buf.back());
-    }
-  }
-
   float model_dt_{0.0};
+  float model_delay_vx_{0.0};
+  float model_delay_vy_{0.0};
+  float model_delay_wz_{0.0};
   bool clamp_raw_controls_{false};
-  // Whether the first control of a sequence is sent, rather than pinned to the current velocity
-  bool first_control_sent_{true};
-  // Time (s) since the model_dt step of the newest command history element began
-  double history_step_elapsed_{std::numeric_limits<double>::quiet_NaN()};
 
   // Per-axis ring buffer of recently published commands
   std::vector<float> cmd_history_vx_;

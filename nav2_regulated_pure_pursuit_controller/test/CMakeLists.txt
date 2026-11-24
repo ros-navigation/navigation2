@@ -4,7 +4,7 @@ find_package(nav2_controller REQUIRED)
 nav2_add_gtest(test_regulated_pp
   test_regulated_pp.cpp
   test_dwpp_functions.cpp
-  test_latency_compensation_functions.cpp
+  test_latency_compensator.cpp
   path_utils/path_utils.cpp
 )
 target_link_libraries(test_regulated_pp
