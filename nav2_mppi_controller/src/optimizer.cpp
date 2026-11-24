@@ -106,26 +106,38 @@ void Optimizer::getParams()
 
   // Reject dynamic updates to acceleration limits of the wrong sign, which would invert the
   // acceleration bounds (e.g. a positive ax_min would prevent slowing down)
-  auto accel_sign_guard = [](bool positive) {
-      return [positive](
-        const rclcpp::Parameter & param,
-        rcl_interfaces::msg::SetParametersResult & result)
-        {
-          if (positive ? param.as_double() < 0.0 : param.as_double() > 0.0) {
-            result.successful = false;
-            if (!result.reason.empty()) {
-              result.reason += "\n";
-            }
-            result.reason += "Rejected dynamic update to '" + param.get_name() + "': it must be " +
-              (positive ? "positive" : "negative") + " or zero.";
-          }
-        };
+  auto reject_accel_sign = [](
+    const rclcpp::Parameter & param,
+    rcl_interfaces::msg::SetParametersResult & result, const std::string & sign)
+    {
+      result.successful = false;
+      if (!result.reason.empty()) {
+        result.reason += "\n";
+      }
+      result.reason += "Rejected dynamic update to '" + param.get_name() + "': it must be " +
+        sign + " or zero.";
+    };
+  auto positive_accel_guard = [reject_accel_sign](
+    const rclcpp::Parameter & param,
+    rcl_interfaces::msg::SetParametersResult & result)
+    {
+      if (param.as_double() < 0.0) {
+        reject_accel_sign(param, result, "positive");
+      }
+    };
+  auto negative_accel_guard = [reject_accel_sign](
+    const rclcpp::Parameter & param,
+    rcl_interfaces::msg::SetParametersResult & result)
+    {
+      if (param.as_double() > 0.0) {
+        reject_accel_sign(param, result, "negative");
+      }
     };
   for (const auto & p : {"ax_max", "ay_max", "az_max"}) {
-    parameters_handler_->addPreCallback(name_ + "." + p, accel_sign_guard(true));
+    parameters_handler_->addPreCallback(name_ + "." + p, positive_accel_guard);
   }
   for (const auto & p : {"ax_min", "ay_min"}) {
-    parameters_handler_->addPreCallback(name_ + "." + p, accel_sign_guard(false));
+    parameters_handler_->addPreCallback(name_ + "." + p, negative_accel_guard);
   }
 
   auto batch_size_guard = [](
