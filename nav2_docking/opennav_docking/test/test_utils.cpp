@@ -122,7 +122,7 @@ TEST(UtilsTests, parseDockFileController)
   EXPECT_TRUE(utils::parseDockFile(filepath, node, db));
   EXPECT_EQ(db.size(), 2u);
   EXPECT_EQ(db["dock1"].controller_name, std::string("pid"));
-  EXPECT_EQ(db["dock2"].controller_name, std::string(""));
+  EXPECT_EQ(db["dock2"].controller_name, std::string("controller"));
 }
 
 TEST(UtilsTests, parseDockFile2)

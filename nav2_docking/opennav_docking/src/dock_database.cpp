@@ -248,15 +248,7 @@ std::string DockDatabase::getControllerName(
     return it->second;
   }
 
-  auto node = node_.lock();
-  if (node) {
-    RCLCPP_WARN_ONCE(
-      node->get_logger(),
-      "No controller is specified for dock type '%s' or its docks. "
-      "Using the default graceful controller %s.",
-      type.c_str(), default_controller_id_.c_str());
-  }
-  return default_controller_id_;
+  return kDefaultControllerId;
 }
 
 void DockDatabase::assignControllers(DockMap & docks) const
@@ -314,71 +306,56 @@ bool DockDatabase::getControllerPlugins(
   const nav2::LifecycleNode::SharedPtr & node,
   nav2::TransformBuffer::SharedPtr tf)
 {
-  const std::vector<std::string> default_controller_ids{"controller"};
   std::vector<std::string> controller_ids =
-    node->declare_or_get_parameter("controllers", default_controller_ids);
+    node->declare_or_get_parameter("controllers", std::vector<std::string>{});
 
-  const std::string graceful_type = "opennav_docking::GracefulController";
-  if (controller_ids == default_controller_ids) {
-    nav2::declare_parameter_if_not_declared(
-      node, "controller.plugin", rclcpp::ParameterValue(graceful_type));
-  }
-
-  if (controller_ids.empty()) {
-    RCLCPP_ERROR(node->get_logger(), "Controllers empty! Must provide at least 1.");
-    return false;
-  }
-
-  const std::string reserved_controller_id = "default_graceful_controller";
-  if (std::find(controller_ids.begin(), controller_ids.end(), reserved_controller_id) !=
+  if (std::find(controller_ids.begin(), controller_ids.end(), kDefaultControllerId) !=
     controller_ids.end())
   {
     RCLCPP_ERROR(
       node->get_logger(), "Controller name '%s' is reserved. Please rename it in `controllers`.",
-      reserved_controller_id.c_str());
+      kDefaultControllerId);
     return false;
   }
 
-  // Docks naming no controller use a graceful controller
-  if (controller_ids == default_controller_ids &&
-    nav2::get_plugin_type_param(node, default_controller_ids.front()) == graceful_type)
-  {
-    default_controller_id_ = default_controller_ids.front();
-  } else {
-    default_controller_id_ = reserved_controller_id;
-    controller_ids.push_back(default_controller_id_);
-    nav2::declare_parameter_if_not_declared(
-      node, default_controller_id_ + ".plugin", rclcpp::ParameterValue(graceful_type));
+  // The default controller is always a graceful controller named `controller`
+  const std::string graceful_type = "opennav_docking::GracefulController";
+  nav2::declare_parameter_if_not_declared(
+    node, std::string(kDefaultControllerId) + ".plugin", rclcpp::ParameterValue(graceful_type));
+  if (nav2::get_plugin_type_param(node, kDefaultControllerId) != graceful_type) {
+    RCLCPP_ERROR(
+      node->get_logger(), "Controller '%s' is reserved for the default %s.",
+      kDefaultControllerId, graceful_type.c_str());
+    return false;
   }
+  controller_ids.push_back(kDefaultControllerId);
 
-  for (size_t i = 0; i != controller_ids.size(); i++) {
-    if (controllers_.find(controller_ids[i]) != controllers_.end()) {
+  std::string available;
+  for (const auto & controller_id : controller_ids) {
+    if (controllers_.find(controller_id) != controllers_.end()) {
       RCLCPP_FATAL(
         node->get_logger(), "Controller %s is listed more than once in `controllers`.",
-        controller_ids[i].c_str());
+        controller_id.c_str());
       return false;
     }
 
     try {
-      std::string plugin_type = nav2::get_plugin_type_param(node, controller_ids[i]);
+      std::string plugin_type = nav2::get_plugin_type_param(node, controller_id);
       ControllerBase::Ptr controller = controller_loader_.createSharedInstance(plugin_type);
       RCLCPP_INFO(
         node->get_logger(), "Created controller plugin %s of type %s",
-        controller_ids[i].c_str(), plugin_type.c_str());
-      controller->configure(node, controller_ids[i], tf);
-      controllers_.insert({controller_ids[i], controller});
+        controller_id.c_str(), plugin_type.c_str());
+      controller->configure(node, controller_id, tf);
+      controllers_.insert({controller_id, controller});
     } catch (const std::exception & ex) {
       RCLCPP_FATAL(
         node->get_logger(), "Failed to create controller plugin %s. Exception: %s",
-        controller_ids[i].c_str(), ex.what());
+        controller_id.c_str(), ex.what());
       return false;
     }
-  }
-
-  std::string available;
-  for (const auto & controller_id : controller_ids) {
     available += controller_id + " ";
   }
+
   RCLCPP_INFO(
     node->get_logger(), "Docking server has %s controllers available.", available.c_str());
 

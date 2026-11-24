@@ -139,7 +139,7 @@ public:
   /**
    * @brief Gets the name of this controller instance
    */
-  std::string getName() {return name_;}
+  std::string getName() const {return name_;}
 
 protected:
   /**

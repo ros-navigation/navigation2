@@ -26,6 +26,12 @@
 typedef nav2_msgs::action::DockRobot DockRobot;
 typedef nav2_msgs::action::UndockRobot UndockRobot;
 
+namespace opennav_docking
+{
+// Reserved name of the default graceful controller
+constexpr char kDefaultControllerId[] = "controller";
+}  // namespace opennav_docking
+
 /**
 * @struct A dock instance struct for a database
 */

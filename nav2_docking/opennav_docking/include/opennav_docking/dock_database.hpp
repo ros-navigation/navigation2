@@ -142,8 +142,8 @@ protected:
   bool getDockInstances(const nav2::LifecycleNode::SharedPtr & node);
 
   /**
-   * @brief Create the controller plugins listed in the `controllers` parameter,
-   * and the default graceful controller if not provided
+   * @brief Create default graceful `controller` and the plugins listed
+   * in the `controllers` parameter
    * @param node Node to get values from
    * @param tf TF buffer
    * @return bool If every controller is created and configured
@@ -191,7 +191,6 @@ protected:
   // Declared before the map so that it is destructed after controllers
   pluginlib::ClassLoader<ControllerBase> controller_loader_;
   ControllerMap controllers_;
-  std::string default_controller_id_;
   nav2::ServiceServer<nav2_msgs::srv::ReloadDockDatabase>::SharedPtr reload_db_service_;
 };
 

@@ -254,7 +254,7 @@ protected:
   std::unique_ptr<Navigator> navigator_;
   std::string curr_dock_type_;
   std::string curr_dock_controller_;
-  // Controller decrlared after its owner dock_db_ so it is destroyed first
+  // Controller declared after its owner dock_db_ so it is destroyed first
   ControllerBase::Ptr controller_;
 
   nav2::TransformBuffer::SharedPtr tf2_buffer_;

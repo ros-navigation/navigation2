@@ -672,8 +672,8 @@ TEST(DockingServerTests, ControllerDefaultInstance)
 
   ASSERT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::SUCCESS);
 
-  // With no `controllers` list, a single instance named `controller` is synthesized so that
-  // the `controller.*` namespace existing configuration files use keeps applying
+  // With no `controllers` list, only reserved default graceful `controller` is loaded,
+  // so the `controller.*` namespace existing configuration files use keeps applying
   EXPECT_EQ(node->controllerCount(), 1u);
   EXPECT_TRUE(node->getCurrentController().empty());
   EXPECT_EQ(
@@ -702,16 +702,14 @@ TEST(DockingServerTests, ControllerNamedInstances)
   EXPECT_EQ(node->controllerCount(), 3u);
   EXPECT_TRUE(node->hasController("c1"));
   EXPECT_TRUE(node->hasController("c2"));
+  EXPECT_TRUE(node->hasController("controller"));
   EXPECT_EQ(
-    node->get_parameter("default_graceful_controller.plugin").as_string(),
+    node->get_parameter("controller.plugin").as_string(),
     "opennav_docking::GracefulController");
 
   // Each instance owns its own parameter namespace
   EXPECT_EQ(node->get_parameter("c1.k_phi").as_double(), 3.0);
   EXPECT_EQ(node->get_parameter("c2.k_phi").as_double(), 5.0);
-
-  // The default instance is not synthesized when an explicit list is given
-  EXPECT_FALSE(node->has_parameter("controller.plugin"));
 
   node->on_cleanup(rclcpp_lifecycle::State());
   node->shutdown();
@@ -745,25 +743,23 @@ TEST(DockingServerTests, controllerReservedNameFails)
 {
   auto node = std::make_shared<DockingServerControllerShim>();
   declareTestDock(node);
-  node->declare_parameter(
-    "controllers", std::vector<std::string>{"c1", "default_graceful_controller"});
+  node->declare_parameter("controllers", std::vector<std::string>{"c1", "controller"});
   node->declare_parameter("c1.plugin", "opennav_docking::GracefulController");
-  node->declare_parameter(
-    "default_graceful_controller.plugin", "opennav_docking::PIDController");
 
   EXPECT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::FAILURE);
   EXPECT_EQ(node->controllerCount(), 0u);
   node->shutdown();
 }
 
-TEST(DockingServerTests, controllerEmptyListFails)
+TEST(DockingServerTests, controllerEmptyListLoadsDefault)
 {
   auto node = std::make_shared<DockingServerControllerShim>();
   declareTestDock(node);
   node->declare_parameter("controllers", std::vector<std::string>{});
 
-  EXPECT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::FAILURE);
-  EXPECT_EQ(node->controllerCount(), 0u);
+  ASSERT_EQ(node->on_configure(rclcpp_lifecycle::State()), nav2::CallbackReturn::SUCCESS);
+  EXPECT_EQ(node->controllerCount(), 1u);
+  EXPECT_TRUE(node->hasController("controller"));
   node->shutdown();
 }
 

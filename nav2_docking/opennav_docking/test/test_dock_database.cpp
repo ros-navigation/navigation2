@@ -286,7 +286,7 @@ TEST(DatabaseTests, typeControllerName)
 
   ASSERT_TRUE(db.initialize(node, nav2::create_transform_buffer(node)));
   EXPECT_EQ(db.getControllerName("", "dockv1"), "c1");
-  EXPECT_EQ(db.getControllerName("", "unknown_type"), "default_graceful_controller");
+  EXPECT_EQ(db.getControllerName("", "unknown_type"), "controller");
   // Empty selects the only dock type
   EXPECT_EQ(db.getControllerName("", ""), "c1");
 }
