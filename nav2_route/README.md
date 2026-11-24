@@ -145,7 +145,7 @@ route_server:
     min_prune_dist_from_start: 0.10                     # Min distance from start node away from start pose to consider start node pruning as considering it as being passed (in case start pose is very close to a start node, but not exact)
     prune_goal: true                              # Whether pruning the goal nodes from the route due to being past the goal pose requested is possible (pose requests only)
     enable_nn_search: true                        # Whether to enable breadth first search considering the costmap to find the node closest to the start and edge poses, rather than using the euclidean nearest neighbor alone.
-    max_nn_search_iterations: 10000               # Maximum number of iterations for breadth-first search.
+    max_nn_search_iterations: 10000               # Maximum number of iterations for breadth-first search, for both the start and goal.
     num_nearest_nodes: 5                          # The number of nearest-neighbors to extract for breadth-first search to consider.
 ```
 
