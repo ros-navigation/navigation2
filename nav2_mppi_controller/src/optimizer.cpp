@@ -416,16 +416,13 @@ void Optimizer::prepare(
     const auto & c = settings_.constraints;
     const double dt = settings_.controller_period;
     state_.speed = robot_speed;
-    const auto [vx_lower, vx_upper] =
-      utils::AccelBounds<double>(dt * c.ax_min, dt * c.ax_max)(robot_speed.linear.x);
-    state_.speed.linear.x = std::clamp(last_command_vel_.linear.x, vx_lower, vx_upper);
-    const auto [wz_lower, wz_upper] =
-      utils::AccelBounds<double>(-dt * c.az_max, dt * c.az_max)(robot_speed.angular.z);
-    state_.speed.angular.z = std::clamp(last_command_vel_.angular.z, wz_lower, wz_upper);
+    state_.speed.linear.x = utils::clampVelocityByAccel(
+      robot_speed.linear.x, last_command_vel_.linear.x, dt * c.ax_min, dt * c.ax_max);
+    state_.speed.angular.z = utils::clampVelocityByAccel(
+      robot_speed.angular.z, last_command_vel_.angular.z, -dt * c.az_max, dt * c.az_max);
     if (isHolonomic()) {
-      const auto [vy_lower, vy_upper] =
-        utils::AccelBounds<double>(dt * c.ay_min, dt * c.ay_max)(robot_speed.linear.y);
-      state_.speed.linear.y = std::clamp(last_command_vel_.linear.y, vy_lower, vy_upper);
+      state_.speed.linear.y = utils::clampVelocityByAccel(
+        robot_speed.linear.y, last_command_vel_.linear.y, dt * c.ay_min, dt * c.ay_max);
     }
   }
 

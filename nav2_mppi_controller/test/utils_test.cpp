@@ -579,25 +579,21 @@ TEST(UtilsTests, toTrajectoryMsgTest)
     rclcpp::Duration(4, 0));
 }
 
-TEST(UtilsTests, AccelBoundsTest)
+TEST(UtilsTests, ClampVelocityByAccelTest)
 {
-  // Speeding up by 0.015 and slowing down by 0.15 in a step
-  const utils::AccelBounds<float> bounds(-0.15f, 0.015f);
-  auto expect = [&](float v, float lower, float upper) {
-      const auto [lo, hi] = bounds(v);
-      EXPECT_NEAR(lo, lower, 1e-6f) << v;
-      EXPECT_NEAR(hi, upper, 1e-6f) << v;
-      // Clamping arrays of controls gives the same bounds
-      Eigen::ArrayXf prev = Eigen::ArrayXf::Constant(2, v), out(2);
-      Eigen::ArrayXf control(2);
-      control << -10.0f, 10.0f;
-      bounds.clamp(prev, control, out);
-      EXPECT_NEAR(out(0), lower, 1e-6f) << v;
-      EXPECT_NEAR(out(1), upper, 1e-6f) << v;
+  // Speeding up by 0.015 and slowing down by 0.15 in a step: the lowest and highest velocities
+  // reachable are where controls far below and above are clamped to
+  auto expect = [](float v, float lower, float upper) {
+      EXPECT_NEAR(utils::clampVelocityByAccel(v, -10.0f, -0.15f, 0.015f), lower, 1e-6f) << v;
+      EXPECT_NEAR(utils::clampVelocityByAccel(v, 10.0f, -0.15f, 0.015f), upper, 1e-6f) << v;
+      // In double precision too
+      EXPECT_NEAR(utils::clampVelocityByAccel<double>(v, -10.0, -0.15, 0.015), lower, 1e-6) << v;
+      EXPECT_NEAR(utils::clampVelocityByAccel<double>(v, 10.0, -0.15, 0.015), upper, 1e-6) << v;
     };
-  // From rest, both directions speed up
+  // From rest, both directions speed up, at the acceleration rather than the braking rate
   expect(0.0f, -0.015f, 0.015f);
-  // Slowing through zero within the step speeds up in reverse for the rest of it
+  // Slowing through zero within the step speeds up in reverse for the rest of it, so with
+  // measurement noise around zero, neither direction speeds up at the braking rate
   expect(0.075f, -0.0075f, 0.09f);
   expect(-0.075f, -0.09f, 0.0075f);
   expect(0.001f, -0.015f * (1.0f - 0.001f / 0.15f), 0.016f);
@@ -605,20 +601,14 @@ TEST(UtilsTests, AccelBoundsTest)
   // Away from zero, speeding up and slowing down use their own limits
   expect(1.0f, 0.85f, 1.015f);
   expect(-1.0f, -1.015f, -0.85f);
+  // Within the reachable velocities, the control is unchanged
+  EXPECT_EQ(utils::clampVelocityByAccel(0.5f, 0.45f, -0.15f, 0.015f), 0.45f);
 
   // Symmetric limits give exactly v -/+ the change, with no rounding from the zero crossing
-  const utils::AccelBounds<float> symmetric(-0.1f, 0.1f);
   for (float v : {0.03f, -0.03f, 0.0f, 0.7f, -0.7f}) {
-    EXPECT_EQ(symmetric(v).first, v - 0.1f);
-    EXPECT_EQ(symmetric(v).second, v + 0.1f);
+    EXPECT_EQ(utils::clampVelocityByAccel(v, -10.0f, -0.1f, 0.1f), v - 0.1f);
+    EXPECT_EQ(utils::clampVelocityByAccel(v, 10.0f, -0.1f, 0.1f), v + 0.1f);
   }
-
-  // The velocity clamp uses the same bounds, so from rest or noise around it, it speeds up at the
-  // acceleration rather than the braking rate in either direction
-  EXPECT_NEAR(utils::clampVelocityByAccel(0.0f, 1.0f, -0.15f, 0.015f), 0.015f, 1e-6f);
-  EXPECT_NEAR(utils::clampVelocityByAccel(0.0f, -1.0f, -0.15f, 0.015f), -0.015f, 1e-6f);
-  EXPECT_LT(utils::clampVelocityByAccel(-0.001f, 1.0f, -0.15f, 0.015f), 0.015f);
-  EXPECT_GT(utils::clampVelocityByAccel(0.001f, -1.0f, -0.15f, 0.015f), -0.015f);
 }
 
 TEST(UtilsTests, getLastPathPoseTest)

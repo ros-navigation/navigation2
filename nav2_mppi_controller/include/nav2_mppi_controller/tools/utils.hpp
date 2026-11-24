@@ -48,7 +48,6 @@
 #include "nav2_mppi_controller/models/path.hpp"
 #include "builtin_interfaces/msg/time.hpp"
 #include "nav2_mppi_controller/critic_data.hpp"
-#include "nav2_mppi_controller/tools/accel_bounds.hpp"
 
 #define M_PIF 3.141592653589793238462643383279502884e+00F
 #define M_PIF_2 1.5707963267948966e+00F
@@ -674,12 +673,28 @@ inline float clamp(
  * @param max_delta Maximum velocity change (acceleration, typically positive)
  * @return Clamped velocity
  */
-inline float clampVelocityByAccel(
-  const float last_vel, const float curr_vel,
-  const float min_delta, const float max_delta)
+template<typename T>
+inline T clampVelocityByAccel(
+  const T last_vel, const T curr_vel,
+  const T min_delta, const T max_delta)
 {
-  const auto [lower, upper] = AccelBounds<float>(min_delta, max_delta)(last_vel);
-  return clamp(lower, upper, curr_vel);
+  // Slowing down through zero within the step speeds up in the other direction for the rest of it
+  const T up = max_delta, down = -min_delta;
+  const bool crossing = down > T(0) && down != up;
+  if (last_vel >= T(0)) {
+    T lower = last_vel - down;
+    if (crossing) {
+      const T through_zero = up / down * last_vel - up;
+      lower = down > up ? std::max(lower, through_zero) : std::min(lower, through_zero);
+    }
+    return std::min(last_vel + up, std::max(curr_vel, lower));
+  }
+  T upper = last_vel + down;
+  if (crossing) {
+    const T through_zero = up / down * last_vel + up;
+    upper = down > up ? std::min(upper, through_zero) : std::max(upper, through_zero);
+  }
+  return std::min(upper, std::max(curr_vel, last_vel - up));
 }
 
 /**

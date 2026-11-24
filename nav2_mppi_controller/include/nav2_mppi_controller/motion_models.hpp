@@ -27,7 +27,6 @@
 #include "nav2_mppi_controller/models/state.hpp"
 #include "nav2_mppi_controller/models/constraints.hpp"
 
-#include "nav2_mppi_controller/tools/accel_bounds.hpp"
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 
 namespace mppi
@@ -149,28 +148,30 @@ public:
   virtual void predict(models::State & state)
   {
     const bool is_holo = isHolonomic();
-    const utils::AccelBounds<float> bounds_vx(
-      model_dt_ * control_constraints_.ax_min, model_dt_ * control_constraints_.ax_max);
-    const utils::AccelBounds<float> bounds_vy(
-      model_dt_ * control_constraints_.ay_min, model_dt_ * control_constraints_.ay_max);
-    const utils::AccelBounds<float> bounds_wz(
-      -model_dt_ * control_constraints_.az_max, model_dt_ * control_constraints_.az_max);
+    float max_delta_vx = model_dt_ * control_constraints_.ax_max;
+    float min_delta_vx = model_dt_ * control_constraints_.ax_min;
+    float max_delta_vy = model_dt_ * control_constraints_.ay_max;
+    float min_delta_vy = model_dt_ * control_constraints_.ay_min;
+    float max_delta_wz = model_dt_ * control_constraints_.az_max;
     unsigned int n_cols = state.vx.cols();
 
     // Set dynamic limits to the platform velocities from the raw controls sampling
     for (unsigned int i = 1; i < n_cols; i++) {
-      bounds_vx.clamp(state.vx.col(i - 1), state.cvx.col(i - 1), state.vx.col(i));
+      clampByAccel(
+        state.vx.col(i - 1), state.cvx.col(i - 1), min_delta_vx, max_delta_vx, state.vx.col(i));
       if (clamp_raw_controls_) {
         state.cvx.col(i - 1) = state.vx.col(i);
       }
 
-      bounds_wz.clamp(state.wz.col(i - 1), state.cwz.col(i - 1), state.wz.col(i));
+      clampByAccel(
+        state.wz.col(i - 1), state.cwz.col(i - 1), -max_delta_wz, max_delta_wz, state.wz.col(i));
       if (clamp_raw_controls_) {
         state.cwz.col(i - 1) = state.wz.col(i);
       }
 
       if (is_holo) {
-        bounds_vy.clamp(state.vy.col(i - 1), state.cvy.col(i - 1), state.vy.col(i));
+        clampByAccel(
+          state.vy.col(i - 1), state.cvy.col(i - 1), min_delta_vy, max_delta_vy, state.vy.col(i));
         if (clamp_raw_controls_) {
           state.cvy.col(i - 1) = state.vy.col(i);
         }
@@ -198,6 +199,43 @@ public:
   virtual void applyConstraints(models::ControlSequence & /*control_sequence*/) {}
 
 protected:
+  /**
+   * @brief Clamp controls to the velocities reachable in a step from the previous velocities:
+   *        speeding up (away from zero) by up to max_delta and slowing down by up to -min_delta.
+   *        Slowing down through zero speeds up in the other direction for the rest of the step,
+   *        so from rest both directions are limited by max_delta.
+   */
+  static void clampByAccel(
+    const Eigen::Ref<const Eigen::ArrayXf> & prev, const Eigen::Ref<const Eigen::ArrayXf> & control,
+    const float min_delta, const float max_delta, Eigen::Ref<Eigen::ArrayXf> out)
+  {
+    const float up = max_delta, down = -min_delta;
+    if (down == up) {
+      // Symmetric limits, through zero or not
+      out = control.cwiseMax(prev - up).cwiseMin(prev + up);
+    } else if (down <= 0.0f) {
+      // Unable to slow down
+      out = control
+        .cwiseMax((prev >= 0.0f).select(prev - down, prev - up))
+        .cwiseMin((prev < 0.0f).select(prev + down, prev + up));
+    } else {
+      // Of the positive and negative parts of the velocity, only one is non-zero: slowing down
+      // to zero takes |v| / down of the step, then speeding up at up for the rest of it
+      const float slope = up / down;
+      const auto pos = prev.max(0.0f);
+      const auto neg = prev.min(0.0f);
+      if (down > up) {
+        out = control
+          .cwiseMax(neg + (pos - down).max(slope * pos - up))
+          .cwiseMin(pos + (neg + down).min(slope * neg + up));
+      } else {
+        out = control
+          .cwiseMax(neg + (pos - down).min(slope * pos - up))
+          .cwiseMin(pos + (neg + down).max(slope * neg + up));
+      }
+    }
+  }
+
   /**
     * @brief Apply an axis' input delay to its velocity rollout: the delay, in steps, is the size of
     *        its history of commands sent within it. For j in [1, offset), the delay window, the
