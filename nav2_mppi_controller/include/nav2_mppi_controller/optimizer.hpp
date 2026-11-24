@@ -26,6 +26,7 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_core/goal_checker.hpp"
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
@@ -154,9 +155,10 @@ public:
 
   /**
    * @brief Reset the optimization problem to initial conditions
-   * @param Whether to reset the constraints to its base values
+   * @param reset_dynamic_speed_limits Whether to reset the constraints to its base values
+   * @param reset_command_history Whether to forget the commands sent, which soft resets keep
    */
-  void reset(bool reset_dynamic_speed_limits = true);
+  void reset(bool reset_dynamic_speed_limits = true, bool reset_command_history = true);
 
   /**
    * @brief Check if a dynamic speed limit is currently active
@@ -290,6 +292,11 @@ protected:
   void setOffset(double controller_period);
 
   /**
+   * @brief Rebuild the constraints from the base constraints and the stored speed limit
+   */
+  void applySpeedLimit();
+
+  /**
    * @brief Perform fallback behavior to try to recover from a set of trajectories in collision
    * @param fail Whether the system failed to recover from
    */
@@ -331,6 +338,8 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("MPPIController")};
 
   geometry_msgs::msg::Twist last_command_vel_;
+  double speed_limit_{nav2_costmap_2d::NO_SPEED_LIMIT};
+  bool speed_limit_percentage_{false};
 };
 
 }  // namespace mppi

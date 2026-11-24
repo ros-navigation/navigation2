@@ -14,6 +14,8 @@
 
 #include <chrono>
 #include <cmath>
+#include <deque>
+#include <random>
 #include <thread>
 
 #include "gtest/gtest.h"
@@ -134,6 +136,16 @@ public:
     return fallback(fail);
   }
 
+  void prepareWrapper(
+    const geometry_msgs::msg::Twist & robot_speed, const geometry_msgs::msg::Twist & last_command)
+  {
+    last_command_vel_ = last_command;
+    geometry_msgs::msg::PoseStamped pose;
+    nav_msgs::msg::Path plan;
+    plan.poses.resize(2);
+    prepare(pose, robot_speed, plan, geometry_msgs::msg::Pose(), nullptr);
+  }
+
   void testPrepare(
     const geometry_msgs::msg::PoseStamped & robot_pose,
     const geometry_msgs::msg::Twist & robot_speed,
@@ -165,6 +177,11 @@ public:
     return {s.constraints.vx_min, s.constraints.vx_max};
   }
 
+  const geometry_msgs::msg::Twist & getLastCommandVel()
+  {
+    return last_command_vel_;
+  }
+
   models::ControlConstraints & getControlConstraints()
   {
     return settings_.constraints;
@@ -183,6 +200,32 @@ public:
   void applyControlSequenceConstraintsWrapper()
   {
     return applyControlSequenceConstraints();
+  }
+
+  /**
+   * @brief Run a control cycle as evalControl() does, keeping the optimal control sequence before
+   * it is shifted and the velocity it was constrained to continue from
+   */
+  geometry_msgs::msg::Twist runCycle(
+    const geometry_msgs::msg::PoseStamped & pose, const geometry_msgs::msg::Twist & speed,
+    const nav_msgs::msg::Path & plan, const geometry_msgs::msg::Pose & goal,
+    geometry_msgs::msg::Twist & start, models::ControlSequence & sequence)
+  {
+    prepare(pose, speed, plan, goal, nullptr);
+    optimize();
+    start = motion_model_->getControlStart(state_.speed);
+    sequence = control_sequence_;
+    auto cmd = getControlFromSequenceAsTwist(plan.header.stamp);
+    last_command_vel_ = cmd.twist;
+    if (settings_.shift_control_sequence) {
+      shiftControlSequence();
+    }
+    return cmd.twist;
+  }
+
+  void generateNoisedTrajectoriesWrapper()
+  {
+    generateNoisedTrajectories();
   }
 
   void applyControlSequenceInterIterationConstraintsWrapper()
@@ -842,7 +885,10 @@ TEST(OptimizerTests, CommandsInFlightTests)
   state.speed.linear.x = 0.1;
   state.speed.angular.z = 0.2;
   for (int i = 0; i < 3; ++i) {
-    optimizer_tester.getMotionModel()->pushCommandHistory(0.4f, 0.0f, 0.6f);
+    geometry_msgs::msg::Twist cmd;
+    cmd.linear.x = 0.4;
+    cmd.angular.z = 0.6;
+    optimizer_tester.getMotionModel()->onCommandSent(cmd);
   }
 
   // So the next command continues from the last command rather than the measured velocity
@@ -857,6 +903,40 @@ TEST(OptimizerTests, CommandsInFlightTests)
   sequence.wz.setZero();
   auto trajectory = optimizer_tester.getOptimizedTrajectory();
   EXPECT_GT(trajectory(2, 0), 0.02);
+}
+
+TEST(OptimizerTests, OptimalTrajectoryMatchesSampledRolloutTests)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(20.0));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(10));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(10));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  auto tf_buffer = nav2::create_transform_buffer(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+
+  // At rest, with an optimal sequence asking for 0.5 m/s
+  auto & state = optimizer_tester.grabState();
+  auto & sequence = optimizer_tester.grabControlSequence();
+  state.speed = geometry_msgs::msg::Twist();
+  sequence.vx = Eigen::ArrayXf::Constant(10, 0.5f);
+  sequence.wz.setZero();
+  auto trajectory = optimizer_tester.getOptimizedTrajectory();
+
+  // As the sampled trajectories, the first step moves at the current speed and the controls take
+  // effect after it within the acceleration limits (3.0 m/s^2 over 0.05s steps), rather than the
+  // robot moving at the optimal controls at once
+  EXPECT_NEAR(trajectory(0, 0), 0.0, 1e-6);
+  EXPECT_NEAR(trajectory(1, 0), 0.15 * 0.05, 1e-6);
+  EXPECT_NEAR(trajectory(2, 0), (0.15 + 0.3) * 0.05, 1e-6);
 }
 
 TEST(OptimizerTests, updateStateVelocitiesTests)
@@ -1107,6 +1187,390 @@ TEST(OptimizerTests, Omni_openLoopMppiTest)
     optimizer_tester.getSettings().controller_period *
     optimizer_tester.getControlConstraints().ay_max);
 }
+
+TEST(OptimizerTests, AccelerationLimitsTests)
+{
+  // Accelerating slowly but braking hard: 0.3 m/s^2 and -3.0 m/s^2 over 0.05s control periods
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(20.0));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(10));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(10));
+  node->declare_parameter("mppic.ax_max", rclcpp::ParameterValue(0.3));
+  node->declare_parameter("mppic.ax_min", rclcpp::ParameterValue(-3.0));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "mppic";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  auto tf_buffer = nav2::create_transform_buffer(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  param_handler.start();
+
+  // The closed loop prediction toward the last command speeds up in reverse at ax_max
+  geometry_msgs::msg::Twist speed, last_command;
+  speed.linear.x = -0.4;
+  last_command.linear.x = -1.0;
+  optimizer_tester.prepareWrapper(speed, last_command);
+  EXPECT_NEAR(optimizer_tester.grabState().speed.linear.x, -0.415, 1e-6);
+
+  // And from rest, in either direction, at ax_max rather than the braking rate
+  speed.linear.x = 0.0;
+  optimizer_tester.prepareWrapper(speed, last_command);
+  EXPECT_NEAR(optimizer_tester.grabState().speed.linear.x, -0.015, 1e-6);
+  last_command.linear.x = 1.0;
+  speed.linear.x = -0.001;
+  optimizer_tester.prepareWrapper(speed, last_command);
+  EXPECT_LT(optimizer_tester.grabState().speed.linear.x, 0.015);
+
+  // Acceleration limits of the wrong sign are rejected, as they would invert the bounds
+  EXPECT_FALSE(node->set_parameter(rclcpp::Parameter("mppic.ax_min", 1.0)).successful);
+  EXPECT_FALSE(node->set_parameter(rclcpp::Parameter("mppic.ax_max", -1.0)).successful);
+  EXPECT_FALSE(node->set_parameter(rclcpp::Parameter("mppic.az_max", -1.0)).successful);
+  EXPECT_FALSE(node->set_parameter(rclcpp::Parameter("mppic.ay_min", 1.0)).successful);
+  EXPECT_FLOAT_EQ(optimizer_tester.getBaseConstraints().ax_min, -3.0f);
+  EXPECT_TRUE(node->set_parameter(rclcpp::Parameter("mppic.ax_min", -2.0)).successful);
+  EXPECT_FLOAT_EQ(optimizer_tester.getBaseConstraints().ax_min, -2.0f);
+}
+
+TEST(OptimizerTests, SoftResetKeepsCommandsAndSpeedLimitTests)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(20.0));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(10));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(10));
+  node->declare_parameter("mppic.open_loop", rclcpp::ParameterValue(true));
+  node->declare_parameter("mppic.ax_min", rclcpp::ParameterValue(-1.0));
+  node->declare_parameter("mppic.model_delay_vx", rclcpp::ParameterValue(0.15));
+  node->declare_parameter(
+    "mppic.diff_drive.plugin", rclcpp::ParameterValue("mppi::DiffDriveMotionModel"));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "mppic";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  auto tf_buffer = nav2::create_transform_buffer(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  param_handler.start();
+
+  // Moving at 0.5 m/s in open loop, with commands at 0.5 m/s in flight
+  geometry_msgs::msg::Twist moving;
+  moving.linear.x = 0.5;
+  for (int i = 0; i < 3; ++i) {
+    optimizer_tester.getMotionModel()->onCommandSent(moving);
+  }
+  optimizer_tester.prepareWrapper(moving, moving);
+  EXPECT_NEAR(optimizer_tester.grabState().speed.linear.x, 0.5, 1e-6);
+
+  // A parameter update while moving keeps the commands sent, so open loop still starts from the
+  // last command and the next command continues from the commands in flight, rather than both
+  // being reset to rest and commanding a stop far beyond the braking limit
+  EXPECT_TRUE(node->set_parameter(rclcpp::Parameter("mppic.gamma", 0.02)).successful);
+  optimizer_tester.prepareWrapper(moving, optimizer_tester.getLastCommandVel());
+  EXPECT_NEAR(optimizer_tester.grabState().speed.linear.x, 0.5, 1e-6);
+  EXPECT_NEAR(
+    optimizer_tester.getMotionModel()->getControlStart(geometry_msgs::msg::Twist()).linear.x,
+    0.5, 1e-6);
+  auto & sequence = optimizer_tester.grabControlSequence();
+  sequence.vx.setZero();
+  optimizer_tester.applyControlSequenceConstraintsWrapper();
+  EXPECT_GE(sequence.vx(1), 0.5 - 1.0 * 0.05 - 1e-6);
+
+  // And it keeps an active speed limit, which the speed filter would not publish again
+  optimizer_tester.setSpeedLimit(50.0, true);
+  const float limited_vx_max = optimizer_tester.getControlConstraints().vx_max;
+  EXPECT_TRUE(node->set_parameter(rclcpp::Parameter("mppic.gamma", 0.03)).successful);
+  EXPECT_TRUE(optimizer_tester.isSpeedLimitActiveWrapper());
+  EXPECT_FLOAT_EQ(optimizer_tester.getControlConstraints().vx_max, limited_vx_max);
+
+  // While a base acceleration update still applies, under the same speed limit
+  EXPECT_TRUE(node->set_parameter(rclcpp::Parameter("mppic.ax_min", -2.0)).successful);
+  EXPECT_FLOAT_EQ(optimizer_tester.getControlConstraints().ax_min, -2.0f);
+  EXPECT_FLOAT_EQ(optimizer_tester.getControlConstraints().vx_max, limited_vx_max);
+
+  // A fallback keeps them too
+  EXPECT_TRUE(optimizer_tester.fallbackWrapper(true));
+  EXPECT_NEAR(optimizer_tester.getLastCommandVel().linear.x, 0.5, 1e-6);
+  EXPECT_TRUE(optimizer_tester.isSpeedLimitActiveWrapper());
+
+  // While a hard reset, between goals, forgets them
+  optimizer_tester.reset(false);
+  EXPECT_NEAR(optimizer_tester.getLastCommandVel().linear.x, 0.0, 1e-6);
+  EXPECT_NEAR(
+    optimizer_tester.getMotionModel()->getControlStart(geometry_msgs::msg::Twist()).linear.x,
+    0.0, 1e-6);
+}
+
+TEST(OptimizerTests, PinnedControlNotSampledTests)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(20.0));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(200));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(10));
+  node->declare_parameter("mppic.motion_model", rclcpp::ParameterValue("omni"));
+  node->declare_parameter(
+    "mppic.omni.plugin", rclcpp::ParameterValue("mppi::OmniMotionModel"));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  rclcpp_lifecycle::State lstate;
+  costmap_ros->on_configure(lstate);
+  auto tf_buffer = nav2::create_transform_buffer(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+
+  // Shifting, vx(0) is the current speed and vx(1) the sent command, asking for full speed
+  auto & state = optimizer_tester.grabState();
+  state.speed.linear.x = 0.2;
+  state.speed.linear.y = 0.1;
+  state.speed.angular.z = 0.3;
+  auto & sequence = optimizer_tester.grabControlSequence();
+  sequence.vx.setConstant(0.5f);
+  sequence.vy.setConstant(0.5f);
+  sequence.wz.setConstant(1.9f);
+  optimizer_tester.generateNoisedTrajectoriesWrapper();
+
+  // The current speed is not sampled, so every sample's response to the sent command, vx(2),
+  // is within one step of the acceleration limits (3.0 and 3.5 over 0.05s) of the current speed,
+  // as the sent command itself is
+  EXPECT_TRUE(state.cvx.col(0).isApproxToConstant(0.2f));
+  EXPECT_TRUE(state.cvy.col(0).isApproxToConstant(0.1f));
+  EXPECT_TRUE(state.cwz.col(0).isApproxToConstant(0.3f));
+  EXPECT_LE((state.vx.col(2) - 0.2f).abs().maxCoeff(), 0.15f + 1e-5f);
+  EXPECT_LE((state.vy.col(2) - 0.1f).abs().maxCoeff(), 0.15f + 1e-5f);
+  EXPECT_LE((state.wz.col(2) - 0.3f).abs().maxCoeff(), 0.175f + 1e-5f);
+}
+
+struct FeasibilityCase
+{
+  std::string model;
+  bool open_loop;
+  double ax_max, ax_min, az_max;
+  double delay;
+  double frequency;
+};
+
+class AccelerationFeasibilityTests : public ::testing::TestWithParam<FeasibilityCase> {};
+
+// Every control cycle, the sent command, the optimal control sequence and the sampled rollouts
+// stay within the direction-aware acceleration limits, between and within iterations
+TEST_P(AccelerationFeasibilityTests, LimitsHeldEveryCycle)
+{
+  const auto c = GetParam();
+  const bool omni = c.model == "omni";
+  auto node = std::make_shared<nav2::LifecycleNode>("feasibility_node");
+  OptimizerTester optimizer_tester;
+  node->declare_parameter("controller_frequency", rclcpp::ParameterValue(c.frequency));
+  node->declare_parameter("mppic.batch_size", rclcpp::ParameterValue(300));
+  node->declare_parameter("mppic.time_steps", rclcpp::ParameterValue(30));
+  node->declare_parameter("mppic.open_loop", rclcpp::ParameterValue(c.open_loop));
+  node->declare_parameter("mppic.ax_max", rclcpp::ParameterValue(c.ax_max));
+  node->declare_parameter("mppic.ax_min", rclcpp::ParameterValue(c.ax_min));
+  node->declare_parameter("mppic.ay_max", rclcpp::ParameterValue(c.ax_max));
+  node->declare_parameter("mppic.ay_min", rclcpp::ParameterValue(c.ax_min));
+  node->declare_parameter("mppic.az_max", rclcpp::ParameterValue(c.az_max));
+  node->declare_parameter("mppic.model_delay_vx", rclcpp::ParameterValue(c.delay));
+  node->declare_parameter("mppic.model_delay_vy", rclcpp::ParameterValue(c.delay));
+  node->declare_parameter("mppic.model_delay_wz", rclcpp::ParameterValue(c.delay));
+  node->declare_parameter("mppic.motion_model", rclcpp::ParameterValue(c.model));
+  node->declare_parameter(
+    "mppic." + c.model + ".plugin", rclcpp::ParameterValue(
+      omni ? "mppi::OmniMotionModel" : "mppi::DiffDriveMotionModel"));
+  node->declare_parameter(
+    "mppic.critics", rclcpp::ParameterValue(std::vector<std::string>{"GoalCritic"}));
+  node->declare_parameter("mppic.GoalCritic.threshold_to_consider", rclcpp::ParameterValue(10.0));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  costmap_ros->on_configure(rclcpp_lifecycle::State{});
+  auto tf_buffer = nav2::create_transform_buffer(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+
+  const auto & settings = optimizer_tester.getSettings();
+  const double period = 1.0 / c.frequency, dt = settings.model_dt;
+  const auto & lim = optimizer_tester.getControlConstraints();
+
+  // Independent reference of the velocities reachable over a duration: slowing down toward zero
+  // at up to decel, and speeding up away from it (forward or reverse) at up to accel
+  struct Limits
+  {
+    double accel, decel, duration;
+  };
+  auto reachable = [](const Limits & l, double v) -> std::pair<double, double> {
+      const double to_zero = std::fabs(v) / l.decel;  // time to slow down to zero
+      const double slowest = to_zero >= l.duration ?
+        std::fabs(v) - l.decel * l.duration : -l.accel * (l.duration - to_zero);
+      const double fastest = std::fabs(v) + l.accel * l.duration;
+      return v >= 0.0 ? std::make_pair(slowest, fastest) : std::make_pair(-fastest, -slowest);
+    };
+  const Limits step_vx{lim.ax_max, -lim.ax_min, dt}, first_vx{lim.ax_max, -lim.ax_min, period};
+  const Limits step_vy{lim.ay_max, -lim.ay_min, dt}, first_vy{lim.ay_max, -lim.ay_min, period};
+  const Limits step_wz{lim.az_max, lim.az_max, dt}, first_wz{lim.az_max, lim.az_max, period};
+  constexpr double tol = 1e-5;
+  auto within = [&](const Limits & l, double from, double to) {
+      const auto [lo, hi] = reachable(l, from);
+      return to >= lo - tol && to <= hi + tol;
+    };
+  const unsigned int k = std::max(1u, static_cast<unsigned int>(std::lround(c.delay / dt)));
+  const unsigned int offset = settings.shift_control_sequence ? 1 : 0;
+
+  // One drive through goals ahead, behind (reversing while moving) and to the side, so the
+  // velocities cross zero. The robot follows the commands within the acceleration limits after
+  // the delay, and its measured velocity has noise around zero.
+  geometry_msgs::msg::PoseStamped pose;
+  pose.header.frame_id = "odom";
+  pose.pose.orientation.w = 1.0;
+  geometry_msgs::msg::Twist robot, prev_cmd;
+  std::deque<geometry_msgs::msg::Twist> in_flight(k - 1);
+  std::mt19937 rng(7);
+  std::normal_distribution<double> noise(0.0, 0.002);
+  double min_cmd_vx = 0.0, max_cmd_vx = 0.0;
+  int sign_changes = 0;
+  for (const auto & [gx, gy] : std::vector<std::pair<double, double>>{{2.0, 0.0}, {-1.0, 0.0},
+      {0.5, 1.5}})
+  {
+    geometry_msgs::msg::Pose goal;
+    goal.position.x = gx;
+    goal.position.y = gy;
+    goal.orientation.w = 1.0;
+    nav_msgs::msg::Path plan;
+    plan.header.frame_id = "odom";
+    plan.poses.resize(2);
+    for (int cycle = 0; cycle < 80; ++cycle) {
+      plan.poses[0] = pose;
+      plan.poses[1].pose = goal;
+      geometry_msgs::msg::Twist measured = robot;
+      measured.linear.x += noise(rng);
+      measured.linear.y = omni ? measured.linear.y + noise(rng) : 0.0;
+      measured.angular.z += noise(rng);
+      geometry_msgs::msg::Twist start;
+      models::ControlSequence seq;
+      const auto cmd = optimizer_tester.runCycle(pose, measured, plan, goal, start, seq);
+      const auto & state = optimizer_tester.grabState();
+      const std::string id = "cycle " + std::to_string(cycle) + " goal " + std::to_string(gx) +
+        "," + std::to_string(gy);
+
+      // Between iterations: the sent command is reachable from the velocity the control
+      // sequence continues from, within a control period
+      EXPECT_TRUE(within(first_vx, start.linear.x, cmd.linear.x)) << id;
+      EXPECT_TRUE(within(first_wz, start.angular.z, cmd.angular.z)) << id;
+      if (omni) {
+        EXPECT_TRUE(within(first_vy, start.linear.y, cmd.linear.y)) << id;
+      }
+      if (offset == 1) {
+        EXPECT_FLOAT_EQ(seq.vx(0), start.linear.x) << id;
+      }
+      // Which, in open loop or with commands in flight, is the previous command
+      if (c.open_loop || k > 1) {
+        EXPECT_TRUE(within(first_vx, prev_cmd.linear.x, cmd.linear.x)) << id;
+        EXPECT_TRUE(within(first_wz, prev_cmd.angular.z, cmd.angular.z)) << id;
+      } else {
+        // And in closed loop, the predicted velocity is reachable from the measured one
+        EXPECT_TRUE(
+          within(first_vx, measured.linear.x, optimizer_tester.grabState().speed.linear.x)) << id;
+      }
+
+      // Within an iteration: each control of the optimal sequence is reachable from the last
+      for (unsigned int i = offset + 1; i < seq.vx.size(); ++i) {
+        EXPECT_TRUE(within(step_vx, seq.vx(i - 1), seq.vx(i))) << id << " step " << i;
+        EXPECT_TRUE(within(step_wz, seq.wz(i - 1), seq.wz(i))) << id << " step " << i;
+        if (omni) {
+          EXPECT_TRUE(within(step_vy, seq.vy(i - 1), seq.vy(i))) << id << " step " << i;
+        }
+        // And stays within the velocity limits once within them
+        if (seq.vx(i - 1) <= lim.vx_max + tol && seq.vx(i - 1) >= lim.vx_min - tol) {
+          EXPECT_LE(seq.vx(i), lim.vx_max + tol) << id;
+          EXPECT_GE(seq.vx(i), lim.vx_min - tol) << id;
+        }
+      }
+
+      // The sampled rollouts: each velocity after the commands in flight is reachable from the
+      // one before it
+      for (unsigned int i = k + 1; i < state.vx.cols(); ++i) {
+        for (Eigen::Index b = 0; b < state.vx.rows(); ++b) {
+          if (!within(step_vx, state.vx(b, i - 1), state.vx(b, i)) ||
+            !within(step_wz, state.wz(b, i - 1), state.wz(b, i)) ||
+            (omni && !within(step_vy, state.vy(b, i - 1), state.vy(b, i))))
+          {
+            ADD_FAILURE() << id << " rollout " << b << " step " << i;
+            i = state.vx.cols();
+            break;
+          }
+        }
+      }
+
+      // Step the robot forward a control period
+      in_flight.push_back(cmd);
+      const auto applied = in_flight.front();
+      in_flight.pop_front();
+      robot.linear.x = std::clamp(
+        applied.linear.x, AccelBounds<double>(period * c.ax_min, period * c.ax_max)(
+          robot.linear.x).first,
+        AccelBounds<double>(period * c.ax_min, period * c.ax_max)(robot.linear.x).second);
+      robot.linear.y = omni ? std::clamp(
+        applied.linear.y, AccelBounds<double>(period * c.ax_min, period * c.ax_max)(
+          robot.linear.y).first,
+        AccelBounds<double>(period * c.ax_min, period * c.ax_max)(robot.linear.y).second) : 0.0;
+      robot.angular.z = std::clamp(
+        applied.angular.z, robot.angular.z - period * c.az_max,
+        robot.angular.z + period * c.az_max);
+      const double yaw = tf2::getYaw(pose.pose.orientation) + robot.angular.z * period;
+      pose.pose.position.x += (robot.linear.x * std::cos(yaw) - robot.linear.y * std::sin(yaw)) *
+        period;
+      pose.pose.position.y += (robot.linear.x * std::sin(yaw) + robot.linear.y * std::cos(yaw)) *
+        period;
+      pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(yaw);
+      min_cmd_vx = std::min(min_cmd_vx, cmd.linear.x);
+      max_cmd_vx = std::max(max_cmd_vx, cmd.linear.x);
+      sign_changes += (cmd.linear.x > 0.0) != (prev_cmd.linear.x > 0.0);
+      prev_cmd = cmd;
+    }
+  }
+  // The scenarios drive forward and in reverse, through zero
+  EXPECT_GT(max_cmd_vx, 0.05);
+  EXPECT_LT(min_cmd_vx, -0.02);
+  EXPECT_GE(sign_changes, 2);
+  optimizer_tester.shutdown();
+}
+
+std::vector<FeasibilityCase> feasibilityCases()
+{
+  std::vector<FeasibilityCase> cases;
+  for (const std::string model : {"diff_drive", "omni"}) {
+    for (bool open_loop : {false, true}) {
+      // High, low, accelerating slower than braking, and braking slower than accelerating
+      for (const auto & [ax_max, ax_min, az_max] : std::vector<std::tuple<double, double, double>>{
+        {3.0, -3.0, 3.5}, {0.3, -0.3, 0.5}, {0.6, -1.7, 1.0}, {1.7, -0.6, 1.0}})
+      {
+        for (double delay : {0.0, 0.2}) {
+          // Shifting the control sequence (controller period == model_dt) or not
+          for (double frequency : {20.0, 30.0}) {
+            cases.push_back({model, open_loop, ax_max, ax_min, az_max, delay, frequency});
+          }
+        }
+      }
+    }
+  }
+  return cases;
+}
+
+INSTANTIATE_TEST_SUITE_P(
+  Feasibility, AccelerationFeasibilityTests, ::testing::ValuesIn(feasibilityCases()),
+  [](const ::testing::TestParamInfo<FeasibilityCase> & param_info) {
+    const auto & c = param_info.param;
+    char name[128];
+    snprintf(
+      name, sizeof(name), "%s_%s_ax%.0f_%.0f_delay%.0f_hz%.0f", c.model.c_str(),
+      c.open_loop ? "open" : "closed", c.ax_max * 10, -c.ax_min * 10, c.delay * 100, c.frequency);
+    return std::string(name);
+  });
 
 TEST(OptimizerTests, SpeedLimitDynamicParameterGuard)
 {

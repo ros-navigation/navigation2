@@ -104,6 +104,30 @@ void Optimizer::getParams()
     parameters_handler_->addPreCallback(name_ + "." + p, kinematic_guard);
   }
 
+  // Reject dynamic updates to acceleration limits of the wrong sign, which would invert the
+  // acceleration bounds (e.g. a positive ax_min would prevent slowing down)
+  auto accel_sign_guard = [](bool positive) {
+      return [positive](
+        const rclcpp::Parameter & param,
+        rcl_interfaces::msg::SetParametersResult & result)
+        {
+          if (positive ? param.as_double() < 0.0 : param.as_double() > 0.0) {
+            result.successful = false;
+            if (!result.reason.empty()) {
+              result.reason += "\n";
+            }
+            result.reason += "Rejected dynamic update to '" + param.get_name() + "': it must be " +
+              (positive ? "positive" : "negative") + " or zero.";
+          }
+        };
+    };
+  for (const auto & p : {"ax_max", "ay_max", "az_max"}) {
+    parameters_handler_->addPreCallback(name_ + "." + p, accel_sign_guard(true));
+  }
+  for (const auto & p : {"ax_min", "ay_min"}) {
+    parameters_handler_->addPreCallback(name_ + "." + p, accel_sign_guard(false));
+  }
+
   auto batch_size_guard = [](
     const rclcpp::Parameter & param,
     rcl_interfaces::msg::SetParametersResult & result)
@@ -143,9 +167,6 @@ void Optimizer::getParams()
   parameters_handler_->addPreCallback(name_ + ".time_steps", time_steps_guard);
 
   getParam(s.model_dt, "model_dt", 0.05f);
-  getParam(s.model_delay_vx, "model_delay_vx", 0.0f);
-  getParam(s.model_delay_vy, "model_delay_vy", 0.0f);
-  getParam(s.model_delay_wz, "model_delay_wz", 0.0f);
   getParam(s.clamp_raw_controls, "clamp_raw_controls", false);
   getParam(s.time_steps, "time_steps", 56);
   getParam(s.batch_size, "batch_size", 1000);
@@ -187,6 +208,20 @@ void Optimizer::getParams()
       "Sign of the parameter ay_min is incorrect, consider setting it negative.");
   }
 
+  if (s.base_constraints.ay_max < 0.0) {
+    s.base_constraints.ay_max = fabs(s.base_constraints.ay_max);
+    RCLCPP_WARN(
+      logger_,
+      "Sign of the parameter ay_max is incorrect, consider setting it positive.");
+  }
+
+  if (s.base_constraints.az_max < 0.0) {
+    s.base_constraints.az_max = fabs(s.base_constraints.az_max);
+    RCLCPP_WARN(
+      logger_,
+      "Sign of the parameter az_max is incorrect, consider setting it positive.");
+  }
+
   getParam(motion_model_name, "motion_model", std::string("diff_drive"), ParameterType::Static);
 
   if (s.batch_size == 0u || s.batch_size > 100000u) {
@@ -205,7 +240,8 @@ void Optimizer::getParams()
   s.constraints = s.base_constraints;
 
   setMotionModel(motion_model_name);
-  parameters_handler_->addPostCallback([this]() {reset();});
+  // Parameter updates keep the active speed limit and the commands already sent
+  parameters_handler_->addPostCallback([this]() {reset(false, false);});
 
   double controller_frequency;
   getParentParam(controller_frequency, "controller_frequency", 0.0, ParameterType::Static);
@@ -233,29 +269,31 @@ void Optimizer::setOffset(double controller_period)
   }
 }
 
-void Optimizer::reset(bool reset_dynamic_speed_limits)
+void Optimizer::reset(bool reset_dynamic_speed_limits, bool reset_command_history)
 {
   state_.reset(settings_.batch_size, settings_.time_steps);
   control_sequence_.reset(settings_.time_steps);
-  control_history_[0] = {0.0f, 0.0f, 0.0f};
-  control_history_[1] = {0.0f, 0.0f, 0.0f};
-  control_history_[2] = {0.0f, 0.0f, 0.0f};
-  control_history_[3] = {0.0f, 0.0f, 0.0f};
 
-  last_command_vel_ = geometry_msgs::msg::Twist();
+  // Commands already sent are being executed or are still in flight. Soft resets (fallbacks,
+  // parameter updates) keep them so that the next command continues feasibly from them
+  if (reset_command_history) {
+    control_history_.fill({0.0f, 0.0f, 0.0f});
+    last_command_vel_ = geometry_msgs::msg::Twist();
+  }
 
   if (reset_dynamic_speed_limits) {
-    settings_.constraints = settings_.base_constraints;
+    speed_limit_ = nav2_costmap_2d::NO_SPEED_LIMIT;
   }
 
   costs_.setZero(settings_.batch_size);
   generated_trajectories_.reset(settings_.batch_size, settings_.time_steps);
 
   noise_generator_.reset(settings_, isHolonomic());
-  motion_model_->setConstraints(settings_.constraints, settings_.model_dt,
-    settings_.model_delay_vx, settings_.model_delay_vy, settings_.model_delay_wz,
-    settings_.clamp_raw_controls);
-  motion_model_->clearCommandHistory();
+  // Rebuild the constraints from the base constraints, which a parameter update may have changed
+  applySpeedLimit();
+  if (reset_command_history) {
+    motion_model_->reset();
+  }
   trajectory_validator_->initialize(
     parent_, name_ + ".TrajectoryValidator",
     costmap_ros_, parameters_handler_, tf_buffer_, settings_);
@@ -340,7 +378,7 @@ bool Optimizer::fallback(bool fail)
     return false;
   }
 
-  reset(false /*Don't reset zone-based speed limits after fallback*/);
+  reset(false /*Don't reset zone-based speed limits*/, false /*Keep the commands sent*/);
 
   if (++fallback_count_ > settings_.retry_attempt_limit) {
     fallback_count_ = 0;
@@ -366,19 +404,16 @@ void Optimizer::prepare(
     const auto & c = settings_.constraints;
     const double dt = settings_.controller_period;
     state_.speed = robot_speed;
-    state_.speed.linear.x = std::clamp(
-      last_command_vel_.linear.x,
-      robot_speed.linear.x + dt * c.ax_min,
-      robot_speed.linear.x + dt * c.ax_max);
-    state_.speed.angular.z = std::clamp(
-      last_command_vel_.angular.z,
-      robot_speed.angular.z - dt * c.az_max,
-      robot_speed.angular.z + dt * c.az_max);
+    const auto [vx_lower, vx_upper] =
+      utils::AccelBounds<double>(dt * c.ax_min, dt * c.ax_max)(robot_speed.linear.x);
+    state_.speed.linear.x = std::clamp(last_command_vel_.linear.x, vx_lower, vx_upper);
+    const auto [wz_lower, wz_upper] =
+      utils::AccelBounds<double>(-dt * c.az_max, dt * c.az_max)(robot_speed.angular.z);
+    state_.speed.angular.z = std::clamp(last_command_vel_.angular.z, wz_lower, wz_upper);
     if (isHolonomic()) {
-      state_.speed.linear.y = std::clamp(
-        last_command_vel_.linear.y,
-        robot_speed.linear.y + dt * c.ay_min,
-        robot_speed.linear.y + dt * c.ay_max);
+      const auto [vy_lower, vy_upper] =
+        utils::AccelBounds<double>(dt * c.ay_min, dt * c.ay_max)(robot_speed.linear.y);
+      state_.speed.linear.y = std::clamp(last_command_vel_.linear.y, vy_lower, vy_upper);
     }
   }
 
@@ -413,6 +448,15 @@ void Optimizer::generateNoisedTrajectories()
 {
   applyControlSequenceInterIterationConstraints();
   noise_generator_.setNoisedControls(state_, control_sequence_);
+  if (settings_.shift_control_sequence) {
+    // vx(0) is "now" and not sent, so it is not sampled: the sent command, vx(1), is explored
+    // from exactly the velocity that the optimal control sequence continues from
+    state_.cvx.col(0).setConstant(control_sequence_.vx(0));
+    state_.cwz.col(0).setConstant(control_sequence_.wz(0));
+    if (isHolonomic()) {
+      state_.cvy.col(0).setConstant(control_sequence_.vy(0));
+    }
+  }
   noise_generator_.generateNextNoises();
   updateStateVelocities(state_);
   integrateStateVelocities(generated_trajectories_, state_);
@@ -430,7 +474,7 @@ void Optimizer::applyControlSequenceInterIterationConstraints()
   float min_delta_vy = first_dt * s.constraints.ay_min;
   float max_delta_wz = first_dt * s.constraints.az_max;
 
-  const auto base_speed = motion_model_->getCommandBaseSpeed(state_.speed);
+  const auto base_speed = motion_model_->getControlStart(state_.speed);
   float speed_vx = static_cast<float>(base_speed.linear.x);
   float speed_wz = static_cast<float>(base_speed.angular.z);
   if (s.shift_control_sequence) {
@@ -471,7 +515,7 @@ void Optimizer::applyControlSequenceConstraints()
   float max_delta_wz = first_dt * s.constraints.az_max;
 
   // Initialize as the current speed to create inter-iteration dynamic feasibility
-  const auto base_speed = motion_model_->getCommandBaseSpeed(state_.speed);
+  const auto base_speed = motion_model_->getControlStart(state_.speed);
   float vx_last = static_cast<float>(base_speed.linear.x);
   float wz_last = static_cast<float>(base_speed.angular.z);
   float vy_last = isHolonomic() ? static_cast<float>(base_speed.linear.y) : 0.0f;
@@ -641,27 +685,19 @@ Eigen::ArrayXXf Optimizer::getOptimizedTrajectory()
   Eigen::Array<float, Eigen::Dynamic, 3> trajectories =
     Eigen::Array<float, Eigen::Dynamic, 3>(settings_.time_steps, 3);
 
-  sequence.col(0) = control_sequence_.vx;
-  sequence.col(1) = control_sequence_.wz;
-
+  // Roll out the optimal controls exactly as the sampled trajectories were, including any
+  // commands in flight, so this is the motion that was scored
+  models::State optimal;
+  optimal.reset(1u, settings_.time_steps);
+  optimal.cvx.row(0) = control_sequence_.vx.transpose();
+  optimal.cwz.row(0) = control_sequence_.wz.transpose();
+  optimal.cvy.row(0) = control_sequence_.vy.transpose();
+  optimal.speed = state_.speed;
+  updateStateVelocities(optimal);
+  sequence.col(0) = optimal.vx.row(0).transpose();
+  sequence.col(1) = optimal.wz.row(0).transpose();
   if (is_holo) {
-    sequence.col(2) = control_sequence_.vy;
-  }
-
-  if (motion_model_->hasCommandsInFlight()) {
-    // Include the commands in flight, as the trajectories do, for the motion the robot will take
-    models::State optimal;
-    optimal.reset(1u, settings_.time_steps);
-    optimal.cvx.row(0) = control_sequence_.vx.transpose();
-    optimal.cwz.row(0) = control_sequence_.wz.transpose();
-    optimal.cvy.row(0) = control_sequence_.vy.transpose();
-    optimal.speed = state_.speed;
-    updateStateVelocities(optimal);
-    sequence.col(0) = optimal.vx.row(0).transpose();
-    sequence.col(1) = optimal.wz.row(0).transpose();
-    if (is_holo) {
-      sequence.col(2) = optimal.vy.row(0).transpose();
-    }
+    sequence.col(2) = optimal.vy.row(0).transpose();
   }
 
   integrateStateVelocities(trajectories, sequence);
@@ -725,14 +761,11 @@ geometry_msgs::msg::TwistStamped Optimizer::getControlFromSequenceAsTwist(
   auto wz = control_sequence_.wz(offset);
   auto vy = isHolonomic() ? control_sequence_.vy(offset) : 0.0f;
 
-  // Update the command history for the motion model's latency compensation mechanism
-  motion_model_->pushCommandHistory(vx, vy, wz);
-
-  if (isHolonomic()) {
-    return utils::toTwistStamped(vx, vy, wz, stamp, costmap_ros_->getBaseFrameID());
-  }
-
-  return utils::toTwistStamped(vx, wz, stamp, costmap_ros_->getBaseFrameID());
+  auto cmd = isHolonomic() ?
+    utils::toTwistStamped(vx, vy, wz, stamp, costmap_ros_->getBaseFrameID()) :
+    utils::toTwistStamped(vx, wz, stamp, costmap_ros_->getBaseFrameID());
+  motion_model_->onCommandSent(cmd.twist);
+  return cmd;
 }
 
 void Optimizer::setMotionModel(const std::string & motion_model_name)
@@ -749,10 +782,9 @@ void Optimizer::setMotionModel(const std::string & motion_model_name)
   try {
     plugin_type = nav2::get_plugin_type_param(node, plugin_ns);
     motion_model_ = motion_model_loader_->createSharedInstance(plugin_type);
-    motion_model_->initialize(parameters_handler_, plugin_ns);
-    motion_model_->setConstraints(settings_.constraints, settings_.model_dt,
-      settings_.model_delay_vx, settings_.model_delay_vy, settings_.model_delay_wz,
-      settings_.clamp_raw_controls);
+    motion_model_->on_configure(parameters_handler_, name_, plugin_ns);
+    motion_model_->setConstraints(
+      settings_.constraints, settings_.model_dt, settings_.clamp_raw_controls);
   } catch (const pluginlib::PluginlibException & ex) {
     throw nav2_core::ControllerException(
             std::string("Failed to load motion model plugin '") + motion_model_name +
@@ -764,16 +796,30 @@ void Optimizer::setMotionModel(const std::string & motion_model_name)
 
 void Optimizer::setSpeedLimit(double speed_limit, bool percentage)
 {
+  const auto & base = settings_.base_constraints;
+  if (speed_limit != nav2_costmap_2d::NO_SPEED_LIMIT && !percentage &&
+    base.vx_max == 0.0f && base.vx_min == 0.0f)
+  {
+    RCLCPP_ERROR(
+      logger_,
+      "Rejected absolute speed limit of %f m/s: vx_max and vx_min are both zero, "
+      "so there is no reference speed to scale against. Keeping current constraints.",
+      speed_limit);
+    return;
+  }
+  speed_limit_ = speed_limit;
+  speed_limit_percentage_ = percentage;
+  applySpeedLimit();
+}
+
+void Optimizer::applySpeedLimit()
+{
   auto & s = settings_;
-  if (speed_limit == nav2_costmap_2d::NO_SPEED_LIMIT) {
-    s.constraints.vx_max = s.base_constraints.vx_max;
-    s.constraints.vx_min = s.base_constraints.vx_min;
-    s.constraints.vy = s.base_constraints.vy;
-    s.constraints.wz = s.base_constraints.wz;
-  } else {
-    if (percentage) {
+  s.constraints = s.base_constraints;
+  if (speed_limit_ != nav2_costmap_2d::NO_SPEED_LIMIT) {
+    if (speed_limit_percentage_) {
       // Speed limit is expressed in % from maximum speed of robot
-      double ratio = speed_limit / 100.0;
+      double ratio = speed_limit_ / 100.0;
       s.constraints.vx_max = s.base_constraints.vx_max * ratio;
       s.constraints.vx_min = s.base_constraints.vx_min * ratio;
       s.constraints.vy = s.base_constraints.vy * ratio;
@@ -783,24 +829,15 @@ void Optimizer::setSpeedLimit(double speed_limit, bool percentage)
       // or to |vx_min| for reverse-only configurations (vx_max == 0).
       const float v_ref = s.base_constraints.vx_max != 0.0f ?
         s.base_constraints.vx_max : std::fabs(s.base_constraints.vx_min);
-      if (v_ref == 0.0f) {
-        RCLCPP_ERROR(
-          logger_,
-          "Rejected absolute speed limit of %f m/s: vx_max and vx_min are both zero, "
-          "so there is no reference speed to scale against. Keeping current constraints.",
-          speed_limit);
-        return;
-      }
-      double ratio = speed_limit / v_ref;
+      double ratio = speed_limit_ / v_ref;
       s.constraints.vx_max = s.base_constraints.vx_max * ratio;
       s.constraints.vx_min = s.base_constraints.vx_min * ratio;
       s.constraints.vy = s.base_constraints.vy * ratio;
       s.constraints.wz = s.base_constraints.wz * ratio;
     }
   }
-  motion_model_->setConstraints(settings_.constraints, settings_.model_dt,
-    settings_.model_delay_vx, settings_.model_delay_vy, settings_.model_delay_wz,
-    settings_.clamp_raw_controls);
+  motion_model_->setConstraints(
+    settings_.constraints, settings_.model_dt, settings_.clamp_raw_controls);
 }
 
 models::Trajectories & Optimizer::getGeneratedTrajectories()

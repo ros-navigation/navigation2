@@ -48,7 +48,7 @@ RosLockGuard g_rclcpp;
 
 void prepareAndRunBenchmark(
   bool consider_footprint, std::string motion_model,
-  std::vector<std::string> critics, benchmark::State & state)
+  std::vector<std::string> critics, benchmark::State & state, bool asymmetric_accel = false)
 {
   int batch_size = 2000;
   int time_steps = 56;
@@ -80,6 +80,13 @@ void prepareAndRunBenchmark(
 
   printInfo(optimizer_settings, path_settings, critics);
   auto node = getDummyNode(optimizer_settings, critics);
+  if (asymmetric_accel) {
+    // Accelerating slower than braking
+    node->declare_parameter("dummy.ax_max", rclcpp::ParameterValue(0.6));
+    node->declare_parameter("dummy.ax_min", rclcpp::ParameterValue(-1.7));
+    node->declare_parameter("dummy.ay_max", rclcpp::ParameterValue(0.6));
+    node->declare_parameter("dummy.ay_min", rclcpp::ParameterValue(-1.7));
+  }
   std::string name = "test";
   auto parameters_handler = std::make_unique<mppi::ParametersHandler>(node, name);
   auto tf_buffer = nav2::create_transform_buffer(node);
@@ -118,6 +125,22 @@ static void BM_DiffDrive(benchmark::State & state)
     {"PreferForwardCritic"}};
 
   prepareAndRunBenchmark(consider_footprint, motion_model, critics, state);
+}
+
+static void BM_DiffDriveAsymmetricAccel(benchmark::State & state)
+{
+  std::vector<std::string> critics = {{"ConstraintCritic"}, {"CostCritic"}, {"GoalCritic"},
+    {"GoalAngleCritic"}, {"PathAlignCritic"}, {"PathFollowCritic"}, {"PathAngleCritic"},
+    {"PreferForwardCritic"}};
+  prepareAndRunBenchmark(true, "diff_drive", critics, state, true);
+}
+
+static void BM_OmniAsymmetricAccel(benchmark::State & state)
+{
+  std::vector<std::string> critics = {{"ConstraintCritic"}, {"CostCritic"}, {"GoalCritic"},
+    {"GoalAngleCritic"}, {"PathAlignCritic"}, {"PathFollowCritic"}, {"PathAngleCritic"},
+    {"PreferForwardCritic"}};
+  prepareAndRunBenchmark(true, "omni", critics, state, true);
 }
 
 static void BM_Omni(benchmark::State & state)
@@ -222,6 +245,81 @@ static void BM_PathAngleCritic(benchmark::State & state)
 
   prepareAndRunBenchmark(consider_footprint, motion_model, critics, state);
 }
+
+// Rollout of the sampled controls through the motion model's dynamics, the hot path of predict()
+template<typename ModelT>
+void runPredictBenchmark(
+  benchmark::State & state, float delay, float ax_max = 3.0f, float ax_min = -3.0f)
+{
+  constexpr unsigned int batch_size = 2000, time_steps = 56;
+  ModelT model;
+  auto node = std::make_shared<nav2::LifecycleNode>("predict_benchmark");
+  for (const char * axis : {"vx", "vy", "wz"}) {
+    node->declare_parameter(
+      std::string("bench.model_delay_") + axis, rclcpp::ParameterValue(delay));
+  }
+  std::string name = "bench";
+  mppi::ParametersHandler param_handler(node, name);
+  model.on_configure(&param_handler, name, name + ".model");
+  mppi::models::ControlConstraints constraints{0.5f, -0.35f, 0.5f, 1.9f, ax_max, ax_min, ax_min,
+    ax_max, 3.5f};
+  model.setConstraints(constraints, 0.05f, false);
+  for (double v : {0.1, 0.2, 0.3, 0.4}) {
+    geometry_msgs::msg::Twist cmd;
+    cmd.linear.x = v;
+    cmd.linear.y = v;
+    cmd.angular.z = v;
+    model.onCommandSent(cmd);
+  }
+
+  mppi::models::State s;
+  s.reset(batch_size, time_steps);
+  s.vx.col(0).setConstant(0.2f);
+  s.vy.col(0).setConstant(0.1f);
+  s.wz.col(0).setConstant(0.3f);
+  s.cvx = Eigen::ArrayXXf::Random(batch_size, time_steps) * 0.6f;
+  s.cvy = Eigen::ArrayXXf::Random(batch_size, time_steps) * 0.6f;
+  s.cwz = Eigen::ArrayXXf::Random(batch_size, time_steps) * 2.0f;
+
+  for (auto _ : state) {
+    model.predict(s);
+    benchmark::DoNotOptimize(s.vx.data());
+    benchmark::ClobberMemory();
+  }
+}
+
+static void BM_PredictDiffDrive(benchmark::State & state)
+{
+  runPredictBenchmark<mppi::DiffDriveMotionModel>(state, 0.0f);
+}
+
+static void BM_PredictDiffDriveDelay(benchmark::State & state)
+{
+  runPredictBenchmark<mppi::DiffDriveMotionModel>(state, 0.2f);
+}
+
+static void BM_PredictOmni(benchmark::State & state)
+{
+  runPredictBenchmark<mppi::OmniMotionModel>(state, 0.0f);
+}
+
+static void BM_PredictDiffDriveAsymmetricAccel(benchmark::State & state)
+{
+  runPredictBenchmark<mppi::DiffDriveMotionModel>(state, 0.0f, 0.6f, -1.7f);
+}
+
+static void BM_PredictOmniAsymmetricAccel(benchmark::State & state)
+{
+  runPredictBenchmark<mppi::OmniMotionModel>(state, 0.0f, 0.6f, -1.7f);
+}
+
+BENCHMARK(BM_PredictDiffDrive)->Unit(benchmark::kMicrosecond);
+BENCHMARK(BM_PredictDiffDriveAsymmetricAccel)->Unit(benchmark::kMicrosecond);
+BENCHMARK(BM_PredictOmniAsymmetricAccel)->Unit(benchmark::kMicrosecond);
+BENCHMARK(BM_DiffDriveAsymmetricAccel)->Unit(benchmark::kMillisecond);
+BENCHMARK(BM_OmniAsymmetricAccel)->Unit(benchmark::kMillisecond);
+BENCHMARK(BM_PredictDiffDriveDelay)->Unit(benchmark::kMicrosecond);
+BENCHMARK(BM_PredictOmni)->Unit(benchmark::kMicrosecond);
 
 BENCHMARK(BM_DiffDrivePointFootprint)->Unit(benchmark::kMillisecond);
 BENCHMARK(BM_DiffDrive)->Unit(benchmark::kMillisecond);

@@ -260,6 +260,28 @@ static models::ControlConstraints unboundedConstraints()
   return {100, -100, 100, 100, 1000, -1000, -1000, 1000, 1000};
 }
 
+// Configure a motion model with the robot's response delays, as the optimizer does on bringup
+static void configureDelays(MotionModel & model, float delay_vx, float delay_vy, float delay_wz)
+{
+  static int count = 0;
+  auto node = std::make_shared<nav2::LifecycleNode>("delay_node_" + std::to_string(count++));
+  node->declare_parameter("test.model_delay_vx", rclcpp::ParameterValue(delay_vx));
+  node->declare_parameter("test.model_delay_vy", rclcpp::ParameterValue(delay_vy));
+  node->declare_parameter("test.model_delay_wz", rclcpp::ParameterValue(delay_wz));
+  std::string name = "test";
+  ParametersHandler param_handler(node, name);
+  model.on_configure(&param_handler, name, name + ".model");
+}
+
+static geometry_msgs::msg::Twist command(float vx, float vy, float wz)
+{
+  geometry_msgs::msg::Twist cmd;
+  cmd.linear.x = vx;
+  cmd.linear.y = vy;
+  cmd.angular.z = wz;
+  return cmd;
+}
+
 TEST(MotionModelTests, DelayReplayAllAxes)
 {
   // Omni model exercises all three axes (vx, vy, wz) in a single test.
@@ -269,14 +291,15 @@ TEST(MotionModelTests, DelayReplayAllAxes)
 
   OmniMotionModel model;
 
-  // Set model_dt, model_delay_vx, model_delay_vy, model_delay_wz = 0.05f, 0.10f, 0.10f, 0.15f;
-  model.setConstraints(unboundedConstraints(), 0.05f, 0.10f, 0.10f, 0.15f, false);
+  // Set model_dt = 0.05 and delays for vx, vy, wz = 0.10, 0.10, 0.15
+  configureDelays(model, 0.10f, 0.10f, 0.15f);
+  model.setConstraints(unboundedConstraints(), 0.05f, false);
 
   // Ring-buffer size of vx/vy/wz = 2/2/3 steps
   // After 3 pushes per axis the rings hold the most-recent 2/2/3 values.
-  model.pushCommandHistory(1.0f, 2.0f, 3.0f);
-  model.pushCommandHistory(5.0f, 6.0f, 7.0f);
-  model.pushCommandHistory(9.0f, 8.0f, 4.0f);
+  model.onCommandSent(command(1.0f, 2.0f, 3.0f));
+  model.onCommandSent(command(5.0f, 6.0f, 7.0f));
+  model.onCommandSent(command(9.0f, 8.0f, 4.0f));
 
   model.predict(state);
 
@@ -307,9 +330,10 @@ TEST(MotionModelTests, DelayVyIgnoredOnDiffDrive)
   state.reset(8, 20);
 
   DiffDriveMotionModel model;
-  model.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.10f, 0.0f, false);
-  model.pushCommandHistory(0.0f, 99.0f, 0.0f);
-  model.pushCommandHistory(0.0f, 99.0f, 0.0f);
+  configureDelays(model, 0.0f, 0.10f, 0.0f);
+  model.setConstraints(unboundedConstraints(), 0.05f, false);
+  model.onCommandSent(command(0.0f, 99.0f, 0.0f));
+  model.onCommandSent(command(0.0f, 99.0f, 0.0f));
 
   EXPECT_NO_THROW(model.predict(state));
   EXPECT_TRUE(state.vy.isApprox(Eigen::ArrayXXf::Zero(8, 20)));
@@ -321,35 +345,15 @@ TEST(MotionModelTests, DelayClearCommandHistory)
   state.reset(8, 20);
 
   DiffDriveMotionModel model;
-  model.setConstraints(unboundedConstraints(), 0.05f, 0.10f, 0.0f, 0.15f, false);
-  model.pushCommandHistory(7.0f, 0.0f, 7.0f);
-  model.clearCommandHistory();
+  configureDelays(model, 0.10f, 0.0f, 0.15f);
+  model.setConstraints(unboundedConstraints(), 0.05f, false);
+  model.onCommandSent(command(7.0f, 0.0f, 7.0f));
+  model.reset();
   model.predict(state);
 
   EXPECT_TRUE(state.vx.col(1).isApproxToConstant(0.0f));
   EXPECT_TRUE(state.wz.col(1).isApproxToConstant(0.0f));
   EXPECT_TRUE(state.wz.col(2).isApproxToConstant(0.0f));
-}
-
-TEST(MotionModelTests, DelayCommandsInFlight)
-{
-  DiffDriveMotionModel diff_drive;
-  OmniMotionModel omni;
-
-  // No delay, or a delay of a single model_dt, leaves no commands in flight
-  diff_drive.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.0f, 0.0f, false);
-  EXPECT_FALSE(diff_drive.hasCommandsInFlight());
-  diff_drive.setConstraints(unboundedConstraints(), 0.05f, 0.05f, 0.0f, 0.05f, false);
-  EXPECT_FALSE(diff_drive.hasCommandsInFlight());
-
-  diff_drive.setConstraints(unboundedConstraints(), 0.05f, 0.15f, 0.0f, 0.0f, false);
-  EXPECT_TRUE(diff_drive.hasCommandsInFlight());
-
-  // A vy delay only matters for holonomic models
-  diff_drive.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.15f, 0.0f, false);
-  EXPECT_FALSE(diff_drive.hasCommandsInFlight());
-  omni.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.15f, 0.0f, false);
-  EXPECT_TRUE(omni.hasCommandsInFlight());
 }
 
 TEST(MotionModelTests, DelayCommandBaseSpeed)
@@ -361,29 +365,97 @@ TEST(MotionModelTests, DelayCommandBaseSpeed)
 
   // Without a delay, commands continue from the current speed
   OmniMotionModel model;
-  model.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.0f, 0.0f, false);
-  model.pushCommandHistory(1.0f, 2.0f, 3.0f);
-  auto base_speed = model.getCommandBaseSpeed(speed);
+  configureDelays(model, 0.0f, 0.0f, 0.0f);
+  model.setConstraints(unboundedConstraints(), 0.05f, false);
+  model.onCommandSent(command(1.0f, 2.0f, 3.0f));
+  auto base_speed = model.getControlStart(speed);
   EXPECT_DOUBLE_EQ(base_speed.linear.x, 0.1);
   EXPECT_DOUBLE_EQ(base_speed.linear.y, 0.2);
   EXPECT_DOUBLE_EQ(base_speed.angular.z, 0.3);
 
   // With commands in flight on vx and vy, those continue from the last command sent, while wz,
   // with a delay of a single model_dt, continues from the current speed
-  model.setConstraints(unboundedConstraints(), 0.05f, 0.15f, 0.10f, 0.05f, false);
-  model.pushCommandHistory(1.0f, 2.0f, 3.0f);
-  model.pushCommandHistory(4.0f, 5.0f, 6.0f);
-  base_speed = model.getCommandBaseSpeed(speed);
+  configureDelays(model, 0.15f, 0.10f, 0.05f);
+  model.setConstraints(unboundedConstraints(), 0.05f, false);
+  model.onCommandSent(command(1.0f, 2.0f, 3.0f));
+  model.onCommandSent(command(4.0f, 5.0f, 6.0f));
+  base_speed = model.getControlStart(speed);
   EXPECT_DOUBLE_EQ(base_speed.linear.x, 4.0);
   EXPECT_DOUBLE_EQ(base_speed.linear.y, 5.0);
   EXPECT_DOUBLE_EQ(base_speed.angular.z, 0.3);
 
   // vy is not modeled for non-holonomic robots
   DiffDriveMotionModel diff_drive;
-  diff_drive.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.10f, 0.0f, false);
-  diff_drive.pushCommandHistory(0.0f, 2.0f, 0.0f);
-  diff_drive.pushCommandHistory(0.0f, 5.0f, 0.0f);
-  EXPECT_DOUBLE_EQ(diff_drive.getCommandBaseSpeed(speed).linear.y, 0.2);
+  configureDelays(diff_drive, 0.0f, 0.10f, 0.0f);
+  diff_drive.setConstraints(unboundedConstraints(), 0.05f, false);
+  diff_drive.onCommandSent(command(0.0f, 2.0f, 0.0f));
+  diff_drive.onCommandSent(command(0.0f, 5.0f, 0.0f));
+  EXPECT_DOUBLE_EQ(diff_drive.getControlStart(speed).linear.y, 0.2);
+}
+
+TEST(MotionModelTests, AsymmetricAccelerationFromRest)
+{
+  // Accelerating slowly but braking hard: from rest, or with measurement noise around it, both
+  // directions speed up at ax_max (0.3 * 0.05 = 0.015), never at the braking rate
+  models::ControlConstraints constraints{1.0f, -1.0f, 1.0f, 1.0f, 0.3f, -3.0f, -3.0f, 0.3f, 1.0f};
+  OmniMotionModel model;
+  configureDelays(model, 0.0f, 0.0f, 0.0f);
+  model.setConstraints(constraints, 0.05f, false);
+
+  for (float v0 : {0.0f, 0.001f, -0.001f}) {
+    models::State state;
+    state.reset(2, 2);
+    state.vx.col(0).setConstant(v0);
+    state.vy.col(0).setConstant(v0);
+    state.cvx << 1.0f, 0.0f, -1.0f, 0.0f;
+    state.cvy << 1.0f, 0.0f, -1.0f, 0.0f;
+    model.predict(state);
+    const float forward_limit = std::max(v0, 0.0f) + 0.015f + 1e-6f;
+    const float reverse_limit = std::min(v0, 0.0f) - 0.015f - 1e-6f;
+    EXPECT_LE(state.vx(0, 1), forward_limit) << v0;
+    EXPECT_GE(state.vx(1, 1), reverse_limit) << v0;
+    EXPECT_LE(state.vy(0, 1), forward_limit) << v0;
+    EXPECT_GE(state.vy(1, 1), reverse_limit) << v0;
+  }
+}
+
+TEST(MotionModelTests, SymmetricAccelerationRolloutUnchanged)
+{
+  // With symmetric acceleration limits, each velocity is the control clamped to within the
+  // velocity change of the previous one, so the rollout matches this reference exactly
+  constexpr unsigned int batches = 50, steps = 30;
+  models::ControlConstraints constraints{1.0f, -1.0f, 1.0f, 2.0f, 2.0f, -2.0f, -1.5f, 1.5f, 3.0f};
+  OmniMotionModel model;
+  configureDelays(model, 0.0f, 0.0f, 0.0f);
+  model.setConstraints(constraints, 0.05f, false);
+
+  models::State state;
+  state.reset(batches, steps);
+  state.vx.col(0).setConstant(0.01f);
+  state.vy.col(0).setConstant(-0.01f);
+  state.wz.col(0).setConstant(0.2f);
+  state.cvx = Eigen::ArrayXXf::Random(batches, steps);
+  state.cvy = Eigen::ArrayXXf::Random(batches, steps);
+  state.cwz = Eigen::ArrayXXf::Random(batches, steps) * 2.0f;
+  models::State reference = state;
+  model.predict(state);
+
+  auto rollout = [](Eigen::ArrayXXf & vel, const Eigen::ArrayXXf & cvel, float max, float min) {
+      for (unsigned int i = 1; i < steps; ++i) {
+        for (unsigned int b = 0; b < batches; ++b) {
+          const float prev = vel(b, i - 1);
+          const float lo = prev > 0 ? prev + min : prev - max;
+          const float hi = prev > 0 ? prev + max : prev - min;
+          vel(b, i) = std::min(std::max(cvel(b, i - 1), lo), hi);
+        }
+      }
+    };
+  rollout(reference.vx, reference.cvx, 0.05f * 2.0f, 0.05f * -2.0f);
+  rollout(reference.vy, reference.cvy, 0.05f * 1.5f, 0.05f * -1.5f);
+  rollout(reference.wz, reference.cwz, 0.05f * 3.0f, 0.05f * -3.0f);
+  EXPECT_TRUE((state.vx == reference.vx).all());
+  EXPECT_TRUE((state.vy == reference.vy).all());
+  EXPECT_TRUE((state.wz == reference.wz).all());
 }
 
 TEST(MotionModelTests, DelayZeroSkipsShift)
@@ -396,8 +468,9 @@ TEST(MotionModelTests, DelayZeroSkipsShift)
   state.cvx.setConstant(2.0f);
 
   DiffDriveMotionModel model;
-  model.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.0f, 0.0f, false);
-  EXPECT_NO_THROW(model.pushCommandHistory(123.0f, 0.0f, 0.0f));
+  configureDelays(model, 0.0f, 0.0f, 0.0f);
+  model.setConstraints(unboundedConstraints(), 0.05f, false);
+  EXPECT_NO_THROW(model.onCommandSent(command(123.0f, 0.0f, 0.0f)));
   model.predict(state);
 
   EXPECT_TRUE(state.vx.isApproxToConstant(2.0f));
@@ -414,7 +487,8 @@ TEST(MotionModelTests, ClampRawControlsRewritesRawCommand)
     100.0f, -100.0f, 100.0f, 100.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f};
 
   OmniMotionModel model;
-  model.setConstraints(tight_constraints, 1.0f, 0.0f, 0.0f, 0.0f, true);
+  configureDelays(model, 0.0f, 0.0f, 0.0f);
+  model.setConstraints(tight_constraints, 1.0f, true);
 
   state.cvx.col(0).setConstant(5.0f);
   state.cvx.col(1).setConstant(5.0f);

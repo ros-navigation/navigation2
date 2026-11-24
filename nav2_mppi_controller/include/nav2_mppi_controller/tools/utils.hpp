@@ -48,6 +48,7 @@
 #include "nav2_mppi_controller/models/path.hpp"
 #include "builtin_interfaces/msg/time.hpp"
 #include "nav2_mppi_controller/critic_data.hpp"
+#include "nav2_mppi_controller/tools/accel_bounds.hpp"
 
 #define M_PIF 3.141592653589793238462643383279502884e+00F
 #define M_PIF_2 1.5707963267948966e+00F
@@ -677,10 +678,8 @@ inline float clampVelocityByAccel(
   const float last_vel, const float curr_vel,
   const float min_delta, const float max_delta)
 {
-  if (last_vel >= 0) {
-    return clamp(last_vel + min_delta, last_vel + max_delta, curr_vel);
-  }
-  return clamp(last_vel - max_delta, last_vel - min_delta, curr_vel);
+  const auto [lower, upper] = AccelBounds<float>(min_delta, max_delta)(last_vel);
+  return clamp(lower, upper, curr_vel);
 }
 
 /**

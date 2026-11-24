@@ -23,11 +23,17 @@
 //                                   matches any ending
 //   MPPI_BENCH_CONFIGS=<a,b,...>    only run controller configurations likewise
 //   MPPI_BENCH_PATHS=<a,b,...>      only run paths likewise
-//   MPPI_BENCH_CSV_DIR=<dir>        write a summary and the first repeat's trajectories as CSV
+//   MPPI_BENCH_CSV_DIR=<dir>        write a summary, every run's metrics and the first repeat's
+//                                   trajectories as CSV
+//   MPPI_BENCH_PLANT_ACCEL=1        the robot's velocity also changes within the configured
+//                                   acceleration limits, as a real robot's would
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <cstdlib>
 #include <deque>
 #include <fstream>
@@ -91,6 +97,21 @@ struct PlantModel
 };
 
 /**
+ * @brief Range of velocities reachable in one step from a velocity, accelerating away from zero
+ * by up to accel and toward zero by up to decel, including through zero within the step
+ */
+std::pair<double, double> reachable(double v, double accel, double decel, double dt)
+{
+  const double a = accel * dt, d = decel * dt;
+  if (v >= 0.0) {
+    const double lo = v >= d ? v - d : -accel * (dt - v / decel);
+    return {lo, v + a};
+  }
+  const double hi = -v >= d ? v + d : accel * (dt + v / decel);
+  return {v - a, hi};
+}
+
+/**
  * Hammerstein unicycle: command -> deadband -> gain -> delay -> first-order lag, with optional
  * velocity noise on the realized motion (e.g. legged gait sway).
  */
@@ -99,6 +120,17 @@ class LaggedUnicycle
 public:
   LaggedUnicycle(const PlantModel & model, double x, double y, double yaw, unsigned int seed)
   : model_(model), x_(x), y_(y), yaw_(yaw), rng_(seed) {}
+
+  /**
+   * @brief Limit the robot's velocity changes to acceleration limits, as a real robot's are
+   */
+  void setAccelLimits(double ax_max, double ax_min, double az_max)
+  {
+    accel_limited_ = true;
+    ax_max_ = ax_max;
+    ax_min_ = ax_min;
+    az_max_ = az_max;
+  }
 
   void command(double t, double v, double w)
   {
@@ -125,8 +157,14 @@ public:
       }
     }
 
-    const double new_v = lag(v_, model_.linear.actuate(cmd_v), model_.linear.time_constant, dt);
-    const double new_w = lag(w_, model_.angular.actuate(cmd_w), model_.angular.time_constant, dt);
+    double new_v = lag(v_, model_.linear.actuate(cmd_v), model_.linear.time_constant, dt);
+    double new_w = lag(w_, model_.angular.actuate(cmd_w), model_.angular.time_constant, dt);
+    if (accel_limited_) {
+      const auto [v_lo, v_hi] = reachable(v_, ax_max_, -ax_min_, dt);
+      const auto [w_lo, w_hi] = reachable(w_, az_max_, az_max_, dt);
+      new_v = std::clamp(new_v, v_lo, v_hi);
+      new_w = std::clamp(new_w, w_lo, w_hi);
+    }
 
     std::normal_distribution<double> noise(0.0, 1.0);
     const bool moving = std::fabs(new_v) > 1e-3 || std::fabs(new_w) > 1e-3;
@@ -172,6 +210,8 @@ private:
   double meas_v_{0.0}, meas_w_{0.0};
   std::vector<Command> commands_;
   std::mt19937 rng_;
+  bool accel_limited_{false};
+  double ax_max_{0.0}, ax_min_{0.0}, az_max_{0.0};
 };
 
 /**
@@ -247,7 +287,12 @@ struct ControllerConfig
   double delay_model_fraction{0.0};
   // Acceleration limits, as a robot which cannot accelerate quickly would be configured
   double ax_max{3.0};
+  double ax_min{-3.0};
   double az_max{3.5};
+  double vx_std{0.2};
+  double wz_std{0.4};
+  int time_steps{56};
+  bool open_loop{false};
 };
 
 struct Scenario
@@ -270,7 +315,29 @@ struct RunResult
   int failures{0};
   // Mean error of the robot's position predicted by the optimal trajectory, kPredictionSteps ahead
   double prediction_error{0.0};
+  // RMS of the second difference of the commands, per axis, which measures oscillation
+  // rather than acceleration
+  double jitter_v{0.0};
+  double jitter_w{0.0};
+  // Commands exceeding the acceleration limits from the previous command
+  int accel_violations{0};
+  // Time from the start until the measured speed first reaches 90% of vx_max, or -1
+  double time_to_speed{-1.0};
+  // Mean computation time of a control cycle
+  double cycle_ms{0.0};
+  // Hash of every command, to check whether a change leaves the behavior bit-identical
+  uint64_t cmd_hash{0};
 };
+
+void hashCombine(uint64_t & hash, double value)
+{
+  uint64_t bits;
+  std::memcpy(&bits, &value, sizeof(bits));
+  for (int i = 0; i < 8; ++i) {
+    hash ^= (bits >> (8 * i)) & 0xff;
+    hash *= 1099511628211ull;
+  }
+}
 
 // Straight segments and arcs (positive angle turns left), as in the RPP benchmark
 nav_msgs::msg::Path makePath(const std::vector<std::pair<double, double>> & segments)
@@ -396,6 +463,7 @@ protected:
     declare(n + "ax_max", rclcpp::ParameterValue(3.0));
     declare(n + "ax_min", rclcpp::ParameterValue(-3.0));
     declare(n + "az_max", rclcpp::ParameterValue(3.5));
+    declare(n + "open_loop", rclcpp::ParameterValue(false));
 
     tf_ = nav2::create_transform_buffer(node_);
     // Transforms are set synchronously by the benchmark loop
@@ -451,8 +519,12 @@ protected:
         rclcpp::Parameter(n + "model_delay_vx", p.linear.delay * c.delay_model_fraction),
         rclcpp::Parameter(n + "model_delay_wz", p.angular.delay * c.delay_model_fraction),
         rclcpp::Parameter(n + "ax_max", c.ax_max),
-        rclcpp::Parameter(n + "ax_min", -c.ax_max),
+        rclcpp::Parameter(n + "ax_min", c.ax_min),
         rclcpp::Parameter(n + "az_max", c.az_max),
+        rclcpp::Parameter(n + "vx_std", c.vx_std),
+        rclcpp::Parameter(n + "wz_std", c.wz_std),
+        rclcpp::Parameter(n + "time_steps", c.time_steps),
+        rclcpp::Parameter(n + "open_loop", c.open_loop),
       }))
     {
       ASSERT_TRUE(result.successful) << result.reason;
@@ -460,7 +532,8 @@ protected:
   }
 
   static RunResult run(
-    const Scenario & scenario, const PlantModel & p, const std::string & csv_path = "")
+    const Scenario & scenario, const PlantModel & p, const ControllerConfig & c,
+    const std::string & csv_path = "")
   {
     controller_->reset();
     BenchmarkGoalChecker checker;
@@ -469,6 +542,9 @@ protected:
     const auto & plan = scenario.plan;
     const auto & start = plan.poses.front().pose.position;
     LaggedUnicycle robot(p, start.x, start.y, scenario.start_yaw, 42);
+    if (std::getenv("MPPI_BENCH_PLANT_ACCEL")) {
+      robot.setAccelLimits(c.ax_max, c.ax_min, c.az_max);
+    }
 
     geometry_msgs::msg::PoseStamped goal = plan.poses.back();
     goal.header.frame_id = "map";
@@ -490,6 +566,14 @@ protected:
     std::deque<std::tuple<int, double, double>> predictions;
     double sum_prediction_error = 0.0;
     int prediction_samples = 0;
+
+    // Command quality: the previous two commands, whether the previous one was a published zero
+    // after a failure, and the accumulated oscillation and computation time
+    double prev_v = 0.0, prev_w = 0.0, prev2_v = 0.0, prev2_w = 0.0;
+    bool prev_failed = false;
+    int cmd_count = 0, jitter_samples = 0;
+    double sum_sq_jit_v = 0.0, sum_sq_jit_w = 0.0, sum_cycle_ms = 0.0;
+    result.cmd_hash = 1469598103934665603ull;
 
     auto sample = [&](double t, const geometry_msgs::msg::Twist & cmd) {
         geometry_msgs::msg::Pose pose;
@@ -589,10 +673,18 @@ protected:
       }
 
       // As the controller server, publish zero on a failure and allow some failure tolerance
+      if (result.time_to_speed < 0.0 && measured.linear.x >= 0.9 * 0.5) {
+        result.time_to_speed = k * kControlDt;
+      }
+
       geometry_msgs::msg::Twist cmd;
+      bool failed = false;
       try {
+        const auto cycle_start = std::chrono::steady_clock::now();
         auto [cmd_stamped, trajectory] = controller_->evalControl(
           robot_pose, measured, &checker, local_plan, goal);
+        sum_cycle_ms += std::chrono::duration<double, std::milli>(
+          std::chrono::steady_clock::now() - cycle_start).count();
         cmd = cmd_stamped.twist;
         consecutive_failures = 0;
         // Each trajectory point is a model_dt (one control step) after the last
@@ -602,11 +694,39 @@ protected:
             trajectory(kPredictionSteps - 1, 1));
         }
       } catch (const nav2_core::NoValidControl &) {
+        failed = true;
         result.failures++;
         if (++consecutive_failures > kMaxConsecutiveFailures) {
           break;
         }
       }
+
+      hashCombine(result.cmd_hash, cmd.linear.x);
+      hashCombine(result.cmd_hash, cmd.angular.z);
+      if (!failed && !prev_failed) {
+        // Commands are a control period apart, starting from rest
+        const auto [v_lo, v_hi] = reachable(prev_v, c.ax_max, -c.ax_min, kControlDt);
+        const auto [w_lo, w_hi] = reachable(prev_w, c.az_max, c.az_max, kControlDt);
+        constexpr double eps = 1e-4;
+        if (cmd.linear.x < v_lo - eps || cmd.linear.x > v_hi + eps ||
+          cmd.angular.z < w_lo - eps || cmd.angular.z > w_hi + eps)
+        {
+          result.accel_violations++;
+        }
+        if (cmd_count >= 2) {
+          const double jv = cmd.linear.x - 2.0 * prev_v + prev2_v;
+          const double jw = cmd.angular.z - 2.0 * prev_w + prev2_w;
+          sum_sq_jit_v += jv * jv;
+          sum_sq_jit_w += jw * jw;
+          jitter_samples++;
+        }
+      }
+      prev2_v = prev_v;
+      prev2_w = prev_w;
+      prev_v = cmd.linear.x;
+      prev_w = cmd.angular.z;
+      prev_failed = failed;
+      cmd_count++;
 
       robot.command(t, cmd.linear.x, cmd.angular.z);
       sample(t, cmd);
@@ -629,6 +749,10 @@ protected:
       sample(t_end + (s + 1) * kControlDt, zero);
     }
 
+    result.jitter_v = jitter_samples > 0 ? std::sqrt(sum_sq_jit_v / jitter_samples) : 0.0;
+    result.jitter_w = jitter_samples > 0 ? std::sqrt(sum_sq_jit_w / jitter_samples) : 0.0;
+    const int cycles = cmd_count - result.failures;
+    result.cycle_ms = cycles > 0 ? sum_cycle_ms / cycles : 0.0;
     result.rms_cte = samples > 0 ? std::sqrt(sum_sq_cte / samples) : 0.0;
     result.prediction_error =
       prediction_samples > 0 ? sum_prediction_error / prediction_samples : 0.0;
@@ -692,15 +816,42 @@ nav2::TransformBuffer::SharedPtr MPPILatencyBenchmark::tf_;
 std::shared_ptr<nav2_costmap_2d::Costmap2DROS> MPPILatencyBenchmark::costmap_;
 std::shared_ptr<InspectableController> MPPILatencyBenchmark::controller_;
 
-ControllerConfig config(const std::string & name, double delay_fraction, bool low_accel)
+enum class AccelProfile {DEFAULT, LOW, ASYMMETRIC, ISSUE_6171};
+
+ControllerConfig config(
+  const std::string & name, double delay_fraction, AccelProfile profile, bool open_loop = false)
 {
   ControllerConfig c;
-  c.name = name + (low_accel ? "_low_acc" : "");
   c.delay_model_fraction = delay_fraction;
-  if (low_accel) {
-    c.ax_max = 0.5;
-    c.az_max = 1.0;
+  c.open_loop = open_loop;
+  std::string suffix;
+  switch (profile) {
+    case AccelProfile::LOW:
+      suffix = "_low_acc";
+      c.ax_max = 0.5;
+      c.ax_min = -0.5;
+      c.az_max = 1.0;
+      break;
+    case AccelProfile::ASYMMETRIC:
+      // Accelerating slowly but braking hard
+      suffix = "_asym_acc";
+      c.ax_max = 0.6;
+      c.ax_min = -1.7;
+      break;
+    case AccelProfile::ISSUE_6171:
+      // Slow rotational acceleration with large sampling noise and a long horizon
+      suffix = "_6171";
+      c.ax_max = 1.7;
+      c.ax_min = -1.7;
+      c.az_max = 0.6061;
+      c.vx_std = 0.5;
+      c.wz_std = 0.4;
+      c.time_steps = 100;
+      break;
+    case AccelProfile::DEFAULT:
+      break;
   }
+  c.name = name + suffix + (open_loop ? "_open" : "");
   return c;
 }
 
@@ -772,23 +923,31 @@ TEST_F(MPPILatencyBenchmark, swathsAndSCurves)
   filterByName(scenarios, "MPPI_BENCH_PATHS");
 
   std::vector<ControllerConfig> configs;
-  for (bool low_accel : {false, true}) {
-    configs.push_back(config("no_model", 0.0, low_accel));
-    configs.push_back(config("delay_model", 1.0, low_accel));
-    if (full) {
-      // Robustness to under-estimating the delay
-      configs.push_back(config("delay_model_-30%", 0.7, low_accel));
+  for (auto profile : {AccelProfile::DEFAULT, AccelProfile::LOW, AccelProfile::ASYMMETRIC,
+      AccelProfile::ISSUE_6171})
+  {
+    for (bool open_loop : {false, true}) {
+      configs.push_back(config("no_model", 0.0, profile, open_loop));
+      configs.push_back(config("delay_model", 1.0, profile, open_loop));
+      if (full) {
+        // Robustness to under-estimating the delay
+        configs.push_back(config("delay_model_-30%", 0.7, profile, open_loop));
+      }
     }
   }
   filterByName(configs, "MPPI_BENCH_CONFIGS");
   const char * repeats_env = std::getenv("MPPI_BENCH_REPEATS");
   const int repeats = repeats_env ? std::max(1, std::atoi(repeats_env)) : 3;
 
-  std::ofstream summary;
+  std::ofstream summary, runs_csv;
   if (csv_dir) {
     summary.open(std::string(csv_dir) + "/summary.csv");
     summary << "path,plant,controller,successes,runs,rms_mean,rms_min,rms_max,max_cte,time," <<
       "goal_overshoot,final_yaw_error,failures,prediction_error\n";
+    runs_csv.open(std::string(csv_dir) + "/runs.csv");
+    runs_csv << "path,plant,controller,repeat,success,rms_cte,max_cte,time,goal_overshoot," <<
+      "final_yaw_error,failures,prediction_error,jitter_v,jitter_w,accel_violations," <<
+      "time_to_speed,cycle_ms,cmd_hash\n";
   }
 
   printf(
@@ -808,7 +967,17 @@ TEST_F(MPPILatencyBenchmark, swathsAndSCurves)
             csv_path = std::string(csv_dir) + "/" + s.name + "__" + p.name + "__" + c.name +
               ".csv";
           }
-          aggregate.add(run(s, p, csv_path));
+          const auto r = run(s, p, c, csv_path);
+          aggregate.add(r);
+          if (runs_csv.is_open()) {
+            runs_csv << s.name << "," << p.name << "," << c.name << "," << i << "," <<
+              r.success << "," << r.rms_cte << "," << r.max_cte << "," << r.time << "," <<
+              r.goal_overshoot << "," << r.final_yaw_error << "," << r.failures << "," <<
+              r.prediction_error << "," << r.jitter_v << "," << r.jitter_w << "," <<
+              r.accel_violations << "," << r.time_to_speed << "," << r.cycle_ms << "," <<
+              r.cmd_hash << "\n";
+            runs_csv.flush();
+          }
         }
         results.push_back(aggregate);
         printRow(s, p, c, aggregate, summary);

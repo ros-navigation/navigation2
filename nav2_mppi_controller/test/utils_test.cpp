@@ -579,6 +579,48 @@ TEST(UtilsTests, toTrajectoryMsgTest)
     rclcpp::Duration(4, 0));
 }
 
+TEST(UtilsTests, AccelBoundsTest)
+{
+  // Speeding up by 0.015 and slowing down by 0.15 in a step
+  const utils::AccelBounds<float> bounds(-0.15f, 0.015f);
+  auto expect = [&](float v, float lower, float upper) {
+      const auto [lo, hi] = bounds(v);
+      EXPECT_NEAR(lo, lower, 1e-6f) << v;
+      EXPECT_NEAR(hi, upper, 1e-6f) << v;
+      // Clamping arrays of controls gives the same bounds
+      Eigen::ArrayXf prev = Eigen::ArrayXf::Constant(2, v), out(2);
+      Eigen::ArrayXf control(2);
+      control << -10.0f, 10.0f;
+      bounds.clamp(prev, control, out);
+      EXPECT_NEAR(out(0), lower, 1e-6f) << v;
+      EXPECT_NEAR(out(1), upper, 1e-6f) << v;
+    };
+  // From rest, both directions speed up
+  expect(0.0f, -0.015f, 0.015f);
+  // Slowing through zero within the step speeds up in reverse for the rest of it
+  expect(0.075f, -0.0075f, 0.09f);
+  expect(-0.075f, -0.09f, 0.0075f);
+  expect(0.001f, -0.015f * (1.0f - 0.001f / 0.15f), 0.016f);
+  expect(-0.001f, -0.016f, 0.015f * (1.0f - 0.001f / 0.15f));
+  // Away from zero, speeding up and slowing down use their own limits
+  expect(1.0f, 0.85f, 1.015f);
+  expect(-1.0f, -1.015f, -0.85f);
+
+  // Symmetric limits give exactly v -/+ the change, with no rounding from the zero crossing
+  const utils::AccelBounds<float> symmetric(-0.1f, 0.1f);
+  for (float v : {0.03f, -0.03f, 0.0f, 0.7f, -0.7f}) {
+    EXPECT_EQ(symmetric(v).first, v - 0.1f);
+    EXPECT_EQ(symmetric(v).second, v + 0.1f);
+  }
+
+  // The velocity clamp uses the same bounds, so from rest or noise around it, it speeds up at the
+  // acceleration rather than the braking rate in either direction
+  EXPECT_NEAR(utils::clampVelocityByAccel(0.0f, 1.0f, -0.15f, 0.015f), 0.015f, 1e-6f);
+  EXPECT_NEAR(utils::clampVelocityByAccel(0.0f, -1.0f, -0.15f, 0.015f), -0.015f, 1e-6f);
+  EXPECT_LT(utils::clampVelocityByAccel(-0.001f, 1.0f, -0.15f, 0.015f), 0.015f);
+  EXPECT_GT(utils::clampVelocityByAccel(0.001f, -1.0f, -0.15f, 0.015f), -0.015f);
+}
+
 TEST(UtilsTests, getLastPathPoseTest)
 {
   nav_msgs::msg::Path path;

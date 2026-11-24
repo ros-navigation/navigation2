@@ -27,6 +27,7 @@
 #include "nav2_mppi_controller/models/state.hpp"
 #include "nav2_mppi_controller/models/constraints.hpp"
 
+#include "nav2_mppi_controller/tools/accel_bounds.hpp"
 #include "nav2_mppi_controller/tools/parameters_handler.hpp"
 
 namespace mppi
@@ -50,6 +51,24 @@ public:
   virtual ~MotionModel() = default;
 
   /**
+   * @brief Configure the motion model on bringup: the parameters shared by all motion models,
+   *        including the robot's response delay, then the plugin's own via initialize()
+   * @param param_handler Pointer to the shared parameters handler
+   * @param parent_name   Namespace of the controller
+   * @param plugin_name   Namespaced name of this plugin instance
+   */
+  void on_configure(
+    ParametersHandler * param_handler, const std::string & parent_name,
+    const std::string & plugin_name)
+  {
+    auto getParentParam = param_handler->getParamGetter(parent_name);
+    getParentParam(delay_vx_, "model_delay_vx", 0.0f);
+    getParentParam(delay_vy_, "model_delay_vy", 0.0f);
+    getParentParam(delay_wz_, "model_delay_wz", 0.0f);
+    initialize(param_handler, plugin_name);
+  }
+
+  /**
    * @brief Initialize motion model on bringup.
    * @param param_handler Pointer to the shared parameters handler
    * @param plugin_name   Namespaced name of this plugin instance
@@ -60,78 +79,67 @@ public:
   {}
 
   /**
-    * @brief Initialize motion model on bringup and set required variables
+    * @brief Set the constraints and time step the motion model predicts with
     * @param control_constraints Constraints on control
     * @param model_dt duration of a time step
+    * @param clamp_raw_controls Whether to clamp the raw controls to the predicted velocities
     */
   void setConstraints(
     const models::ControlConstraints & control_constraints, float model_dt,
-    float model_delay_vx, float model_delay_vy, float model_delay_wz, bool clamp_raw_controls)
+    bool clamp_raw_controls)
   {
     control_constraints_ = control_constraints;
     model_dt_ = model_dt;
-    model_delay_vx_ = model_delay_vx;
-    model_delay_vy_ = model_delay_vy;
-    model_delay_wz_ = model_delay_wz;
     clamp_raw_controls_ = clamp_raw_controls;
 
-    cmd_history_vx_.resize(offsetSteps(model_delay_vx_), 0.0f);
-    cmd_history_vy_.resize(offsetSteps(model_delay_vy_), 0.0f);
-    cmd_history_wz_.resize(offsetSteps(model_delay_wz_), 0.0f);
+    // Keep the commands sent when the history size is unchanged, e.g. across parameter updates,
+    // as resizing the ring buffer in place would misorder it
+    resizeHistory(history_vx_, offsetSteps(delay_vx_));
+    resizeHistory(history_vy_, offsetSteps(delay_vy_));
+    resizeHistory(history_wz_, offsetSteps(delay_wz_));
   }
 
   /**
-    * @brief Push the most recently published command to the per-axis history
-    *        ring buffers. Called once per controller cycle from the optimizer.
+    * @brief Inform the model of the command sent to the robot, once per control cycle
+    * @param cmd Command sent
     */
-  void pushCommandHistory(float vx, float vy, float wz)
+  void onCommandSent(const geometry_msgs::msg::Twist & cmd)
   {
-    pushOne(cmd_history_vx_, vx);
-    pushOne(cmd_history_vy_, vy);
-    pushOne(cmd_history_wz_, wz);
+    pushOne(history_vx_, static_cast<float>(cmd.linear.x));
+    pushOne(history_vy_, static_cast<float>(cmd.linear.y));
+    pushOne(history_wz_, static_cast<float>(cmd.angular.z));
   }
 
   /**
-    * @brief Zero the ring buffers
+    * @brief Forget the commands sent, when the robot's motion is no longer a continuation of them
     */
-  void clearCommandHistory()
+  void reset()
   {
-    std::fill(cmd_history_vx_.begin(), cmd_history_vx_.end(), 0.0f);
-    std::fill(cmd_history_vy_.begin(), cmd_history_vy_.end(), 0.0f);
-    std::fill(cmd_history_wz_.begin(), cmd_history_wz_.end(), 0.0f);
+    std::fill(history_vx_.begin(), history_vx_.end(), 0.0f);
+    std::fill(history_vy_.begin(), history_vy_.end(), 0.0f);
+    std::fill(history_wz_.begin(), history_wz_.end(), 0.0f);
   }
 
   /**
-    * @brief Whether commands sent are still in flight on any axis when the next is sent, due to
-    *        the delay. A delay of a single model_dt is the latency inherent to the trajectories.
-    * @return If commands are in flight
-    */
-  bool hasCommandsInFlight() const
-  {
-    return cmd_history_vx_.size() > 1u || cmd_history_wz_.size() > 1u ||
-           (isHolonomic() && cmd_history_vy_.size() > 1u);
-  }
-
-  /**
-    * @brief Get the velocity the next command continues from. On axes with commands in flight,
-    *        the next command takes effect after them, so it continues from the last command
-    *        sent rather than the robot's lagging measured velocity.
+    * @brief Get the velocity the next control continues from, which the control sequence must be
+    *        feasible from. Commands still in flight take effect first, so on those axes it is the
+    *        last command sent rather than the robot's current velocity.
     * @param speed Current robot velocity
     * @return Velocity to continue from
     */
-  geometry_msgs::msg::Twist getCommandBaseSpeed(const geometry_msgs::msg::Twist & speed) const
+  geometry_msgs::msg::Twist getControlStart(const geometry_msgs::msg::Twist & speed) const
   {
-    geometry_msgs::msg::Twist base_speed = speed;
-    if (cmd_history_vx_.size() > 1u) {
-      base_speed.linear.x = cmd_history_vx_.back();
+    geometry_msgs::msg::Twist start = speed;
+    if (history_vx_.size() > 1u) {
+      start.linear.x = history_vx_.back();
     }
-    if (isHolonomic() && cmd_history_vy_.size() > 1u) {
-      base_speed.linear.y = cmd_history_vy_.back();
+    if (isHolonomic() && history_vy_.size() > 1u) {
+      start.linear.y = history_vy_.back();
     }
-    if (cmd_history_wz_.size() > 1u) {
-      base_speed.angular.z = cmd_history_wz_.back();
+    if (history_wz_.size() > 1u) {
+      start.angular.z = history_wz_.back();
     }
-    return base_speed;
+    return start;
   }
 
   /**
@@ -141,61 +149,39 @@ public:
   virtual void predict(models::State & state)
   {
     const bool is_holo = isHolonomic();
-    float max_delta_vx = model_dt_ * control_constraints_.ax_max;
-    float min_delta_vx = model_dt_ * control_constraints_.ax_min;
-    float max_delta_vy = model_dt_ * control_constraints_.ay_max;
-    float min_delta_vy = model_dt_ * control_constraints_.ay_min;
-    float max_delta_wz = model_dt_ * control_constraints_.az_max;
+    const utils::AccelBounds<float> bounds_vx(
+      model_dt_ * control_constraints_.ax_min, model_dt_ * control_constraints_.ax_max);
+    const utils::AccelBounds<float> bounds_vy(
+      model_dt_ * control_constraints_.ay_min, model_dt_ * control_constraints_.ay_max);
+    const utils::AccelBounds<float> bounds_wz(
+      -model_dt_ * control_constraints_.az_max, model_dt_ * control_constraints_.az_max);
     unsigned int n_cols = state.vx.cols();
 
     // Set dynamic limits to the platform velocities from the raw controls sampling
     for (unsigned int i = 1; i < n_cols; i++) {
-      auto lower_bound_vx = (state.vx.col(i - 1) >
-        0).select(
-        state.vx.col(i - 1) + min_delta_vx,
-        state.vx.col(i - 1) - max_delta_vx);
-      auto upper_bound_vx = (state.vx.col(i - 1) >
-        0).select(
-        state.vx.col(i - 1) + max_delta_vx,
-        state.vx.col(i - 1) - min_delta_vx);
-      state.vx.col(i) = state.cvx.col(i - 1)
-        .cwiseMax(lower_bound_vx)
-        .cwiseMin(upper_bound_vx);
+      bounds_vx.clamp(state.vx.col(i - 1), state.cvx.col(i - 1), state.vx.col(i));
       if (clamp_raw_controls_) {
         state.cvx.col(i - 1) = state.vx.col(i);
       }
 
-      state.wz.col(i) = state.cwz.col(i - 1)
-        .cwiseMax(state.wz.col(i - 1) - max_delta_wz)
-        .cwiseMin(state.wz.col(i - 1) + max_delta_wz);
+      bounds_wz.clamp(state.wz.col(i - 1), state.cwz.col(i - 1), state.wz.col(i));
       if (clamp_raw_controls_) {
         state.cwz.col(i - 1) = state.wz.col(i);
       }
 
       if (is_holo) {
-        auto lower_bound_vy = (state.vy.col(i - 1) >
-          0).select(
-          state.vy.col(i - 1) + min_delta_vy,
-          state.vy.col(i - 1) - max_delta_vy);
-        auto upper_bound_vy = (state.vy.col(i - 1) >
-          0).select(
-          state.vy.col(i - 1) + max_delta_vy,
-          state.vy.col(i - 1) - min_delta_vy);
-        state.vy.col(i) = state.cvy.col(i - 1)
-          .cwiseMax(lower_bound_vy)
-          .cwiseMin(upper_bound_vy);
+        bounds_vy.clamp(state.vy.col(i - 1), state.cvy.col(i - 1), state.vy.col(i));
         if (clamp_raw_controls_) {
           state.cvy.col(i - 1) = state.vy.col(i);
         }
       }
     }
 
-    const unsigned int offset_vx = std::floor((model_delay_vx_ / model_dt_) + 0.5);
-    const unsigned int offset_vy = std::floor((model_delay_vy_ / model_dt_) + 0.5);
-    const unsigned int offset_wz = std::floor((model_delay_wz_ / model_dt_) + 0.5);
-
-    if (offset_vx > 0u || offset_wz > 0u || (is_holo && offset_vy > 0u)) {
-      applyDelayShift(state, is_holo, offset_vx, offset_vy, offset_wz);
+    // The commands still in flight play out before the sampled controls take effect
+    applyDelayShift(state.vx, history_vx_);
+    applyDelayShift(state.wz, history_wz_);
+    if (is_holo) {
+      applyDelayShift(state.vy, history_vy_);
     }
   }
 
@@ -213,38 +199,30 @@ public:
 
 protected:
   /**
-    * @brief Apply the per-axis input-delay shift to velocity rollout.
-    *
-    * For j in [1, offset) — the delay window — fill `dst` with history[j]
+    * @brief Apply an axis' input delay to its velocity rollout: the delay, in steps, is the size of
+    *        its history of commands sent within it. For j in [1, offset), the delay window, the
+    *        velocities are the commands in flight, history[j]. A delay of a single model_dt is the
+    *        latency inherent to the trajectories, so leaves them unchanged.
+    * @param velocities Velocities of the axis
+    * @param history Commands sent within the axis' delay, oldest first
     */
-  void applyDelayShift(
-    models::State & state, bool is_holo,
-    unsigned int offset_vx, unsigned int offset_vy, unsigned int offset_wz) const
+  static void applyDelayShift(Eigen::ArrayXXf & velocities, const std::vector<float> & history)
   {
-    auto shift = [](Eigen::ArrayXXf & velocities, unsigned int offset,
-      const std::vector<float> & history) {
-        const unsigned int cols = static_cast<unsigned int>(velocities.cols());
-        if (offset == 0u || cols == 0u) {
-          return;
-        }
+    const unsigned int offset = static_cast<unsigned int>(history.size());
+    const unsigned int cols = static_cast<unsigned int>(velocities.cols());
+    if (offset <= 1u || cols == 0u) {
+      return;
+    }
 
-        // Shift cols in-place right-to-left by offset
-        for (unsigned int k = (offset < cols) ? cols - offset : 0u; k > 0; --k) {
-          velocities.col(offset + k - 1) = velocities.col(k);
-        }
+    // Shift cols in-place right-to-left by offset
+    for (unsigned int k = (offset < cols) ? cols - offset : 0u; k > 0; --k) {
+      velocities.col(offset + k - 1) = velocities.col(k);
+    }
 
-        // Fill delay window cols with the in-flight commands from history.
-        const unsigned int end = std::min(offset, cols);
-        for (unsigned int j = 1; j < end; ++j) {
-          velocities.col(j).setConstant(history[j]);
-        }
-      };
-
-    shift(state.vx, offset_vx, cmd_history_vx_);
-    shift(state.wz, offset_wz, cmd_history_wz_);
-
-    if (is_holo) {
-      shift(state.vy, offset_vy, cmd_history_vy_);
+    // Fill delay window cols with the in-flight commands from history.
+    const unsigned int end = std::min(offset, cols);
+    for (unsigned int j = 1; j < end; ++j) {
+      velocities.col(j).setConstant(history[j]);
     }
   }
 
@@ -269,16 +247,26 @@ protected:
     buf.back() = v;
   }
 
+  /**
+    * @brief Resize a ring buffer, zeroing it only when its size changes
+    */
+  static void resizeHistory(std::vector<float> & buf, std::size_t size)
+  {
+    if (buf.size() != size) {
+      buf.assign(size, 0.0f);
+    }
+  }
+
   float model_dt_{0.0};
-  float model_delay_vx_{0.0};
-  float model_delay_vy_{0.0};
-  float model_delay_wz_{0.0};
   bool clamp_raw_controls_{false};
 
-  // Per-axis ring buffer of recently published commands
-  std::vector<float> cmd_history_vx_;
-  std::vector<float> cmd_history_vy_;
-  std::vector<float> cmd_history_wz_;
+  // The robot's response delay per axis and the commands sent within it, still in flight
+  float delay_vx_{0.0f};
+  float delay_vy_{0.0f};
+  float delay_wz_{0.0f};
+  std::vector<float> history_vx_;
+  std::vector<float> history_vy_;
+  std::vector<float> history_wz_;
 
   models::ControlConstraints control_constraints_{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
     0.0f, 0.0f};
