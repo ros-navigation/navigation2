@@ -374,6 +374,7 @@
     <Action ID="ConcatenatePaths">
       <input_port name="input_path1" type="nav_msgs::msg::Path">First path to concatenate.</input_port>
       <input_port name="input_path2" type="nav_msgs::msg::Path">Second path to concatenate.</input_port>
+      <input_port name="allow_frame_transform" type="bool" default="false">Transform the second path into the frame of the first when the frames differ, instead of failing.</input_port>
       <output_port name="output_path" type="nav_msgs::msg::Path">Output concatenated path.</output_port>
     </Action>
 

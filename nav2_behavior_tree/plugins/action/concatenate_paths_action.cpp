@@ -19,6 +19,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/path_utils.hpp"
 #include "behaviortree_cpp/decorator_node.h"
 
 #include "nav2_behavior_tree/plugins/action/concatenate_paths_action.hpp"
@@ -33,8 +34,20 @@ ConcatenatePaths::ConcatenatePaths(
 {
 }
 
+void ConcatenatePaths::initialize()
+{
+  auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
+  logger_ = node->get_logger();
+  tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
+  node->get_parameter("transform_tolerance", transform_tolerance_);
+}
+
 inline BT::NodeStatus ConcatenatePaths::tick()
 {
+  if (!BT::isStatusActive(status())) {
+    initialize();
+  }
+
   setStatus(BT::NodeStatus::RUNNING);
 
   nav_msgs::msg::Path input_path1, input_path2;
@@ -43,9 +56,36 @@ inline BT::NodeStatus ConcatenatePaths::tick()
 
   if (input_path1.poses.empty() && input_path2.poses.empty()) {
     RCLCPP_ERROR(
-      config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node")->get_logger(),
+      logger_,
       "No input paths provided to concatenate. Both paths are empty.");
     return BT::NodeStatus::FAILURE;
+  }
+
+  const std::string & frame1 = input_path1.header.frame_id;
+  const std::string & frame2 = input_path2.header.frame_id;
+  if (!input_path2.poses.empty() && frame1 != frame2) {
+    bool allow_frame_transform = false;
+    getInput("allow_frame_transform", allow_frame_transform);
+    if (!allow_frame_transform) {
+      RCLCPP_ERROR(
+        logger_,
+        "Cannot concatenate paths in different frames ('%s' and '%s'). "
+        "Set allow_frame_transform to transform the second path into the frame of the first.",
+        frame1.c_str(), frame2.c_str());
+      return BT::NodeStatus::FAILURE;
+    }
+
+    nav_msgs::msg::Path transformed_path2;
+    if (!nav2_util::transformPathInTargetFrame(
+        input_path2, transformed_path2, *tf_, frame1, transform_tolerance_))
+    {
+      RCLCPP_ERROR(
+        logger_,
+        "Failed to transform the second path from '%s' to '%s' for concatenation.",
+        frame2.c_str(), frame1.c_str());
+      return BT::NodeStatus::FAILURE;
+    }
+    input_path2 = transformed_path2;
   }
 
   nav_msgs::msg::Path output_path;

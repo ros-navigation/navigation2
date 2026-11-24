@@ -211,7 +211,7 @@ GoalIntentExtractor::findStartandGoal(const std::shared_ptr<const GoalT> goal)
     {
       if (los_checker.isInCollision()) {
         GoalIntentSearch::BreadthFirstSearch bfs(costmap);
-        if (bfs.search(transformed_end, candidate_nodes)) {
+        if (bfs.search(transformed_end, candidate_nodes, max_nn_search_iterations_)) {
           end_route_loc = end_route[bfs.getClosestNodeIdx()];
         }
       }

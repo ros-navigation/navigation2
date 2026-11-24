@@ -18,7 +18,7 @@ comment-on-organic: false
 auto-close: false
 auto-close-classifications: [automation]   # any of: organic, mixed, automation
 
-honeypot: true
+honeypot: false
 
 labels:
   community-flagged: agentscan:community-flagged-ai
