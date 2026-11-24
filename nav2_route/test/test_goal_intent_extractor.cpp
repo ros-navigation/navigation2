@@ -18,6 +18,9 @@
 #include <vector>
 
 #include "gtest/gtest.h"
+#include "nav2_costmap_2d/cost_values.hpp"
+#include "nav2_costmap_2d/costmap_subscriber.hpp"
+#include "nav2_msgs/msg/costmap.hpp"
 #include "rclcpp/parameter.hpp"
 #include "rclcpp/parameter_value.hpp"
 #include "rclcpp/utilities.hpp"
@@ -169,6 +172,33 @@ TEST(GoalIntentExtractorTest, test_start_goal_finder)
   raw_goal.use_poses = true;
   goal = std::make_shared<const nav2_msgs::action::ComputeRoute::Goal>(raw_goal);
   EXPECT_THROW(extractor.findStartandGoal(goal), nav2_core::IndeterminantNodesOnGraph);
+
+  // Block the closest goal node at (2, 1), leaving (1, 1) reachable.
+  constexpr unsigned int map_size = 6;
+  auto costmap = std::make_shared<nav2_msgs::msg::Costmap>();
+  costmap->header.frame_id = "map";
+  costmap->metadata.size_x = map_size;
+  costmap->metadata.size_y = map_size;
+  costmap->metadata.resolution = 0.5f;
+  costmap->metadata.origin.orientation.w = 1.0;
+  costmap->data.resize(map_size * map_size, nav2_costmap_2d::FREE_SPACE);
+  costmap->data[2 * map_size + 4] = nav2_costmap_2d::LETHAL_OBSTACLE;
+  costmap_subscriber = std::make_shared<nav2_costmap_2d::CostmapSubscriber>(
+    node, "goal_intent_costmap");
+  costmap_subscriber->costmapCallback(costmap);
+
+  raw_goal.start.pose.position.x = 0.0;
+  raw_goal.start.pose.position.y = 0.0;
+  raw_goal.goal.pose.position.x = 1.6;
+  goal = std::make_shared<const nav2_msgs::action::ComputeRoute::Goal>(raw_goal);
+  ASSERT_TRUE(node->set_parameter(rclcpp::Parameter("enable_nn_search", true)).successful);
+  extractor.configure(node, graph, &id_map, tf, costmap_subscriber, "map", "base_link");
+  EXPECT_EQ(extractor.findStartandGoal(goal).second, 4u);
+
+  // With one iteration, the goal search falls back to the Euclidean nearest node.
+  ASSERT_TRUE(node->set_parameter(rclcpp::Parameter("max_nn_search_iterations", 1)).successful);
+  extractor.configure(node, graph, &id_map, tf, costmap_subscriber, "map", "base_link");
+  EXPECT_EQ(extractor.findStartandGoal(goal).second, 7u);
 }
 
 TEST(GoalIntentExtractorTest, test_pruning)
