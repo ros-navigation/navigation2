@@ -1925,7 +1925,7 @@ TEST(SummariseTriggeringSources, CountsPerSourceMostPointsFirst)
 
   EXPECT_EQ(summariseTriggeringSources({}), "no points");
 
-  // Grouped by source, as Polygon::getPointsInside produces them.
+  // Grouped by source, as from Polygon::getPointsInside.
   std::vector<Point> points{
     {0.1, 0.0, 0.0, "scan"},
     {0.2, 0.0, 0.0, "pointcloud"}, {0.3, 0.0, 0.0, "pointcloud"}, {0.4, 0.0, 0.0, "pointcloud"},
@@ -1934,7 +1934,7 @@ TEST(SummariseTriggeringSources, CountsPerSourceMostPointsFirst)
     summariseTriggeringSources(points),
     "pointcloud (3 points), range (1 point), scan (1 point)");
 
-  // Not grouped, and an untagged point: counts still merge per source.
+  // Ungrouped, with an unnamed source.
   points = {
     {0.1, 0.0, 0.0, "scan"}, {0.2, 0.0, 0.0, "range"}, {0.3, 0.0, 0.0, "scan"},
     {0.4, 0.0, 0.0, ""}};

@@ -84,14 +84,14 @@ struct Action
   Velocity req_vel;
   std::string polygon_name;
   std::vector<Point> triggering_points;
-  std::string invalid_source = "";  // name of the source that caused an "invalid source" stop
+  std::string invalid_source = "";
 };
 
 /**
- * @brief Summarises which data sources a set of triggering points came from,
- * e.g. "scan (34 points), pointcloud (3 points)": most points first, ties by name.
+ * @brief Lists the triggering points' sources, most points first,
+ * e.g. "scan (34 points), pointcloud (3 points)"
  * @param points Triggering points of a robot action
- * @return Human-readable list of sources with their point counts
+ * @return Sources with their point counts
  */
 inline std::string summariseTriggeringSources(const std::vector<Point> & points)
 {
@@ -99,8 +99,7 @@ inline std::string summariseTriggeringSources(const std::vector<Point> & points)
     return "no points";
   }
 
-  // Points arrive grouped by source, so count runs and only touch the map when the
-  // source changes: one string compare per point instead of a map lookup.
+  // Points arrive grouped by source: count runs rather than a map lookup per point.
   std::map<std::string, size_t> counts;
   const std::string * run_source = &points.front().source;
   size_t run_length = 0;
