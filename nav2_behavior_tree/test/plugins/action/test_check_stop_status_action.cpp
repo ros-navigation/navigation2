@@ -34,7 +34,7 @@ class CheckStopStatusTestFixture : public nav2_behavior_tree::BehaviorTreeTestFi
 public:
   void SetUp()
   {
-    odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_);
+    odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_, 0.05);
     config_->blackboard->set(
       "odom_smoother", odom_smoother_);  // NOLINT
     // shorten duration_stopped  from default to make the test faster
@@ -77,6 +77,7 @@ TEST_F(CheckStopStatusTestFixture, test_behavior)
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 
   // Test RUNNING when robot is stopped but not long enough
+  std::this_thread::sleep_for(60ms);
   odom_msg.header.stamp = node_->now();
   odom_msg.twist.twist.linear.x = 0.001;
   odom_pub->publish(odom_msg);
@@ -94,6 +95,10 @@ TEST_F(CheckStopStatusTestFixture, test_behavior)
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 
   // Test SUCCESS when robot is stopped for long with a back-dated timestamp
+  odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_, 0.05);
+  config_->blackboard->set("odom_smoother", odom_smoother_);
+  bt_node_ = std::make_shared<nav2_behavior_tree::CheckStopStatus>("check_stop_status", *config_);
+
   odom_msg.header.stamp = node_->now() - rclcpp::Duration(2, 0);
   odom_msg.twist.twist.angular.z = 0;
   odom_msg.twist.twist.linear.x = 0.001;
@@ -102,6 +107,10 @@ TEST_F(CheckStopStatusTestFixture, test_behavior)
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
 
   // Test SUCCESS when robot is stopped for long enough without a stamp for odometry
+  odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(node_, 0.05);
+  config_->blackboard->set("odom_smoother", odom_smoother_);
+  bt_node_ = std::make_shared<nav2_behavior_tree::CheckStopStatus>("check_stop_status", *config_);
+
   odom_msg.header.stamp = rclcpp::Time(0, 0, RCL_ROS_TIME);
   odom_msg.twist.twist.linear.x = 0.001;
   odom_pub->publish(odom_msg);
