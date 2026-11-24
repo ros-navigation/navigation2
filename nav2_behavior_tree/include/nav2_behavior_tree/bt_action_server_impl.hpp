@@ -254,6 +254,11 @@ bool BtActionServer<ActionT, NodeT>::loadBehaviorTree(const std::string & bt_xml
     return true;
   }
 
+  // Clear the registered behavior
+  if (!current_bt_file_or_id_.empty()) {
+    bt_->clearRegisteredBehaviorTrees();
+  }
+
   // Reset any existing Groot2 monitoring
   bt_->resetGrootMonitor();
 
