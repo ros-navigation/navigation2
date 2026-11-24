@@ -380,8 +380,13 @@ void Optimizer::prepare(
       state_.speed.linear.y = utils::clampVelocityByAccel(
       robot_speed.linear.y, last_command_vel_.linear.y, min_delta_vy, max_delta_vy);
     }
-    // Predict the robot pose at dt in future
-    motion_model_->predictPose(state_.pose.pose, robot_speed, dt);
+    auto interval_speed = state_.speed;
+    interval_speed.linear.x = 0.5f * (robot_speed.linear.x + state_.speed.linear.x);
+    interval_speed.angular.z = 0.5f * (robot_speed.angular.z + state_.speed.angular.z);
+    if (isHolonomic()) {
+      interval_speed.linear.y = 0.5f * (robot_speed.linear.y + state_.speed.linear.y);
+    }
+    motion_model_->predictPose(state_.pose.pose, interval_speed, dt);
   }
   state_.local_path_length = nav2_util::geometry_utils::calculate_path_length(plan);
   path_ = utils::toTensor(plan);
@@ -556,26 +561,39 @@ void Optimizer::integrateStateVelocities(
     return;
   }
 
+  Eigen::ArrayXf wz_ave(n_size);
+  wz_ave.head(n_size - 1) = 0.5f * (wz.head(n_size - 1) + wz.tail(n_size - 1));
+  wz_ave(n_size - 1) = wz(n_size - 1);
+
   float last_yaw = initial_yaw;
   for (size_t i = 0; i != n_size; i++) {
-    last_yaw += wz(i) * settings_.model_dt;
+    last_yaw += wz_ave(i) * settings_.model_dt;
     traj_yaws(i) = last_yaw;
   }
 
-  Eigen::ArrayXf yaw_cos = traj_yaws.cos();
-  Eigen::ArrayXf yaw_sin = traj_yaws.sin();
-  utils::shiftColumnsByOnePlace(yaw_cos, 1);
-  utils::shiftColumnsByOnePlace(yaw_sin, 1);
-  yaw_cos(0) = cosf(initial_yaw);
-  yaw_sin(0) = sinf(initial_yaw);
+  Eigen::ArrayXf yaw_ave = traj_yaws;
+  utils::shiftColumnsByOnePlace(yaw_ave, 1);
+  yaw_ave(0) = initial_yaw;
+  yaw_ave = 0.5f * (yaw_ave + traj_yaws);
 
-  auto dx = (vx * yaw_cos).eval();
-  auto dy = (vx * yaw_sin).eval();
+  Eigen::ArrayXf yaw_cos_ave = yaw_ave.cos();
+  Eigen::ArrayXf yaw_sin_ave = yaw_ave.sin();
+
+  Eigen::ArrayXf v_ave_x(n_size);
+  v_ave_x.head(n_size - 1) = 0.5f * (vx.head(n_size - 1) + vx.tail(n_size - 1));
+  v_ave_x(n_size - 1) = vx(n_size - 1);
+
+  auto dx = (v_ave_x * yaw_cos_ave).eval();
+  auto dy = (v_ave_x * yaw_sin_ave).eval();
 
   if (isHolonomic()) {
     auto vy = sequence.col(2);
-    dx = (dx - vy * yaw_sin).eval();
-    dy = (dy + vy * yaw_cos).eval();
+    Eigen::ArrayXf v_ave_y(n_size);
+    v_ave_y.head(n_size - 1) = 0.5f * (vy.head(n_size - 1) + vy.tail(n_size - 1));
+    v_ave_y(n_size - 1) = vy(n_size - 1);
+
+    dx = (dx - v_ave_y * yaw_sin_ave).eval();
+    dy = (dy + v_ave_y * yaw_cos_ave).eval();
   }
 
   float last_x = state_.pose.pose.position.x;
@@ -595,25 +613,46 @@ void Optimizer::integrateStateVelocities(
   auto initial_yaw = static_cast<float>(tf2::getYaw(state.pose.pose.orientation));
   const size_t n_cols = trajectories.yaws.cols();
 
+  if (n_cols == 0) {
+    return;
+  }
+
+  Eigen::ArrayXXf wz_ave(state.wz.rows(), n_cols);
+  wz_ave.leftCols(n_cols - 1) =
+    0.5f * (state.wz.leftCols(n_cols - 1) + state.wz.rightCols(n_cols - 1));
+  wz_ave.col(n_cols - 1) = state.wz.col(n_cols - 1);
+
+
   Eigen::ArrayXf last_yaws = Eigen::ArrayXf::Constant(trajectories.yaws.rows(), initial_yaw);
   for (size_t i = 0; i != n_cols; i++) {
-    last_yaws += state.wz.col(i) * settings_.model_dt;
+    last_yaws += wz_ave.col(i) * settings_.model_dt;
     trajectories.yaws.col(i) = last_yaws;
   }
 
-  Eigen::ArrayXXf yaw_cos = trajectories.yaws.cos();
-  Eigen::ArrayXXf yaw_sin = trajectories.yaws.sin();
-  utils::shiftColumnsByOnePlace(yaw_cos, 1);
-  utils::shiftColumnsByOnePlace(yaw_sin, 1);
-  yaw_cos.col(0) = cosf(initial_yaw);
-  yaw_sin.col(0) = sinf(initial_yaw);
+  Eigen::ArrayXXf yaw_ave = trajectories.yaws;
+  utils::shiftColumnsByOnePlace(yaw_ave, 1);
+  yaw_ave.col(0) = initial_yaw;
+  yaw_ave = 0.5f * (yaw_ave + trajectories.yaws);
 
-  auto dx = (state.vx * yaw_cos).eval();
-  auto dy = (state.vx * yaw_sin).eval();
+  Eigen::ArrayXXf yaw_cos_ave = yaw_ave.cos();
+  Eigen::ArrayXXf yaw_sin_ave = yaw_ave.sin();
+
+  Eigen::ArrayXXf v_ave_x(state.vx.rows(), n_cols);
+  v_ave_x.leftCols(n_cols - 1) =
+    0.5f * (state.vx.leftCols(n_cols - 1) + state.vx.rightCols(n_cols - 1));
+  v_ave_x.col(n_cols - 1) = state.vx.col(n_cols - 1);
+
+  auto dx = (v_ave_x * yaw_cos_ave).eval();
+  auto dy = (v_ave_x * yaw_sin_ave).eval();
 
   if (isHolonomic()) {
-    dx -= state.vy * yaw_sin;
-    dy += state.vy * yaw_cos;
+    Eigen::ArrayXXf v_ave_y(state.vy.rows(), n_cols);
+    v_ave_y.leftCols(n_cols - 1) =
+      0.5f * (state.vy.leftCols(n_cols - 1) + state.vy.rightCols(n_cols - 1));
+    v_ave_y.col(n_cols - 1) = state.vy.col(n_cols - 1);
+
+    dx -= v_ave_y * yaw_sin_ave;
+    dy += v_ave_y * yaw_cos_ave;
   }
 
   Eigen::ArrayXf last_x = Eigen::ArrayXf::Constant(
