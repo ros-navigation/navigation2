@@ -120,18 +120,16 @@ public:
   /**
    * @brief Start navigating with a given navigator
    * @param string Name of the navigator to start
+   * @return bool If the navigator holds ownership; false if another navigator holds it
    */
-  void startNavigating(nav2_core::NavigatorBase * navigator)
+  bool startNavigating(nav2_core::NavigatorBase * navigator)
   {
     std::scoped_lock l(mutex_);
-    if (current_navigator_ != nullptr) {
-      RCLCPP_ERROR(
-        rclcpp::get_logger("NavigatorMutex"),
-        "Major error! Navigation requested while another navigation"
-        " task is in progress! This likely occurred from an incorrect"
-        "implementation of a navigator plugin.");
+    if (current_navigator_ != nullptr && current_navigator_ != navigator) {
+      return false;
     }
     current_navigator_ = navigator;
+    return true;
   }
 
   /**
@@ -155,7 +153,10 @@ public:
   void preemptCurrentNavigator()
   {
     std::scoped_lock l(mutex_);
-    current_navigator_->preempt();
+    // The navigator may have completed since the caller checked it.
+    if (current_navigator_ != nullptr) {
+      current_navigator_->preempt();
+    }
   }
 
   /**
@@ -247,6 +248,7 @@ public:
       plugin_lib_names,
       default_bt_xml_filename,
       std::bind(&BehaviorTreeNavigator::onGoalReceived, this, std::placeholders::_1),
+      std::bind(&BehaviorTreeNavigator::onGoalStarted, this, std::placeholders::_1),
       std::bind(&BehaviorTreeNavigator::onLoop, this),
       std::bind(&BehaviorTreeNavigator::onPreempt, this, std::placeholders::_1),
       std::bind(
@@ -332,43 +334,64 @@ protected:
    */
   bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal)
   {
-    if (plugin_muxer_->isNavigating() && !plugin_muxer_->isCurrentNavigator(this)) {
-      // A different navigator is processing; check if cross-navigator preemption is allowed
-      if (!allow_navigator_preemption_) {
-        RCLCPP_ERROR(
-          logger_,
-          "Requested navigation from %s while another navigator is processing,"
-          " rejecting request.", getName().c_str());
-        return false;
-      }
+    // Validate first, so that an invalid goal never preempts another navigator
+    if (!goalReceived(goal)) {
+      return false;
+    }
 
-      RCLCPP_INFO(
+    if (plugin_muxer_->startNavigating(this)) {
+      return true;
+    }
+
+    // A different navigator is processing; check if cross-navigator preemption is allowed
+    if (!allow_navigator_preemption_) {
+      RCLCPP_ERROR(
         logger_,
         "Requested navigation from %s while another navigator is processing,"
-        " stopping current navigator.", getName().c_str());
-      plugin_muxer_->preemptCurrentNavigator();
+        " rejecting request.", getName().c_str());
+      return false;
+    }
 
-      const auto start = std::chrono::steady_clock::now();
-      rclcpp::Rate r(100);
-      while (plugin_muxer_->isNavigating()) {
-        if (std::chrono::steady_clock::now() - start > navigator_preemption_timeout_) {
-          RCLCPP_ERROR(
-            logger_,
-            "Timed out waiting for current navigator to stop before accepting"
-            " goal from %s. Rejecting request.", getName().c_str());
-          return false;
-        }
-        r.sleep();
+    RCLCPP_INFO(
+      logger_,
+      "Requested navigation from %s while another navigator is processing,"
+      " stopping current navigator.", getName().c_str());
+
+    const auto start = std::chrono::steady_clock::now();
+    rclcpp::Rate r(100);
+    while (!plugin_muxer_->startNavigating(this)) {
+      if (std::chrono::steady_clock::now() - start > navigator_preemption_timeout_) {
+        RCLCPP_ERROR(
+          logger_,
+          "Timed out waiting for current navigator to stop before accepting"
+          " goal from %s. Rejecting request.", getName().c_str());
+        return false;
       }
+      // Requested every cycle, since the navigator holding the muxer can change while waiting,
+      // such as when a pending goal starts after the previous one completed
+      plugin_muxer_->preemptCurrentNavigator();
+      r.sleep();
     }
+    return true;
+  }
 
-    bool goal_accepted = goalReceived(goal);
-
-    if (goal_accepted) {
-      plugin_muxer_->startNavigating(this);
+  /**
+   * @brief Acquire navigator ownership and initialize a goal on the execution thread
+   * Called for each fresh BT execution, including a pending goal promoted after completion.
+   * @param goal Action template's goal message to process
+   * @return bool If navigator ownership was acquired and goal initialization succeeded
+   */
+  bool onGoalStarted(typename ActionT::Goal::ConstSharedPtr goal)
+  {
+    // Ownership is already held unless completion released it before a pending goal started.
+    // Never preempt here: a newer request to another navigator wins over this queued goal.
+    if (!plugin_muxer_->startNavigating(this)) {
+      bt_action_server_->setInternalError(
+        ActionT::Result::GOAL_REJECTED,
+        "Another navigator is processing a goal.");
+      return false;
     }
-
-    return goal_accepted;
+    return goalStarted(goal);
   }
 
   /**
@@ -378,16 +401,29 @@ protected:
     typename ActionT::Result::SharedPtr result,
     nav2_behavior_tree::BtStatus & final_bt_status)
   {
-    plugin_muxer_->stopNavigating(this);
+    if (plugin_muxer_->isCurrentNavigator(this)) {
+      plugin_muxer_->stopNavigating(this);
+    }
     goalCompleted(result, final_bt_status);
   }
 
   /**
    * @brief A callback to be called when a new goal is received by the BT action server
-   * Can be used to check if goal is valid and put values on
-   * the blackboard which depend on the received goal
+   * Validate without modifying execution state: this also runs for pending goals
+   * while the current behavior tree is executing.
+   * @param goal Action template's goal message to validate
+   * @return bool If the goal is valid and can be accepted
    */
   virtual bool goalReceived(typename ActionT::Goal::ConstSharedPtr goal) = 0;
+
+  /**
+   * @brief Initialize blackboard and feedback state when a goal starts execution
+   * The goal argument identifies the action whose BT is about to run.
+   * Same-navigator preemption is initialized by onPreempt instead of this callback.
+   * @param goal Action template's goal message to process
+   * @return bool If the goal was initialized successfully
+   */
+  virtual bool goalStarted(typename ActionT::Goal::ConstSharedPtr goal) = 0;
 
   /**
    * @brief A callback that defines execution that happens on one iteration through the BT

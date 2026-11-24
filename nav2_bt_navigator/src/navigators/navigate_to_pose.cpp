@@ -94,6 +94,19 @@ NavigateToPoseNavigator::cleanup()
 bool
 NavigateToPoseNavigator::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 {
+  geometry_msgs::msg::PoseStamped current_pose;
+  geometry_msgs::msg::PoseStamped goal_pose;
+  std::string error;
+  if (!prepareGoalPose(goal, current_pose, goal_pose, error)) {
+    RCLCPP_WARN(logger_, "Rejecting goal: %s", error.c_str());
+    return false;
+  }
+  return true;
+}
+
+bool
+NavigateToPoseNavigator::goalStarted(ActionT::Goal::ConstSharedPtr goal)
+{
   return initializeGoalPose(goal);
 }
 
@@ -223,32 +236,41 @@ NavigateToPoseNavigator::onPreempt(ActionT::Goal::ConstSharedPtr goal)
 }
 
 bool
-NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
+NavigateToPoseNavigator::prepareGoalPose(
+  ActionT::Goal::ConstSharedPtr goal,
+  geometry_msgs::msg::PoseStamped & current_pose,
+  geometry_msgs::msg::PoseStamped & goal_pose, std::string & error)
 {
-  geometry_msgs::msg::PoseStamped current_pose;
   if (!nav2_util::getFreshPose(
       *feedback_utils_.tf, feedback_utils_.global_frame,
       feedback_utils_.robot_frame, clock_->now(),
       transform_staleness_threshold_, current_pose))
   {
-    bt_action_server_->setInternalError(
-      ActionT::Result::TF_ERROR,
-      "Initial robot pose is not available.");
+    error = "Initial robot pose is not available.";
     return false;
   }
 
-  geometry_msgs::msg::PoseStamped goal_pose;
   if (!nav2_util::transformPoseInTargetFrame(
       goal->pose, goal_pose, *feedback_utils_.tf, feedback_utils_.global_frame,
       feedback_utils_.transform_tolerance))
   {
-    bt_action_server_->setInternalError(
-      ActionT::Result::TF_ERROR,
-      "Failed to transform a goal pose provided with frame_id '" +
-      goal->pose.header.frame_id +
-      "' to the global frame '" +
-      feedback_utils_.global_frame +
-      "'.");
+    error = "Failed to transform a goal pose provided with frame_id '" +
+      goal->pose.header.frame_id + "' to the global frame '" +
+      feedback_utils_.global_frame + "'.";
+    return false;
+  }
+
+  return true;
+}
+
+bool
+NavigateToPoseNavigator::initializeGoalPose(ActionT::Goal::ConstSharedPtr goal)
+{
+  geometry_msgs::msg::PoseStamped current_pose;
+  geometry_msgs::msg::PoseStamped goal_pose;
+  std::string error;
+  if (!prepareGoalPose(goal, current_pose, goal_pose, error)) {
+    bt_action_server_->setInternalError(ActionT::Result::TF_ERROR, error);
     return false;
   }
 

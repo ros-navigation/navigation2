@@ -14,6 +14,10 @@
 
 #include <gtest/gtest.h>
 
+#include <atomic>
+#include <chrono>
+#include <functional>
+#include <memory>
 #include <thread>
 
 #include "nav2_core/behavior_tree_navigator.hpp"
@@ -39,10 +43,31 @@ public:
   }
 
   bool callOnGoalReceived(NavigateToPose::Goal::ConstSharedPtr goal) {return onGoalReceived(goal);}
+  bool callOnGoalStarted(NavigateToPose::Goal::ConstSharedPtr goal) {return onGoalStarted(goal);}
+  void complete()
+  {
+    auto status = nav2_behavior_tree::BtStatus::SUCCEEDED;
+    onCompletion(std::make_shared<NavigateToPose::Result>(), status);
+  }
 
   std::string getName() override {return "test_navigator";}
   std::string getDefaultBTFilepath(nav2::LifecycleNode::WeakPtr) override {return "";}
-  bool goalReceived(NavigateToPose::Goal::ConstSharedPtr) override {return goal_accepted_;}
+  bool goalReceived(NavigateToPose::Goal::ConstSharedPtr) override
+  {
+    ++received_count_;
+    if (on_validate_) {on_validate_();}
+    return goal_accepted_;
+  }
+  bool goalStarted(NavigateToPose::Goal::ConstSharedPtr goal) override
+  {
+    ++started_count_;
+    active_x_ = goal->pose.pose.position.x;
+    return true;
+  }
+  std::function<void()> on_validate_;
+  int received_count_ = 0;
+  int started_count_ = 0;
+  double active_x_ = 0.0;
   void onLoop() override {}
   void onPreempt(NavigateToPose::Goal::ConstSharedPtr) override {}
   void goalCompleted(
@@ -73,6 +98,61 @@ TEST(BTNavigatorOnGoalReceivedTest, NotNavigatingGoalRejected)
   auto goal = std::make_shared<NavigateToPose::Goal>();
   EXPECT_FALSE(nav.callOnGoalReceived(goal));
   EXPECT_FALSE(muxer.isNavigating());
+}
+
+TEST(BTNavigatorOnGoalReceivedTest, SameNavigatorReceptionPreservesExecutionState)
+{
+  nav2_core::NavigatorMuxer muxer;
+  TestBTNavigator nav;
+  nav.setup(&muxer, false);
+  auto first = std::make_shared<NavigateToPose::Goal>();
+  first->pose.pose.position.x = 1.0;
+  ASSERT_TRUE(nav.callOnGoalReceived(first));
+  EXPECT_EQ(nav.started_count_, 0);
+  ASSERT_TRUE(nav.callOnGoalStarted(first));
+  auto replacement = std::make_shared<NavigateToPose::Goal>();
+  replacement->pose.pose.position.x = 9.0;
+  ASSERT_TRUE(nav.callOnGoalReceived(replacement));
+  EXPECT_TRUE(muxer.isCurrentNavigator(&nav));
+  EXPECT_EQ(nav.started_count_, 1);
+  EXPECT_EQ(nav.active_x_, 1.0);
+}
+
+TEST(BTNavigatorOnGoalReceivedTest, SameNavigatorInvalidGoalRejectedBeforeExecution)
+{
+  nav2_core::NavigatorMuxer muxer;
+  TestBTNavigator nav;
+  nav.setup(&muxer, false);
+  auto first = std::make_shared<NavigateToPose::Goal>();
+  ASSERT_TRUE(nav.callOnGoalReceived(first));
+  ASSERT_TRUE(nav.callOnGoalStarted(first));
+  nav.goal_accepted_ = false;
+  EXPECT_FALSE(nav.callOnGoalReceived(std::make_shared<NavigateToPose::Goal>()));
+  EXPECT_TRUE(muxer.isCurrentNavigator(&nav));
+  EXPECT_EQ(nav.started_count_, 1);
+}
+
+TEST(BTNavigatorOnGoalReceivedTest, PendingGoalStartsAfterCompletion)
+{
+  nav2_core::NavigatorMuxer muxer;
+  TestBTNavigator nav;
+  nav.setup(&muxer, false);
+  auto first = std::make_shared<NavigateToPose::Goal>();
+  first->pose.pose.position.x = 1.0;
+  ASSERT_TRUE(nav.callOnGoalReceived(first));
+  ASSERT_TRUE(nav.callOnGoalStarted(first));
+  auto pending = std::make_shared<NavigateToPose::Goal>();
+  pending->pose.pose.position.x = 9.0;
+  ASSERT_TRUE(nav.callOnGoalReceived(pending));
+  nav.complete();
+  ASSERT_FALSE(muxer.isNavigating());
+  // The worker starts the promoted pending goal without calling onPreempt.
+  ASSERT_TRUE(nav.callOnGoalStarted(pending));
+  EXPECT_TRUE(muxer.isCurrentNavigator(&nav));
+  EXPECT_EQ(nav.started_count_, 2);
+  EXPECT_EQ(nav.active_x_, 9.0);
+  // Starting only acquires ownership; the goal is not validated by goalReceived again.
+  EXPECT_EQ(nav.received_count_, 2);
 }
 
 // This mock is used to simulate an already active navigator
@@ -159,6 +239,47 @@ TEST(BTNavigatorOnGoalReceivedTest, AlreadyNavigatingPreemptionEnabledTimeout)
   EXPECT_TRUE(muxer.isNavigating());
   muxer.stopNavigating(&active_nav);
   EXPECT_FALSE(muxer.isNavigating());
+}
+
+TEST(BTNavigatorOnGoalReceivedTest, ReceptionRejectedWhenAnotherNavigatorStartsDuringValidation)
+{
+  nav2_core::NavigatorMuxer muxer;
+  MockNavigator other_nav;
+  TestBTNavigator nav;
+  nav.setup(&muxer, false);
+  nav.on_validate_ = [&]() {muxer.startNavigating(&other_nav);};
+
+  EXPECT_FALSE(nav.callOnGoalReceived(std::make_shared<NavigateToPose::Goal>()));
+  EXPECT_TRUE(muxer.isCurrentNavigator(&other_nav));
+  muxer.stopNavigating(&other_nav);
+}
+
+TEST(BTNavigatorOnGoalReceivedTest, PreemptionAllowedWhenAnotherNavigatorStartsDuringValidation)
+{
+  nav2_core::NavigatorMuxer muxer;
+  MockNavigator other_nav;
+  TestBTNavigator nav;
+  nav.setup(&muxer, true, 500);
+  // Another navigator, such as one promoting a pending goal, takes the muxer during validation.
+  nav.on_validate_ = [&]() {muxer.startNavigating(&other_nav);};
+  std::atomic_bool done{false};
+  std::thread stopper(
+    [&]() {
+      const auto end = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+      while (!other_nav.preempt_called_ && !done && std::chrono::steady_clock::now() < end) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      }
+      if (other_nav.preempt_called_) {
+        muxer.stopNavigating(&other_nav);
+      }
+    });
+
+  const bool accepted = nav.callOnGoalReceived(std::make_shared<NavigateToPose::Goal>());
+  done = true;
+  stopper.join();
+  EXPECT_TRUE(accepted);
+  EXPECT_TRUE(other_nav.preempt_called_);
+  EXPECT_TRUE(muxer.isCurrentNavigator(&nav));
 }
 
 int main(int argc, char ** argv)
