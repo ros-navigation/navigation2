@@ -246,10 +246,6 @@ Costmap2DROS::on_configure(const rclcpp_lifecycle::State & /*state*/)
   executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor_->add_callback_group(callback_group_, get_node_base_interface());
   executor_thread_ = std::make_unique<nav2::NodeThread>(executor_);
-  // An immediate cleanup must not cancel the executor before spin() starts.
-  while (!executor_->is_spinning() && get_node_base_interface()->get_context()->is_valid()) {
-    std::this_thread::yield();
-  }
   return nav2::CallbackReturn::SUCCESS;
 }
 
