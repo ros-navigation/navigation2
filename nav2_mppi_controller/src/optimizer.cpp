@@ -418,28 +418,6 @@ void Optimizer::generateNoisedTrajectories()
   integrateStateVelocities(generated_trajectories_, state_);
 }
 
-bool Optimizer::hasCommandsInFlight(float model_delay) const
-{
-  // A delay of a single model_dt is the latency inherent to the trajectories
-  return std::floor((model_delay / settings_.model_dt) + 0.5) >= 2.0;
-}
-
-geometry_msgs::msg::Twist Optimizer::getCommandBaseSpeed() const
-{
-  const auto & s = settings_;
-  geometry_msgs::msg::Twist base_speed = state_.speed;
-  if (hasCommandsInFlight(s.model_delay_vx)) {
-    base_speed.linear.x = last_command_vel_.linear.x;
-  }
-  if (hasCommandsInFlight(s.model_delay_vy)) {
-    base_speed.linear.y = last_command_vel_.linear.y;
-  }
-  if (hasCommandsInFlight(s.model_delay_wz)) {
-    base_speed.angular.z = last_command_vel_.angular.z;
-  }
-  return base_speed;
-}
-
 void Optimizer::applyControlSequenceInterIterationConstraints()
 {
   // Enforce t=0 to be dynamically feasible from the current speed for inter-iteration feasibility
@@ -452,7 +430,7 @@ void Optimizer::applyControlSequenceInterIterationConstraints()
   float min_delta_vy = first_dt * s.constraints.ay_min;
   float max_delta_wz = first_dt * s.constraints.az_max;
 
-  const auto base_speed = getCommandBaseSpeed();
+  const auto base_speed = motion_model_->getCommandBaseSpeed(state_.speed);
   float speed_vx = static_cast<float>(base_speed.linear.x);
   float speed_wz = static_cast<float>(base_speed.angular.z);
   if (s.shift_control_sequence) {
@@ -493,7 +471,7 @@ void Optimizer::applyControlSequenceConstraints()
   float max_delta_wz = first_dt * s.constraints.az_max;
 
   // Initialize as the current speed to create inter-iteration dynamic feasibility
-  const auto base_speed = getCommandBaseSpeed();
+  const auto base_speed = motion_model_->getCommandBaseSpeed(state_.speed);
   float vx_last = static_cast<float>(base_speed.linear.x);
   float wz_last = static_cast<float>(base_speed.angular.z);
   float vy_last = isHolonomic() ? static_cast<float>(base_speed.linear.y) : 0.0f;
@@ -670,10 +648,7 @@ Eigen::ArrayXXf Optimizer::getOptimizedTrajectory()
     sequence.col(2) = control_sequence_.vy;
   }
 
-  const auto & s = settings_;
-  if (hasCommandsInFlight(s.model_delay_vx) || hasCommandsInFlight(s.model_delay_wz) ||
-    (is_holo && hasCommandsInFlight(s.model_delay_vy)))
-  {
+  if (motion_model_->hasCommandsInFlight()) {
     // Include the commands in flight, as the trajectories do, for the motion the robot will take
     models::State optimal;
     optimal.reset(1u, settings_.time_steps);
@@ -681,8 +656,7 @@ Eigen::ArrayXXf Optimizer::getOptimizedTrajectory()
     optimal.cwz.row(0) = control_sequence_.wz.transpose();
     optimal.cvy.row(0) = control_sequence_.vy.transpose();
     optimal.speed = state_.speed;
-    updateInitialStateVelocities(optimal);
-    motion_model_->predict(optimal);
+    updateStateVelocities(optimal);
     sequence.col(0) = optimal.vx.row(0).transpose();
     sequence.col(1) = optimal.wz.row(0).transpose();
     if (is_holo) {

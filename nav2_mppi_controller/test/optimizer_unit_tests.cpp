@@ -205,11 +205,6 @@ public:
     return control_sequence_;
   }
 
-  void setLastCommand(const geometry_msgs::msg::Twist & command)
-  {
-    last_command_vel_ = command;
-  }
-
   std::shared_ptr<MotionModel> getMotionModel()
   {
     return motion_model_;
@@ -846,10 +841,6 @@ TEST(OptimizerTests, CommandsInFlightTests)
   auto & sequence = optimizer_tester.grabControlSequence();
   state.speed.linear.x = 0.1;
   state.speed.angular.z = 0.2;
-  geometry_msgs::msg::Twist last_command;
-  last_command.linear.x = 0.4;
-  last_command.angular.z = 0.6;
-  optimizer_tester.setLastCommand(last_command);
   for (int i = 0; i < 3; ++i) {
     optimizer_tester.getMotionModel()->pushCommandHistory(0.4f, 0.0f, 0.6f);
   }

@@ -102,6 +102,39 @@ public:
   }
 
   /**
+    * @brief Whether commands sent are still in flight on any axis when the next is sent, due to
+    *        the delay. A delay of a single model_dt is the latency inherent to the trajectories.
+    * @return If commands are in flight
+    */
+  bool hasCommandsInFlight() const
+  {
+    return cmd_history_vx_.size() > 1u || cmd_history_wz_.size() > 1u ||
+           (isHolonomic() && cmd_history_vy_.size() > 1u);
+  }
+
+  /**
+    * @brief Get the velocity the next command continues from. On axes with commands in flight,
+    *        the next command takes effect after them, so it continues from the last command
+    *        sent rather than the robot's lagging measured velocity.
+    * @param speed Current robot velocity
+    * @return Velocity to continue from
+    */
+  geometry_msgs::msg::Twist getCommandBaseSpeed(const geometry_msgs::msg::Twist & speed) const
+  {
+    geometry_msgs::msg::Twist base_speed = speed;
+    if (cmd_history_vx_.size() > 1u) {
+      base_speed.linear.x = cmd_history_vx_.back();
+    }
+    if (isHolonomic() && cmd_history_vy_.size() > 1u) {
+      base_speed.linear.y = cmd_history_vy_.back();
+    }
+    if (cmd_history_wz_.size() > 1u) {
+      base_speed.angular.z = cmd_history_wz_.back();
+    }
+    return base_speed;
+  }
+
+  /**
    * @brief With input velocities, find the vehicle's output velocities
    * @param state Contains control velocities to use to populate vehicle velocities
    */

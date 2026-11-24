@@ -331,6 +331,61 @@ TEST(MotionModelTests, DelayClearCommandHistory)
   EXPECT_TRUE(state.wz.col(2).isApproxToConstant(0.0f));
 }
 
+TEST(MotionModelTests, DelayCommandsInFlight)
+{
+  DiffDriveMotionModel diff_drive;
+  OmniMotionModel omni;
+
+  // No delay, or a delay of a single model_dt, leaves no commands in flight
+  diff_drive.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.0f, 0.0f, false);
+  EXPECT_FALSE(diff_drive.hasCommandsInFlight());
+  diff_drive.setConstraints(unboundedConstraints(), 0.05f, 0.05f, 0.0f, 0.05f, false);
+  EXPECT_FALSE(diff_drive.hasCommandsInFlight());
+
+  diff_drive.setConstraints(unboundedConstraints(), 0.05f, 0.15f, 0.0f, 0.0f, false);
+  EXPECT_TRUE(diff_drive.hasCommandsInFlight());
+
+  // A vy delay only matters for holonomic models
+  diff_drive.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.15f, 0.0f, false);
+  EXPECT_FALSE(diff_drive.hasCommandsInFlight());
+  omni.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.15f, 0.0f, false);
+  EXPECT_TRUE(omni.hasCommandsInFlight());
+}
+
+TEST(MotionModelTests, DelayCommandBaseSpeed)
+{
+  geometry_msgs::msg::Twist speed;
+  speed.linear.x = 0.1;
+  speed.linear.y = 0.2;
+  speed.angular.z = 0.3;
+
+  // Without a delay, commands continue from the current speed
+  OmniMotionModel model;
+  model.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.0f, 0.0f, false);
+  model.pushCommandHistory(1.0f, 2.0f, 3.0f);
+  auto base_speed = model.getCommandBaseSpeed(speed);
+  EXPECT_DOUBLE_EQ(base_speed.linear.x, 0.1);
+  EXPECT_DOUBLE_EQ(base_speed.linear.y, 0.2);
+  EXPECT_DOUBLE_EQ(base_speed.angular.z, 0.3);
+
+  // With commands in flight on vx and vy, those continue from the last command sent, while wz,
+  // with a delay of a single model_dt, continues from the current speed
+  model.setConstraints(unboundedConstraints(), 0.05f, 0.15f, 0.10f, 0.05f, false);
+  model.pushCommandHistory(1.0f, 2.0f, 3.0f);
+  model.pushCommandHistory(4.0f, 5.0f, 6.0f);
+  base_speed = model.getCommandBaseSpeed(speed);
+  EXPECT_DOUBLE_EQ(base_speed.linear.x, 4.0);
+  EXPECT_DOUBLE_EQ(base_speed.linear.y, 5.0);
+  EXPECT_DOUBLE_EQ(base_speed.angular.z, 0.3);
+
+  // vy is not modeled for non-holonomic robots
+  DiffDriveMotionModel diff_drive;
+  diff_drive.setConstraints(unboundedConstraints(), 0.05f, 0.0f, 0.10f, 0.0f, false);
+  diff_drive.pushCommandHistory(0.0f, 2.0f, 0.0f);
+  diff_drive.pushCommandHistory(0.0f, 5.0f, 0.0f);
+  EXPECT_DOUBLE_EQ(diff_drive.getCommandBaseSpeed(speed).linear.y, 0.2);
+}
+
 TEST(MotionModelTests, DelayZeroSkipsShift)
 {
   models::State state;

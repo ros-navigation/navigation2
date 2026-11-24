@@ -198,21 +198,6 @@ protected:
   void getParams();
 
   /**
-   * @brief Whether commands sent on an axis are still in flight when the next is sent,
-   * due to the axis's modeled delay
-   * @param model_delay Delay (s) of the axis
-   * @return If commands are in flight
-   */
-  bool hasCommandsInFlight(float model_delay) const;
-
-  /**
-   * @brief Get the velocity the next command continues from. With commands in flight, it takes
-   * effect after them, so it continues from the last command rather than the measured velocity.
-   * @return Velocity
-   */
-  geometry_msgs::msg::Twist getCommandBaseSpeed() const;
-
-  /**
    * @brief Set the motion model of the vehicle platform
    * @param model Model string to use
    */
