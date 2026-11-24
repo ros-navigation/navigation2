@@ -215,8 +215,6 @@ TEST(collision_footprint, test_point_and_line_cost)
   delete costmap_;
 }
 
-<<<<<<< HEAD
-=======
 // Regression test for #5996: poses are checked at their continuous coordinates
 TEST(collision_footprint, test_fractional_pose_coordinates)
 {
@@ -335,7 +333,6 @@ TEST(collision_footprint, test_pose_cell_and_bounds)
   EXPECT_FALSE(checker.inCollision(50u * 100u + 3u, false));
 }
 
->>>>>>> 2b7ee2e (Smac collision checker: check collisions at continuous poses (#6777))
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
