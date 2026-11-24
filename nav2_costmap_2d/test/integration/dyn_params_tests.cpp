@@ -148,13 +148,13 @@ TEST(DynParamTestNode, testDynFootprintReplacesRadius)
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_footprint_costmap");
   costmap->on_configure(rclcpp_lifecycle::State());
 
-  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_ =
-    nav2::create_transform_broadcaster(node);
+  nav2::TransformManager::SharedPtr tf_manager_ =
+    nav2::create_transform_manager(node, false);
   geometry_msgs::msg::TransformStamped t;
   t.header.stamp = node->get_clock()->now();
   t.header.frame_id = "map";
   t.child_frame_id = "base_link";
-  tf_broadcaster_->sendTransform(t);
+  tf_manager_->sendTransform(t);
 
   costmap->on_activate(rclcpp_lifecycle::State());
 

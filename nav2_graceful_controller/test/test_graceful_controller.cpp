@@ -898,7 +898,7 @@ TEST(GracefulControllerTest, computeVelocityCommandMinLookaheadNearGoal) {
 
 TEST(GracefulControllerTest, simulateTrajectoryReachesTarget) {
   auto node = std::make_shared<nav2::LifecycleNode>("testGracefulSimulation");
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
 
   // Create a costmap of 10x10 meters
   auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("test_costmap");
@@ -1376,7 +1376,7 @@ TEST(GracefulControllerTest, computeVelocityCommandObstacleMargin) {
 
 TEST(GracefulControllerTest, computeVelocityCommandCollisionDetectionDisabled) {
   auto node = std::make_shared<nav2::LifecycleNode>("testGracefulCollisionDetectionDisabled");
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
 
   nav2::declare_parameter_if_not_declared(
     node, "test.use_collision_detection", rclcpp::ParameterValue(false));

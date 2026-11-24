@@ -23,7 +23,7 @@
 
 #include "behaviortree_cpp/action_node.h"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace nav2_behavior_tree
 {
@@ -87,7 +87,7 @@ private:
   BT::NodeStatus tick() override;
 
   rclcpp::Logger logger_{rclcpp::get_logger("ConcatenatePaths")};
-  nav2::TransformBuffer::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   double transform_tolerance_{0.1};
 };
 

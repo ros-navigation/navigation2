@@ -20,7 +20,7 @@
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav2_navfn_planner/navfn_planner.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 constexpr unsigned int size = 60;
@@ -59,7 +59,7 @@ protected:
       nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE);
 
     planner_ = std::make_unique<nav2_navfn_planner::NavfnPlanner>();
-    auto tf = nav2::create_transform_buffer(node_);
+    auto tf = nav2::create_transform_manager(node_);
     planner_->configure(node_, "test", tf, costmap_ros_);
     planner_->activate();
   }

@@ -969,7 +969,7 @@ TEST(BinaryFilterState, DefaultStateOnStartupAndKeptOnReset)
   auto node = std::make_shared<nav2::LifecycleNode>("default_state_test");
   node->declare_parameter("filter.filter_info_topic", "filter_info");
   node->declare_parameter("filter.default_state", true);
-  auto buffer = nav2::create_transform_buffer(node);
+  auto buffer = nav2::create_transform_manager(node);
   nav2_costmap_2d::LayeredCostmap layers("odom", false, false);
   BinaryFilterTFTestable filter;
   filter.initialize(&layers, "filter", buffer.get(), node, nullptr);

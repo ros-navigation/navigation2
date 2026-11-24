@@ -20,8 +20,7 @@
 #include <string>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "rclcpp/clock.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "behaviortree_cpp/control_node.h"
 
 namespace nav2_behavior_tree
@@ -89,8 +88,7 @@ private:
   double reset_distance_{0.0};
   double transform_staleness_threshold_{0.0};
   std::string robot_frame_, global_frame_;
-  rclcpp::Clock::SharedPtr clock_;
-  nav2::TransformBuffer::SharedPtr tf_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   std::optional<geometry_msgs::msg::PoseStamped> reset_pose_;
 
   /**

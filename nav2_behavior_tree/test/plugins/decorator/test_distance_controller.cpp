@@ -104,20 +104,21 @@ TEST_F(DistanceControllerTestFixture, test_distance_from_blackboard)
 
   config_->blackboard->set("controller_distance", 3.0);
 
+  if (transform_handler_->isActive()) {
+    transform_handler_->deactivate();
+  }
+  const auto tf_manager = transform_handler_->getTfManager();
   geometry_msgs::msg::PoseStamped pose;
-  ASSERT_TRUE(nav2_util::getCurrentPose(pose, *transform_handler_->getBuffer()));
-  const double start_x = pose.pose.position.x;
+  pose.header.frame_id = "map";
+  const double start_x = 0.0;
 
   auto move_robot_to = [&](double x) {
       pose.pose.position.x = x;
-      transform_handler_->updateRobotPose(pose.pose);
-      // Wait for the transform to actually update
-      geometry_msgs::msg::PoseStamped current;
-      while (!nav2_util::getCurrentPose(current, *transform_handler_->getBuffer()) ||
-        std::abs(current.pose.position.x - x) > 1e-3)
-      {
-      }
+      pose.header.stamp = node_->now();
+      ASSERT_TRUE(tf_manager->getRawBuffer()->setTransform(
+        tf_manager->poseToTransformStamped(pose, "base_link"), "test", false));
     };
+  move_robot_to(start_x);
 
   // First tick always ticks the child and sets the starting pose
   dummy_node->changeStatus(BT::NodeStatus::SUCCESS);

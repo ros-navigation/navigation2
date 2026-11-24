@@ -715,7 +715,7 @@ TEST(RotationShimControllerTest, collisionCheckStopsAtHandOffInBothDirections)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("ShimControllerTest");
   std::string name = "test";
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf = nav2::create_transform_manager(node);
   auto costmap = std::make_shared<nav2_costmap_2d::Costmap2DROS>("fake_costmap");
   // Long, thin footprint pointing along +x so a rotation sweeps it across obstacles
   costmap->declare_parameter(
