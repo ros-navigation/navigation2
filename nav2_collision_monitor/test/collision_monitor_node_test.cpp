@@ -1918,6 +1918,31 @@ TEST_F(Tester, testSourceAssociatedToPolygon)
   cm_->stop();
 }
 
+TEST(SummariseTriggeringSources, CountsPerSourceMostPointsFirst)
+{
+  using nav2_collision_monitor::Point;
+  using nav2_collision_monitor::summariseTriggeringSources;
+
+  EXPECT_EQ(summariseTriggeringSources({}), "no points");
+
+  // Grouped by source, as Polygon::getPointsInside produces them.
+  std::vector<Point> points{
+    {0.1, 0.0, 0.0, "scan"},
+    {0.2, 0.0, 0.0, "pointcloud"}, {0.3, 0.0, 0.0, "pointcloud"}, {0.4, 0.0, 0.0, "pointcloud"},
+    {0.5, 0.0, 0.0, "range"}};
+  EXPECT_EQ(
+    summariseTriggeringSources(points),
+    "pointcloud (3 points), range (1 point), scan (1 point)");
+
+  // Not grouped, and an untagged point: counts still merge per source.
+  points = {
+    {0.1, 0.0, 0.0, "scan"}, {0.2, 0.0, 0.0, "range"}, {0.3, 0.0, 0.0, "scan"},
+    {0.4, 0.0, 0.0, ""}};
+  EXPECT_EQ(
+    summariseTriggeringSources(points),
+    "scan (2 points), range (1 point), unnamed source (1 point)");
+}
+
 int main(int argc, char ** argv)
 {
   // Initialize the system
