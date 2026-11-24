@@ -13,16 +13,43 @@
 // limitations under the License.
 
 #include <algorithm>
-#include <string>
 #include <limits>
 #include <memory>
-#include <vector>
+#include <string>
+#include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include "opennav_following/parameter_handler.hpp"
 
 namespace opennav_following
 {
+
+namespace
+{
+
+bool isDynamicParameter(const std::string & param_name)
+{
+  static const std::unordered_set<std::string> kDynamicParams = {
+    "controller_frequency",
+    "detection_timeout",
+    "rotate_to_object_timeout",
+    "static_object_timeout",
+    "linear_tolerance",
+    "angular_tolerance",
+    "desired_distance",
+    "transform_tolerance",
+    "transform_staleness_threshold",
+    "search_angle",
+    "base_frame",
+    "fixed_frame",
+    "skip_orientation",
+    "search_by_rotating",
+  };
+  return kDynamicParams.count(param_name) > 0;
+}
+
+}  // namespace
 
 using nav2::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
@@ -76,6 +103,7 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
 {
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
+  std::unique_lock<std::mutex> lock(mutex_, std::defer_lock);
   for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
@@ -83,6 +111,14 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
     // as they handle parameter changes themselves and don't need to lock the mutex
     if (param_name.find('.') != std::string::npos) {
       continue;
+    }
+    if (isDynamicParameter(param_name) && !lock.owns_lock() && !lock.try_lock()) {
+      RCLCPP_WARN(
+        logger_,
+        "Unable to dynamically change parameters while a following action is currently running.");
+      result.successful = false;
+      result.reason = "Cannot update parameters while a following action is running.";
+      return result;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (parameter.as_double() <= 0.0 &&
@@ -110,13 +146,22 @@ void
 ParameterHandler::updateParametersCallback(
   const std::vector<rclcpp::Parameter> & parameters)
 {
-  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  std::unique_lock<std::mutex> lock_reinit(mutex_, std::defer_lock);
 
   for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
     if (param_name.find('.') != std::string::npos) {
       continue;
+    }
+    if (!isDynamicParameter(param_name)) {
+      continue;
+    }
+    if (!lock_reinit.owns_lock() && !lock_reinit.try_lock()) {
+      RCLCPP_WARN(
+        logger_,
+        "Unable to dynamically change parameters while a following action is currently running.");
+      return;
     }
     if (param_type == ParameterType::PARAMETER_DOUBLE) {
       if (param_name == "controller_frequency") {
