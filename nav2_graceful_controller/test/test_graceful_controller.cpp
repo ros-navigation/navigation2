@@ -460,6 +460,28 @@ TEST(GracefulControllerTest, rotateToTarget) {
   // Check results: positive velocity, at least as high as min_in_place
   EXPECT_EQ(cmd_vel.linear.x, 0.0);
   EXPECT_EQ(cmd_vel.angular.z, 1.0);
+
+  // Restore a low in-place minimum so the upper bound is the operative limit
+  results = params->set_parameters_atomically(
+    {rclcpp::Parameter("test.v_angular_min_in_place", 0.25),
+      rclcpp::Parameter("test.rotation_scaling_factor", 1.0)});
+  rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
+
+  // Set an angle to target whose unscaled command would be well above v_angular_max
+  angle_to_target = 3.0;
+  cmd_vel = controller->rotateToTarget(angle_to_target);
+
+  // Check results: it must be capped at v_angular_max, not 3.0
+  EXPECT_EQ(cmd_vel.linear.x, 0.0);
+  EXPECT_EQ(cmd_vel.angular.z, 1.0);
+
+  // Set the same angle in the opposite direction
+  angle_to_target = -3.0;
+  cmd_vel = controller->rotateToTarget(angle_to_target);
+
+  // Check results: it must be capped at -v_angular_max
+  EXPECT_EQ(cmd_vel.linear.x, 0.0);
+  EXPECT_EQ(cmd_vel.angular.z, -1.0);
 }
 
 TEST(GracefulControllerTest, setSpeedLimit) {
