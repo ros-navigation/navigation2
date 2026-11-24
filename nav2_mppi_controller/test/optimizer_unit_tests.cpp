@@ -663,8 +663,8 @@ TEST(OptimizerTests, SpeedLimitReverseOnlyTests)
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_manager(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  auto tf_manager = nav2::create_transform_manager(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
 
   const auto base = optimizer_tester.getBaseConstraints();
   EXPECT_EQ(base.vx_max, 0.0f);
@@ -710,8 +710,8 @@ TEST(OptimizerTests, SpeedLimitZeroLinearVelocityTests)
   ParametersHandler param_handler(node, name);
   rclcpp_lifecycle::State lstate;
   costmap_ros->on_configure(lstate);
-  auto tf_buffer = nav2::create_transform_manager(node);
-  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_buffer, &param_handler);
+  auto tf_manager = nav2::create_transform_manager(node);
+  optimizer_tester.initialize(node, "mppic", costmap_ros, tf_manager, &param_handler);
 
   const auto base = optimizer_tester.getBaseConstraints();
   const auto & c = optimizer_tester.getControlConstraints();

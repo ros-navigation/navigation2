@@ -20,27 +20,32 @@ Thus, see the migration guide below for how to migrate from the previous version
 
 ### Transform manager
 
-The `nav2::TransformManager` in `nav2_ros_common/tf_manager.hpp` brings TF reception, broadcasting, lookups, and pose conversions together in a single object.
+The `nav2::TransformManager` enables most of the tf related operations (transform lookup, transform broadcast, pose transformations) from a single object, reducing boilerplate and centralizing TF resource management and error handling.
 
-By default, it starts listening for transforms when instantiated. Transforms and poses can be queried using:
+The manager, unless otherwise configured, automatically starts to listen for transformations and can perform operations at exact time points using the methods:
 
-- `getStampedTransform` to retrieve a transform between frames at a specified time.
+- `getStampedTransform` to retrieve a transform between frames.
 - `transformStampedPose` to transform a stamped pose into a different frame.
-- `getLatestTransform` / `getLatestPose` to retrieve the latest available transform / pose, optionally checking its age against a specified threshold.
 
-With the default configuration, the manager creates a dedicated thread to receive TF messages. Set `spin_thread=false` if your application already spins the supplied node through an executor and you want that executor to process TF messages instead. In this mode, the executor must keep running for the manager to receive new transforms.
+or, if an exact time point is not relevant, it can retrieve the latest available information using the methods:
 
-If the node uses a namespace, set `use_internal_node=true` to receive TF through an auxiliary node that doesn't prepend the supplied node's namespace to the subscribed TF topics. This option requires `spin_thread=true`.
+- `getLatestTransform` / `getLatestPose`
 
-Lookups and pose transformations return `std::optional` values that callers must check for validity before use. Callers can also supply an `error_msg` string pointer to receive failure details.
+If the latter APIs are used, the manager also provides the option to easily verify if the retrieved information is stale. This can be very handy to prevent prolonged operations on old data, which can potentially be dangerous.
 
-Transforms can be broadcast using `sendTransform()` or `sendStaticTransform()`. Each broadcaster advertises its topic independently on first use.
+The object is also capable of broadcasting new transformations through the methods:
 
-If the application is only broadcasting transformations, it is advised to create the manager using the option that disables the internal listener.
+- `sendTransform()` / `sendStaticTransform()`
 
-Applications must synchronize concurrent broadcaster calls on the same manager, including initialization on first use, as the object is not thread-safe.
+which will perform an automatic lazy-broadcaster initialization.
 
-The `getRawBuffer()` method returns a shared pointer to the native TF buffer. Reserve it for integrations requiring direct buffer access; use the manager's methods for ordinary lookups and pose transformations.
+Common conversion helpers are also included alongside the main functionalities for convenience:
+
+`transformToPoseStamped()`, `poseToTransformStamped()`, and `invertTransform()`.
+
+For operations requiring direct buffer access, the manager still exposes the usual tf buffer interfaces using `getRawBuffer()`, which returns a shared pointer to the wrapped TF buffer.
+
+All the methods provide error information through optional strings, leaving the logging responsibility to the caller.
 
 ## Migration Guide
 
