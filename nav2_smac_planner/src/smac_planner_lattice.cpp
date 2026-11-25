@@ -29,6 +29,59 @@ namespace nav2_smac_planner
 using namespace std::chrono;  // NOLINT
 using rcl_interfaces::msg::ParameterType;
 
+namespace
+{
+
+// NodeLattice keeps the motion table and the distance heuristic lookup table in static
+// members, so all SmacPlannerLattice instances in a process share them.
+
+// Loads a planner's lattice file into the shared motion table
+void loadLatticeMotionTable(
+  const nav2_costmap_2d::Costmap2D * costmap,
+  const unsigned int & number_of_headings,
+  SearchInfo & search_info)
+{
+  unsigned int size_x = costmap->getSizeInCellsX();
+  unsigned int size_y = costmap->getSizeInCellsY();
+  unsigned int dim_3_size = number_of_headings;
+  NodeLattice::initMotionModel(
+    MotionModel::STATE_LATTICE, size_x, size_y, dim_3_size, search_info);
+}
+
+// Distance heuristic lookup table size in cells, a whole odd number
+float getLookupTableDim(const double & lookup_table_size, const double & resolution)
+{
+  float lookup_table_dim = static_cast<float>(lookup_table_size) /
+    static_cast<float>(resolution);
+  lookup_table_dim = static_cast<float>(static_cast<int>(lookup_table_dim));
+  if (static_cast<int>(lookup_table_dim) % 2 == 0) {
+    lookup_table_dim += 1.0;
+  }
+  return lookup_table_dim;
+}
+
+// Whether the shared distance heuristic lookup table was built with the same size,
+// headings, turning radius and motion model as this planner's, so it can be reused
+bool distanceHeuristicMatches(
+  const float & lookup_table_dim,
+  const LatticeMetadata & metadata,
+  const SearchInfo & search_info)
+{
+  MotionModel motion_model = MotionModel::REEDS_SHEPP;
+  if (metadata.motion_model == "omni") {
+    motion_model = MotionModel::OMNI;
+  } else if (!search_info.allow_reverse_expansion) {
+    motion_model = MotionModel::DUBIN;
+  }
+  const LatticeMotionTable & table = NodeLattice::motion_table;
+  return NodeLattice::size_lookup == lookup_table_dim &&
+         table.motion_model == motion_model &&
+         table.min_turning_radius == search_info.minimum_turning_radius &&
+         table.lattice_metadata.heading_angles == metadata.heading_angles;
+}
+
+}  // namespace
+
 SmacPlannerLattice::SmacPlannerLattice()
 : _a_star(nullptr),
   _collision_checker(nullptr, 1, nullptr),
@@ -206,6 +259,7 @@ void SmacPlannerLattice::configure(
     _max_planning_time,
     lookup_table_dim,
     _metadata.number_of_headings);
+  loadLatticeMotionTable(_costmap, _metadata.number_of_headings, _search_info);
 
   // Initialize path smoother
   SmootherParams params;
@@ -299,6 +353,18 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   steady_clock::time_point a = steady_clock::now();
 
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
+
+  // Another SmacPlannerLattice instance may have used the shared tables since this one last
+  // planned. Rebuild the distance heuristic lookup table if it was built for different
+  // settings, and restore this planner's settings and lattice file in the motion table
+  // (the file is only read again if it changed)
+  const float lookup_table_dim =
+    getLookupTableDim(_lookup_table_size, _costmap->getResolution());
+  if (!distanceHeuristicMatches(lookup_table_dim, _metadata, _search_info)) {
+    NodeLattice::precomputeDistanceHeuristic(
+      lookup_table_dim, _motion_model, _metadata.number_of_headings, _search_info);
+  }
+  loadLatticeMotionTable(_costmap, _metadata.number_of_headings, _search_info);
 
   // Set collision checker and costmap information
   _collision_checker.setFootprint(
@@ -667,6 +733,7 @@ SmacPlannerLattice::dynamicParametersCallback(std::vector<rclcpp::Parameter> par
         _max_planning_time,
         lookup_table_dim,
         _metadata.number_of_headings);
+      loadLatticeMotionTable(_costmap, _metadata.number_of_headings, _search_info);
     }
   }
 

@@ -91,6 +91,10 @@ void LatticeMotionTable::initMotionModel(
     }
   }
 
+  // Replace, not append to, any primitives from a previously loaded lattice file
+  motion_primitives.clear();
+  trig_values.clear();
+
   // Populate the motion primitives at each heading angle
   float prev_start_angle = 0.0;
   std::vector<MotionPrimitive> primitives;
