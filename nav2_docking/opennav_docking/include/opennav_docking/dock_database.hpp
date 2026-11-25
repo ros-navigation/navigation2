@@ -31,7 +31,7 @@
 #include "opennav_docking/types.hpp"
 #include "opennav_docking/controller_base.hpp"
 #include "nav2_msgs/srv/reload_dock_database.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace opennav_docking
 {
@@ -53,11 +53,11 @@ public:
   /**
    * @brief A setup function to populate database
    * @param parent Weakptr to the node to use to get interances and parameters
-   * @param tf TF buffer
+   * @param tf_manager Transform manager
    * @return If successful
    */
   bool initialize(
-    const nav2::LifecycleNode::WeakPtr & parent, nav2::TransformBuffer::SharedPtr tf);
+    const nav2::LifecycleNode::WeakPtr & parent, nav2::TransformManager::SharedPtr tf_manager);
 
   /**
    * @brief A destructor for opennav_docking::DockDatabase
@@ -129,11 +129,11 @@ protected:
   /**
    * @brief Populate database of dock type plugins
    * @param Node Node to get values from
-   * @param tf TF buffer
+   * @param tf_manager Transform manager
    * @return bool If successful
    */
   bool getDockPlugins(
-    const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf);
+    const nav2::LifecycleNode::SharedPtr & node, nav2::TransformManager::SharedPtr tf_manager);
 
   /**
    * @brief Populate database of dock instances
@@ -145,11 +145,11 @@ protected:
    * @brief Create default graceful `controller` and the plugins listed
    * in the `controllers` parameter
    * @param node Node to get values from
-   * @param tf TF buffer
+   * @param tf_manager Transform manager
    * @return bool If every controller is created and configured
    */
   bool getControllerPlugins(
-    const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf);
+    const nav2::LifecycleNode::SharedPtr & node, nav2::TransformManager::SharedPtr tf_manager);
 
   /**
    * @brief Check every controller name in the database against the loaded controllers.

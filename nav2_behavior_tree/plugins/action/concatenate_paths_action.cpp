@@ -38,7 +38,7 @@ void ConcatenatePaths::initialize()
 {
   auto node = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   logger_ = node->get_logger();
-  tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
+  tf_manager_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("transform_manager");
   node->get_parameter("transform_tolerance", transform_tolerance_);
 }
 
@@ -77,7 +77,7 @@ inline BT::NodeStatus ConcatenatePaths::tick()
 
     nav_msgs::msg::Path transformed_path2;
     if (!nav2_util::transformPathInTargetFrame(
-        input_path2, transformed_path2, *tf_, frame1, transform_tolerance_))
+        input_path2, transformed_path2, *tf_manager_, frame1, transform_tolerance_))
     {
       RCLCPP_ERROR(
         logger_,

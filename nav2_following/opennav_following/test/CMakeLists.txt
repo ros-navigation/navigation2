@@ -9,6 +9,7 @@ target_link_libraries(test_following_server_unit
   opennav_docking_core::opennav_docking_core
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
+  tf2_geometry_msgs::tf2_geometry_msgs
 )
 
 # Test following server (smoke)

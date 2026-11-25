@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. Reserved.
 
+#include <chrono>
 #include <memory>
 #include <string>
+#include <thread>
 
 #include "gtest/gtest.h"
 #include "rclcpp/executors/single_threaded_executor.hpp"
@@ -24,7 +26,7 @@
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_ros_common/rate.hpp"
 #include "nav2_route/graph_loader.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 
 using namespace nav2_route; //NOLINT
@@ -32,7 +34,7 @@ using namespace nav2_route; //NOLINT
 TEST(GraphLoader, test_invalid_plugin)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_loader_test");
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   std::string frame = "map";
 
   nav2::declare_parameter_if_not_declared(
@@ -45,13 +47,13 @@ TEST(GraphLoader, test_invalid_plugin)
   nav2::declare_parameter_if_not_declared(
     node, "graph_file_loader", rclcpp::ParameterValue(default_plugin));
 
-  EXPECT_THROW(GraphLoader graph_loader(node, tf, frame), pluginlib::PluginlibException);
+  EXPECT_THROW(GraphLoader graph_loader(node, tf_manager, frame), pluginlib::PluginlibException);
 }
 
 TEST(GraphLoader, test_api)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_loader_test");
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   std::string frame = "map";
 
   nav2::declare_parameter_if_not_declared(
@@ -59,7 +61,7 @@ TEST(GraphLoader, test_api)
       nav2::get_package_share_directory("nav2_route") +
       "/graphs/aws_graph.geojson"));
 
-  GraphLoader graph_loader(node, tf, frame);
+  GraphLoader graph_loader(node, tf_manager, frame);
 
   Graph graph;
   GraphToIDMap graph_to_id_map;
@@ -73,10 +75,7 @@ TEST(GraphLoader, test_transformation_api)
   auto node = std::make_shared<nav2::LifecycleNode>("graph_loader_test");
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node->get_node_base_interface());
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);
-  auto tf_listener = nav2::create_transform_listener(*tf, node);
-  auto tf_broadcaster = nav2::create_static_transform_broadcaster(node);
+  auto tf_manager = nav2::create_transform_manager(node);
 
   std::string frame = "map";
 
@@ -85,7 +84,7 @@ TEST(GraphLoader, test_transformation_api)
       nav2::get_package_share_directory("nav2_route") +
       "/graphs/aws_graph.geojson"));
 
-  GraphLoader graph_loader(node, tf, frame);
+  GraphLoader graph_loader(node, tf_manager, frame);
 
   // Test with a file that now works
   Graph graph;
@@ -103,9 +102,9 @@ TEST(GraphLoader, test_transformation_api)
   transform.header.stamp = node->now();
   transform.transform.rotation.w = 1.0;
   transform.transform.translation.x = 1.0;
-  tf_broadcaster->sendTransform(transform);
+  tf_manager->sendStaticTransform(transform);
   rclcpp::WallRate(1).sleep();
-  tf_broadcaster->sendTransform(transform);
+  tf_manager->sendStaticTransform(transform);
   executor.spin_all(std::chrono::milliseconds(50));
 
   graph[0].coords.frame_id = "map_test";
@@ -124,11 +123,37 @@ TEST(GraphLoader, test_transformation_api)
   EXPECT_EQ(graph[0].coords.x, or_coord);
 }
 
+TEST(GraphLoader, test_waits_for_transform)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("graph_loader_wait_test");
+  auto tf_manager = nav2::create_transform_manager(node);
+  GraphLoader graph_loader(node, tf_manager, "map");
+
+  Graph graph(1);
+  graph[0].coords.frame_id = "graph_frame";
+  graph[0].coords.x = 2.0;
+
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = "map";
+  transform.child_frame_id = "graph_frame";
+  transform.transform.translation.x = 1.0;
+
+  // Deliver TF after the lookup starts, without depending on DDS discovery timing.
+  std::thread delivery([&]() {
+      std::this_thread::sleep_for(std::chrono::milliseconds(250));
+      EXPECT_TRUE(tf_manager->getRawBuffer()->setTransform(transform, "test", true));
+    });
+  EXPECT_TRUE(graph_loader.transformGraph(graph));
+  delivery.join();
+
+  EXPECT_EQ(graph[0].coords.frame_id, "map");
+  EXPECT_FLOAT_EQ(graph[0].coords.x, 3.0);
+}
+
 TEST(GraphLoader, test_transformation_api2)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("graph_loader_test");
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);
+  auto tf_manager = nav2::create_transform_manager(node);
 
   std::string frame = "map";
 
@@ -137,7 +162,7 @@ TEST(GraphLoader, test_transformation_api2)
       nav2::get_package_share_directory("nav2_route") +
       "/test/test_graphs/no_frame.json"));
 
-  GraphLoader graph_loader(node, tf, frame);
+  GraphLoader graph_loader(node, tf_manager, frame);
 
   // Test with a file that has unknown frames that cannot be transformed
   Graph graph;

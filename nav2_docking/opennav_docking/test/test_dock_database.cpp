@@ -65,7 +65,7 @@ TEST(DatabaseTests, ObjectLifecycle)
   auto node = std::make_shared<nav2::LifecycleNode>("test");
   std::mutex mutex;
   opennav_docking::DockDatabase db(mutex);
-  db.initialize(node, nav2::create_transform_buffer(node));
+  db.initialize(node, nav2::create_transform_manager(node));
   db.activate();
   db.deactivate();
 
@@ -80,11 +80,11 @@ TEST(DatabaseTests, initializeBogusPlugins)
   node->declare_parameter("dock_plugins", rclcpp::ParameterValue(plugins));
   std::mutex mutex;
   opennav_docking::DockDatabase db(mutex);
-  db.initialize(node, nav2::create_transform_buffer(node));
+  db.initialize(node, nav2::create_transform_manager(node));
 
   plugins.clear();
   node->set_parameter(rclcpp::Parameter("dock_plugins", rclcpp::ParameterValue(plugins)));
-  db.initialize(node, nav2::create_transform_buffer(node));
+  db.initialize(node, nav2::create_transform_manager(node));
 }
 
 TEST(DatabaseTests, findTests)
@@ -120,7 +120,7 @@ TEST(DatabaseTests, getDockInstancesBadConversionFile)
       "/dock_files/test_dock_bad_conversion_file.yaml"));
   std::mutex mutex;
   opennav_docking::DockDatabase db(mutex);
-  db.initialize(node, nav2::create_transform_buffer(node));
+  db.initialize(node, nav2::create_transform_manager(node));
 
   EXPECT_EQ(db.plugin_size(), 1u);
   EXPECT_EQ(db.instance_size(), 0u);
@@ -140,7 +140,7 @@ TEST(DatabaseTests, getDockInstancesWrongPath)
 
   std::mutex mutex;
   opennav_docking::DockDatabase db(mutex);
-  db.initialize(node, nav2::create_transform_buffer(node));
+  db.initialize(node, nav2::create_transform_manager(node));
 
   EXPECT_EQ(db.plugin_size(), 1u);
   EXPECT_EQ(db.instance_size(), 0u);
@@ -156,7 +156,7 @@ TEST(DatabaseTests, reloadDbService)
     rclcpp::ParameterValue("opennav_docking::SimpleChargingDock"));
   std::mutex mutex;
   opennav_docking::DockDatabase db(mutex);
-  db.initialize(node, nav2::create_transform_buffer(node));
+  db.initialize(node, nav2::create_transform_manager(node));
 
   // Call service with a filepath
   auto client =
@@ -197,7 +197,7 @@ TEST(DatabaseTests, reloadDbMutexLocked)
   std::mutex mutex;
   mutex.lock();
   opennav_docking::DockDatabase db(mutex);
-  db.initialize(node, nav2::create_transform_buffer(node));
+  db.initialize(node, nav2::create_transform_manager(node));
 
   // Call service with a filepath
   auto client =
@@ -256,7 +256,7 @@ TEST(DatabaseTests, controllerValidationAcceptsLoadedController)
   std::mutex mutex;
   opennav_docking::DockDatabase db(mutex);
 
-  EXPECT_TRUE(db.initialize(node, nav2::create_transform_buffer(node)));
+  EXPECT_TRUE(db.initialize(node, nav2::create_transform_manager(node)));
   EXPECT_EQ(db.instance_size(), 1u);
   // The listed controllers plus the default graceful controller
   EXPECT_EQ(db.controller_size(), 3u);
@@ -273,7 +273,7 @@ TEST(DatabaseTests, controllerValidationRejectsUnknownController)
   std::mutex mutex;
   opennav_docking::DockDatabase db(mutex);
 
-  EXPECT_FALSE(db.initialize(node, nav2::create_transform_buffer(node)));
+  EXPECT_FALSE(db.initialize(node, nav2::create_transform_manager(node)));
 }
 
 TEST(DatabaseTests, typeControllerName)
@@ -284,7 +284,7 @@ TEST(DatabaseTests, typeControllerName)
   std::mutex mutex;
   DbShim db(mutex);
 
-  ASSERT_TRUE(db.initialize(node, nav2::create_transform_buffer(node)));
+  ASSERT_TRUE(db.initialize(node, nav2::create_transform_manager(node)));
   EXPECT_EQ(db.getControllerName("", "dockv1"), "c1");
   EXPECT_EQ(db.getControllerName("", "unknown_type"), "controller");
   // Empty selects the only dock type
@@ -299,7 +299,7 @@ TEST(DatabaseTests, rejectUnknownController)
   std::mutex mutex;
   opennav_docking::DockDatabase db(mutex);
 
-  EXPECT_FALSE(db.initialize(node, nav2::create_transform_buffer(node)));
+  EXPECT_FALSE(db.initialize(node, nav2::create_transform_manager(node)));
 }
 
 }  // namespace opennav_docking

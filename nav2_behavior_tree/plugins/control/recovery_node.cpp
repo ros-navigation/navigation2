@@ -16,7 +16,6 @@
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_behavior_tree/plugins/control/recovery_node.hpp"
 #include "nav2_behavior_tree/bt_utils.hpp"
 
@@ -44,8 +43,7 @@ void RecoveryNode::initialize()
       node, "robot_base_frame", this);
     global_frame_ = BT::deconflictPortAndParamFrame<std::string>(
       node, "global_frame", this);
-    clock_ = node->get_clock();
-    tf_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
+    tf_manager_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("transform_manager");
     transform_staleness_threshold_ = node->declare_or_get_parameter(
       "transform_staleness_threshold", 0.0);
   }
@@ -56,12 +54,8 @@ void RecoveryNode::captureResetPose()
   if (reset_distance_ <= 0.0 || reset_pose_) {
     return;
   }
-  geometry_msgs::msg::PoseStamped pose;
-  if (nav2_util::getFreshPose(
-      *tf_, global_frame_, robot_frame_, clock_->now(), transform_staleness_threshold_, pose))
-  {
-    reset_pose_ = pose;
-  }
+  reset_pose_ = tf_manager_->getLatestPose(
+    global_frame_, robot_frame_, transform_staleness_threshold_);
 }
 
 void RecoveryNode::checkRetryReset()
@@ -70,15 +64,14 @@ void RecoveryNode::checkRetryReset()
     return;
   }
 
-  geometry_msgs::msg::PoseStamped pose;
-  if (!nav2_util::getFreshPose(
-      *tf_, global_frame_, robot_frame_, clock_->now(), transform_staleness_threshold_, pose))
-  {
+  const auto pose = tf_manager_->getLatestPose(
+    global_frame_, robot_frame_, transform_staleness_threshold_);
+  if (!pose) {
     return;
   }
 
   if (nav2_util::geometry_utils::euclidean_distance(
-      reset_pose_->pose, pose.pose) >= reset_distance_)
+      reset_pose_->pose, pose->pose) >= reset_distance_)
   {
     retry_count_ = 0;
     setOutput("retry_count", retry_count_);

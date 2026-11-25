@@ -15,7 +15,10 @@
 #ifndef NAV2_COLLISION_MONITOR__TYPES_HPP_
 #define NAV2_COLLISION_MONITOR__TYPES_HPP_
 
+#include <algorithm>
+#include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace nav2_collision_monitor
@@ -81,7 +84,49 @@ struct Action
   Velocity req_vel;
   std::string polygon_name;
   std::vector<Point> triggering_points;
+  std::string invalid_source = "";
 };
+
+/**
+ * @brief Lists the triggering points' sources, most points first,
+ * e.g. "scan (34 points), pointcloud (3 points)"
+ * @param points Triggering points of a robot action
+ * @return Sources with their point counts
+ */
+inline std::string summariseTriggeringSources(const std::vector<Point> & points)
+{
+  if (points.empty()) {
+    return "no points";
+  }
+
+  // Points arrive grouped by source: count runs rather than a map lookup per point.
+  std::map<std::string, size_t> counts;
+  const std::string * run_source = &points.front().source;
+  size_t run_length = 0;
+  for (const auto & p : points) {
+    if (p.source != *run_source) {
+      counts[run_source->empty() ? "unnamed source" : *run_source] += run_length;
+      run_source = &p.source;
+      run_length = 0;
+    }
+    ++run_length;
+  }
+  counts[run_source->empty() ? "unnamed source" : *run_source] += run_length;
+
+  std::vector<std::pair<std::string, size_t>> sorted(counts.begin(), counts.end());
+  std::stable_sort(
+    sorted.begin(), sorted.end(),
+    [](const auto & a, const auto & b) {return a.second > b.second;});
+
+  std::string summary;
+  for (const auto & [source, count] : sorted) {
+    if (!summary.empty()) {
+      summary += ", ";
+    }
+    summary += source + " (" + std::to_string(count) + (count == 1 ? " point)" : " points)");
+  }
+  return summary;
+}
 
 }  // namespace nav2_collision_monitor
 

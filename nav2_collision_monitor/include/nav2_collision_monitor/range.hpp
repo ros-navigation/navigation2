@@ -22,7 +22,7 @@
 #include "sensor_msgs/msg/range.hpp"
 
 #include "nav2_collision_monitor/source.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace nav2_collision_monitor
 {
@@ -37,7 +37,7 @@ public:
    * @brief Range constructor
    * @param node Collision Monitor node pointer
    * @param source_name Name of data source
-   * @param tf_buffer Shared pointer to a TF buffer
+   * @param tf_manager Shared pointer to a TF manager
    * @param base_frame_id Robot base frame ID. The output data will be transformed into this frame.
    * @param global_frame_id Global frame ID for correct transform calculation
    * @param transform_tolerance Transform tolerance
@@ -48,10 +48,10 @@ public:
   Range(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const nav2::TransformBuffer::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     const rclcpp::Duration & source_timeout,
     const bool base_shift_correction);
   /**

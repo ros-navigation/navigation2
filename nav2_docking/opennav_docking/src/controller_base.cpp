@@ -27,9 +27,8 @@
 #include "opennav_docking/controller_base.hpp"
 
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/parameter.hpp"
 #include "tf2/utils.hpp"
@@ -42,7 +41,7 @@ namespace opennav_docking
 
 void ControllerBase::configure(
   const nav2::LifecycleNode::WeakPtr & parent,
-  const std::string & name, nav2::TransformBuffer::SharedPtr tf)
+  const std::string & name, nav2::TransformManager::SharedPtr tf_manager)
 {
   auto node = parent.lock();
   if (!node) {
@@ -51,7 +50,7 @@ void ControllerBase::configure(
 
   node_ = parent;
   name_ = name;
-  tf2_buffer_ = tf;
+  tf_manager_ = tf_manager;
   logger_ = node->get_logger();
 
   // The base frame is the server's; targets are given in it
@@ -115,7 +114,7 @@ bool ControllerBase::computeVelocityCommands(
   cmd = computeCommand(target, options.backward, dt);
   return isTrajectoryCollisionFree(
     target, options.collision_pose.value_or(target),
-    nav2_util::poseToTransformStamped(robot_pose, base_frame_),
+    nav2::TransformManager::poseToTransformStamped(robot_pose, base_frame_),
     options.is_docking, options.backward);
 }
 
@@ -262,7 +261,7 @@ void ControllerBase::configureCollisionChecker(
 {
   costmap_sub_ = std::make_unique<nav2_costmap_2d::CostmapSubscriber>(node, costmap_topic);
   footprint_sub_ = std::make_unique<nav2_costmap_2d::FootprintSubscriber>(
-    node, footprint_topic, *tf2_buffer_, base_frame_, transform_tolerance);
+    node, footprint_topic, *tf_manager_, base_frame_, transform_tolerance);
   collision_checker_ = std::make_shared<nav2_costmap_2d::CostmapTopicCollisionChecker>(
     *costmap_sub_, *footprint_sub_, node->get_name());
 }

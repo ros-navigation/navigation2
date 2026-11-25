@@ -14,21 +14,21 @@
 
 #include <memory>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_route/graph_saver.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 namespace nav2_route
 {
 
 GraphSaver::GraphSaver(
   nav2::LifecycleNode::SharedPtr node,
-  nav2::TransformBuffer::SharedPtr tf,
+  nav2::TransformManager::SharedPtr tf_manager,
   const std::string frame)
 : plugin_loader_("nav2_route", "nav2_route::GraphFileSaver"),
   default_plugin_id_("GeoJsonGraphFileSaver")
 {
   logger_ = node->get_logger();
-  tf_ = tf;
+  tf_manager_ = tf_manager;
   route_frame_ = frame;
 
   graph_filepath_ = node->declare_or_get_parameter(
@@ -108,17 +108,19 @@ bool GraphSaver::transformGraph(Graph & graph)
     // Find the transform to convert node from node frame to route frame
     if (cached_transforms.find(node_frame) == cached_transforms.end()) {
       tf2::Transform tf_transform;
-      bool got_transform = nav2_util::getTransform(
-        node_frame, route_frame_, tf2::durationFromSec(0.1), tf_, tf_transform);
+      std::string transform_error;
+      const auto transform = tf_manager_->getLatestTransform(route_frame_, node_frame, 0.0,
+          &transform_error);
 
-      if (!got_transform) {
+      if (!transform) {
         RCLCPP_WARN(
           logger_,
-          "Could not get transform from node frame %s to route frame %s",
-          node_frame.c_str(), route_frame_.c_str());
+          "Could not get transform from node frame %s to route frame %s: %s",
+          node_frame.c_str(), route_frame_.c_str(), transform_error.c_str());
         return false;
       }
 
+      tf2::fromMsg(transform->transform, tf_transform);
       cached_transforms.insert({node_frame, tf_transform});
     }
     // Apply the transform

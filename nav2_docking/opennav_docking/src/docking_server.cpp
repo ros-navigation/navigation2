@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "angles/angles.h"
 #include "nav2_ros_common/rate.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "opennav_docking/docking_server.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.hpp"
@@ -42,7 +42,7 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   params_ = param_handler_->getParams();
 
   vel_publisher_ = std::make_unique<nav2_util::TwistPublisher>(node, "cmd_vel");
-  tf2_buffer_ = nav2::create_transform_buffer(node);
+  tf_manager_ = nav2::create_transform_manager(node);
 
   // Create odom subscriber for backward blind docking
   odom_sub_ = std::make_unique<nav2_util::OdomSmoother>(node, params_->odom_duration,
@@ -64,7 +64,7 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
   // Create composed utilities
   navigator_ = std::make_unique<Navigator>(node);
   dock_db_ = std::make_unique<DockDatabase>(param_handler_->getMutex());
-  if (!dock_db_->initialize(node, tf2_buffer_)) {
+  if (!dock_db_->initialize(node, tf_manager_)) {
     on_cleanup(state);
     return nav2::CallbackReturn::FAILURE;
   }
@@ -79,7 +79,6 @@ DockingServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   auto node = shared_from_this();
 
-  tf2_listener_ = nav2::create_transform_listener(*tf2_buffer_, this, true);
   dock_db_->activate();
   navigator_->activate();
   vel_publisher_->on_activate();
@@ -106,7 +105,6 @@ DockingServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
   navigator_->deactivate();
   vel_publisher_->on_deactivate();
   param_handler_->deactivate();
-  tf2_listener_.reset();
 
   // Destroy bond connection
   destroyBond();
@@ -118,7 +116,7 @@ nav2::CallbackReturn
 DockingServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 {
   RCLCPP_INFO(get_logger(), "Cleaning up %s", get_name());
-  tf2_buffer_.reset();
+  tf_manager_.reset();
   docking_action_server_.reset();
   undocking_action_server_.reset();
   // Release controller before the database that owns its loader
@@ -256,7 +254,8 @@ void DockingServer::dockRobot()
 
     // Construct initial estimate of where the dock is located in fixed_frame
     auto dock_pose = utils::getDockPoseStamped(dock, rclcpp::Time(0));
-    tf2_buffer_->transform(dock_pose, dock_pose, params_->fixed_frame);
+    dock_pose = utils::transformPoseToFrame(
+      *tf_manager_, dock_pose, params_->fixed_frame, params_->transform_staleness_threshold);
 
     // Get initial detection of dock before proceeding to move
     doInitialPerception(dock, dock_pose);
@@ -512,13 +511,14 @@ bool DockingServer::approachDock(
 
     // Transform the dock pose into the fixed frame
     geometry_msgs::msg::PoseStamped target_pose = utils::transformPoseToFrame(
-      *tf2_buffer_, dock_pose, params_->fixed_frame, now(), params_->transform_staleness_threshold);
+      *tf_manager_, dock_pose, params_->fixed_frame, params_->transform_staleness_threshold);
 
     // Transforming the target pose from the fixed frame into the robot's base frame
     const auto robot_pose = getRobotPoseInFrame(params_->fixed_frame);
-    const auto base_to_fixed_transform = nav2_util::poseToTransformStamped(
+    const auto base_to_fixed_transform = tf_manager_->poseToTransformStamped(
       robot_pose, params_->base_frame);
-    tf2::doTransform(target_pose, target_pose, nav2_util::invertTransform(base_to_fixed_transform));
+    tf2::doTransform(target_pose, target_pose,
+        tf_manager_->invertTransform(base_to_fixed_transform));
 
     geometry_msgs::msg::PoseStamped collision_pose(target_pose);
 
@@ -598,8 +598,7 @@ bool DockingServer::resetApproach(
   const geometry_msgs::msg::PoseStamped & staging_pose, bool backward)
 {
   const auto fixed_staging_pose = utils::transformPoseToFrame(
-    *tf2_buffer_, staging_pose, params_->fixed_frame, now(),
-      params_->transform_staleness_threshold);
+    *tf_manager_, staging_pose, params_->fixed_frame, params_->transform_staleness_threshold);
 
   nav2::Rate loop_rate(this, params_->controller_frequency);
   auto start = this->now();
@@ -646,12 +645,12 @@ bool DockingServer::getCommandToPose(
   cmd.linear.x = 0;
   cmd.angular.z = 0;
 
-  geometry_msgs::msg::PoseStamped fixed_pose = utils::transformPoseToFrame(
-    *tf2_buffer_, pose, params_->fixed_frame, now(), params_->transform_staleness_threshold);
+  const auto fixed_pose = utils::transformPoseToFrame(
+    *tf_manager_, pose, params_->fixed_frame, params_->transform_staleness_threshold);
 
   // Determine if we have reached pose yet & stop
   const auto robot_pose = getRobotPoseInFrame(params_->fixed_frame);
-  const auto base_to_fixed_transform = nav2_util::poseToTransformStamped(robot_pose,
+  const auto base_to_fixed_transform = tf_manager_->poseToTransformStamped(robot_pose,
       params_->base_frame);
   const double dist = std::hypot(
     robot_pose.pose.position.x - fixed_pose.pose.position.x,
@@ -664,7 +663,8 @@ bool DockingServer::getCommandToPose(
 
   // Transform target_pose into base_link frame
   geometry_msgs::msg::PoseStamped target_pose = fixed_pose;
-  tf2::doTransform(target_pose, target_pose, nav2_util::invertTransform(base_to_fixed_transform));
+  tf2::doTransform(target_pose, target_pose,
+      tf_manager_->invertTransform(base_to_fixed_transform));
 
   // Compute velocity command
   DockingOptions options;
@@ -844,15 +844,15 @@ void DockingServer::undockRobot()
 
 geometry_msgs::msg::PoseStamped DockingServer::getRobotPoseInFrame(const std::string & frame)
 {
-  geometry_msgs::msg::PoseStamped robot_pose;
-  if (!nav2_util::getFreshPose(
-      *tf2_buffer_, frame, params_->base_frame, now(),
-      params_->transform_staleness_threshold, robot_pose))
-  {
+  std::string robot_pose_error;
+  const auto robot_pose = tf_manager_->getLatestPose(
+    frame, params_->base_frame, params_->transform_staleness_threshold, &robot_pose_error);
+  if (!robot_pose) {
     throw opennav_docking_core::DockingTFError(
-            "Transform error: failed to get a fresh robot pose in frame " + frame);
+            "Transform error: failed to get a fresh robot pose in frame " + frame + ": " +
+        robot_pose_error);
   }
-  return robot_pose;
+  return *robot_pose;
 }
 
 void DockingServer::publishZeroVelocity()

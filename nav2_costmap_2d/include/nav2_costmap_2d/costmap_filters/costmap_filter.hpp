@@ -224,7 +224,7 @@ protected:
   /**
    * @brief: mask_frame->global_frame_ transform tolerance
    */
-  tf2::Duration transform_tolerance_;
+  double transform_tolerance_;
 
   /**
    * @brief: Max age for transforms. Check disabled if <= 0.

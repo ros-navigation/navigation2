@@ -36,7 +36,7 @@
 #include "opennav_docking/navigator.hpp"
 #include "opennav_docking/parameter_handler.hpp"
 #include "opennav_docking_core/charging_dock.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace opennav_docking
 {
@@ -257,8 +257,7 @@ protected:
   // Controller declared after its owner dock_db_ so it is destroyed first
   ControllerBase::Ptr controller_;
 
-  nav2::TransformBuffer::SharedPtr tf2_buffer_;
-  nav2::TransformListener::SharedPtr tf2_listener_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 };
 
 }  // namespace opennav_docking

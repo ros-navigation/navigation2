@@ -33,7 +33,7 @@
 #include "nav_msgs/msg/path.hpp"
 #include "angles/angles.h"
 #include "tf2/utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace nav2_smoother
 {
@@ -57,7 +57,7 @@ public:
 
   void configure(
     const nav2::LifecycleNode::WeakPtr &,
-    std::string name, nav2::TransformBuffer::SharedPtr,
+    std::string name, nav2::TransformManager::SharedPtr,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber>,
     std::shared_ptr<nav2_costmap_2d::FootprintSubscriber>) override;
 

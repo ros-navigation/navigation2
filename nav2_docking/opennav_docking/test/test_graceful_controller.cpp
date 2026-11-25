@@ -21,7 +21,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav2_ros_common/node_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_util/geometry_utils.hpp"
 #include "opennav_docking/controller_plugins/graceful_controller.hpp"
 #include "pluginlib/class_loader.hpp"
@@ -43,7 +43,7 @@ geometry_msgs::msg::Pose makeTarget(double x, double y, double yaw)
 
 /// @brief Insert a static transform directly into the buffer, so no spinning is required.
 void setTransform(
-  const nav2::TransformBuffer::SharedPtr & tf,
+  const nav2::TransformManager::SharedPtr & tf,
   const std::string & parent, const std::string & child, double x, double y)
 {
   geometry_msgs::msg::TransformStamped transform;
@@ -52,7 +52,7 @@ void setTransform(
   transform.transform.translation.x = x;
   transform.transform.translation.y = y;
   transform.transform.rotation.w = 1.0;
-  tf->setTransform(transform, "test", true);
+  tf->getRawBuffer()->setTransform(transform, "test", true);
 }
 
 /// @brief Exposes protected state so the trajectory publisher can be inspected directly.
@@ -64,7 +64,7 @@ public:
 
 /// @brief Configure a controller instance with collision detection disabled.
 std::shared_ptr<GracefulController> makeController(
-  const nav2::LifecycleNode::SharedPtr & node, const nav2::TransformBuffer::SharedPtr & tf,
+  const nav2::LifecycleNode::SharedPtr & node, const nav2::TransformManager::SharedPtr & tf,
   const std::string & name)
 {
   nav2::declare_parameter_if_not_declared(
@@ -81,8 +81,7 @@ TEST(GracefulControllerTests, PluginIsDiscoverable)
   EXPECT_TRUE(loader.isClassAvailable("opennav_docking::GracefulController"));
 
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);
+  auto tf = nav2::create_transform_manager(node);
   nav2::declare_parameter_if_not_declared(
     node, "c.use_collision_detection", rclcpp::ParameterValue(false));
   nav2::declare_parameter_if_not_declared(
@@ -111,8 +110,7 @@ TEST(GracefulControllerTests, PluginIsDiscoverable)
 TEST(GracefulControllerTests, UsesServerFrames)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);
+  auto tf = nav2::create_transform_manager(node);
   setTransform(tf, "odom", "my_base", 0.0, 0.0);
 
   // The controller must pick up the server's frames
@@ -133,8 +131,7 @@ TEST(GracefulControllerTests, UsesServerFrames)
 TEST(GracefulControllerTests, ReverseDrivesBackwards)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);
+  auto tf = nav2::create_transform_manager(node);
   setTransform(tf, "odom", "base_link", 0.0, 0.0);
   nav2::declare_parameter_if_not_declared(
     node, "fixed_frame", rclcpp::ParameterValue(std::string("odom")));
@@ -153,8 +150,7 @@ TEST(GracefulControllerTests, ReverseDrivesBackwards)
 TEST(GracefulControllerTests, RotateToHeadingUsesInstanceParameters)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("test");
-  auto tf = nav2::create_transform_buffer(node);
-  tf->setUsingDedicatedThread(true);
+  auto tf = nav2::create_transform_manager(node);
   nav2::declare_parameter_if_not_declared(
     node, "c.rotate_to_heading_angular_vel", rclcpp::ParameterValue(0.5));
   auto controller = makeController(node, tf, "c");

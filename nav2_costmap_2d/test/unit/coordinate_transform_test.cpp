@@ -55,6 +55,24 @@ TEST(mapToWorldNoBounds, MapToWorldNoBoundsNegativeMapCoords)
   EXPECT_DOUBLE_EQ(wy, -15.0);
 }
 
+TEST(mapToWorldContinuous, InverseOfWorldToMapContinuous)
+{
+  nav2_costmap_2d::Costmap2D map(10, 10, 0.05, -1.0, 2.0);
+  double wx, wy;
+
+  map.mapToWorldContinuous(0.0f, 0.0f, wx, wy);
+  EXPECT_DOUBLE_EQ(wx, -1.0);
+  EXPECT_DOUBLE_EQ(wy, 2.0);
+
+  map.mapToWorldContinuous(3.5f, 7.25f, wx, wy);
+  EXPECT_NEAR(wx, -1.0 + 3.5 * 0.05, 1e-9);
+  EXPECT_NEAR(wy, 2.0 + 7.25 * 0.05, 1e-9);
+
+  float mx, my;
+  ASSERT_TRUE(map.worldToMapContinuous(wx, wy, mx, my));
+  EXPECT_NEAR(mx, 3.5f, 1e-4);
+  EXPECT_NEAR(my, 7.25f, 1e-4);
+}
 
 TEST(GetRobotPose, PreservesTransformAndRejectsStalePose)
 {
@@ -75,11 +93,11 @@ TEST(GetRobotPose, PreservesTransformAndRejectsStalePose)
   transform.transform.translation.x = 1.0;
   transform.transform.translation.y = 2.0;
   transform.transform.rotation.w = 1.0;
-  ASSERT_TRUE(costmap->getTfBuffer()->setTransform(transform, "test"));
+  ASSERT_TRUE(costmap->getTfManager()->getRawBuffer()->setTransform(transform, "test"));
   EXPECT_FALSE(costmap->getRobotPose(pose));
 
   transform.header.stamp = costmap->now();
-  ASSERT_TRUE(costmap->getTfBuffer()->setTransform(transform, "test"));
+  ASSERT_TRUE(costmap->getTfManager()->getRawBuffer()->setTransform(transform, "test"));
   ASSERT_TRUE(costmap->getRobotPose(pose));
   EXPECT_EQ(pose.header, transform.header);
   EXPECT_DOUBLE_EQ(pose.pose.position.x, 1.0);

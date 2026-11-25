@@ -19,7 +19,7 @@
 
 #include "gtest/gtest.h"
 #include "rclcpp/utilities.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_core/route_exceptions.hpp"
 #include "nav2_route/route_tracker.hpp"
@@ -54,13 +54,11 @@ TEST(RouteTrackerTest, test_lifecycle)
 TEST(RouteTrackerTest, test_get_robot_pose)
 {
   auto node = std::make_shared<nav2::LifecycleNode>("router_test");
-  auto tf = nav2::create_transform_buffer(node);
-  auto transform_listener = nav2::create_transform_listener(*tf, node);
-  auto broadcaster = nav2::create_transform_broadcaster(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber;
 
   RouteTracker tracker;
-  tracker.configure(node, tf, costmap_subscriber, nullptr, "map", "base_link");
+  tracker.configure(node, tf_manager, costmap_subscriber, nullptr, "map", "base_link");
 
   EXPECT_THROW(tracker.getRobotPose(), nav2_core::RouteTFError);
 
@@ -68,8 +66,8 @@ TEST(RouteTrackerTest, test_get_robot_pose)
   transform.header.frame_id = "map";
   transform.header.stamp = node->now();
   transform.child_frame_id = "base_link";
-  broadcaster->sendTransform(transform);
-  tf->setTransform(transform, "test", false);
+  tf_manager->sendTransform(transform);
+  tf_manager->getRawBuffer()->setTransform(transform, "test", false);
   EXPECT_NO_THROW(tracker.getRobotPose());
 }
 

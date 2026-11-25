@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "opennav_docking/dock_database.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace opennav_docking
 {
@@ -42,19 +42,19 @@ DockDatabase::~DockDatabase()
 
 bool DockDatabase::initialize(
   const nav2::LifecycleNode::WeakPtr & parent,
-  nav2::TransformBuffer::SharedPtr tf)
+  nav2::TransformManager::SharedPtr tf_manager)
 {
   node_ = parent;
   auto node = node_.lock();
 
-  if (!getDockPlugins(node, tf)) {
+  if (!getDockPlugins(node, tf_manager)) {
     RCLCPP_ERROR(
       node->get_logger(),
       "An error occurred while getting the dock plugins!");
     return false;
   }
 
-  if (!getControllerPlugins(node, tf)) {
+  if (!getControllerPlugins(node, tf_manager)) {
     RCLCPP_ERROR(
       node->get_logger(),
       "An error occurred while getting the controller plugins!");
@@ -261,7 +261,7 @@ void DockDatabase::assignControllers(DockMap & docks) const
 
 bool DockDatabase::getDockPlugins(
   const nav2::LifecycleNode::SharedPtr & node,
-  nav2::TransformBuffer::SharedPtr tf)
+  nav2::TransformManager::SharedPtr tf_manager)
 {
   std::vector<std::string> docks_plugins;
   try {
@@ -285,7 +285,7 @@ bool DockDatabase::getDockPlugins(
       RCLCPP_INFO(
         node->get_logger(), "Created charging dock plugin %s of type %s",
         docks_plugins[i].c_str(), plugin_type.c_str());
-      dock->configure(node, docks_plugins[i], tf);
+      dock->configure(node, docks_plugins[i], tf_manager);
       // Type-level controller selection. An individual dock instance may override this;
       // when both are empty the server's default controller is used.
       type_controllers_[docks_plugins[i]] = node->declare_or_get_parameter(
@@ -304,7 +304,7 @@ bool DockDatabase::getDockPlugins(
 
 bool DockDatabase::getControllerPlugins(
   const nav2::LifecycleNode::SharedPtr & node,
-  nav2::TransformBuffer::SharedPtr tf)
+  nav2::TransformManager::SharedPtr tf_manager)
 {
   std::vector<std::string> controller_ids =
     node->declare_or_get_parameter("controllers", std::vector<std::string>{});
@@ -345,7 +345,7 @@ bool DockDatabase::getControllerPlugins(
       RCLCPP_INFO(
         node->get_logger(), "Created controller plugin %s of type %s",
         controller_id.c_str(), plugin_type.c_str());
-      controller->configure(node, controller_id, tf);
+      controller->configure(node, controller_id, tf_manager);
       controllers_.insert({controller_id, controller});
     } catch (const std::exception & ex) {
       RCLCPP_FATAL(

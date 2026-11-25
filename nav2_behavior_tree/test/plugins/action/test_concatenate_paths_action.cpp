@@ -52,8 +52,8 @@ public:
       "node",
       node_);
     config_->blackboard->set(
-      "tf_buffer",
-      transform_handler_->getBuffer());
+      "transform_manager",
+      transform_handler_->getTfManager());
 
     BT::NodeBuilder builder =
       [](const std::string & name, const BT::NodeConfiguration & config)
@@ -235,7 +235,7 @@ TEST_F(ConcatenatePathsTestFixture, test_different_frames_transformed)
   transform.child_frame_id = "odom";
   transform.transform.translation.x = 10.0;
   transform.transform.rotation.w = 1.0;
-  transform_handler_->getBuffer()->setTransform(transform, "unit_test", true);
+  transform_handler_->getTfManager()->getRawBuffer()->setTransform(transform, "unit_test", true);
 
   config_->blackboard->set("path1", makePath("map", 0.0, 2));
   config_->blackboard->set("path2", makePath("odom", 0.0, 2));
@@ -304,7 +304,7 @@ TEST_F(ConcatenatePathsTestFixture, test_empty_first_path_different_frame)
   transform.child_frame_id = "odom";
   transform.transform.translation.x = 10.0;
   transform.transform.rotation.w = 1.0;
-  transform_handler_->getBuffer()->setTransform(transform, "unit_test", true);
+  transform_handler_->getTfManager()->getRawBuffer()->setTransform(transform, "unit_test", true);
 
   EXPECT_EQ(
     runTree(

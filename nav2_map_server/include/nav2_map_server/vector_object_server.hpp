@@ -23,7 +23,7 @@
 #include "rclcpp/timer.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 #include "nav2_msgs/srv/add_shapes.hpp"
 #include "nav2_msgs/srv/remove_shapes.hpp"
@@ -48,7 +48,7 @@ public:
 
 protected:
   /**
-   * @brief: Initializes TF buffer/listener, obtains ROS-parameters, creates incoming services,
+   * @brief: Initializes TF manager, obtains ROS-parameters, creates incoming services,
    * and output map publisher
    * @param state Lifecycle Node's state
    * @return Success or Failure
@@ -180,10 +180,8 @@ protected:
     std::shared_ptr<nav2_msgs::srv::RemoveShapes::Response> response);
 
 protected:
-  /// @brief TF buffer
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
-  /// @brief TF listener
-  nav2::TransformListener::SharedPtr tf_listener_;
+  /// @brief Transform manager
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   /// @brief All shapes vector
   std::vector<std::shared_ptr<Shape>> shapes_;

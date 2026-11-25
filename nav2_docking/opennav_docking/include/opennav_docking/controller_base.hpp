@@ -31,7 +31,7 @@
 #include "nav2_costmap_2d/footprint_subscriber.hpp"
 #include "nav2_costmap_2d/costmap_topic_collision_checker.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav_msgs/msg/path.hpp"
 
 namespace opennav_docking
@@ -76,11 +76,11 @@ public:
    *
    * @param parent Lifecycle node
    * @param name The name of this controller instance; also its parameter namespace
-   * @param tf tf2_ros TF buffer
+   * @param tf_manager Transform manager
    */
   void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    const std::string & name, nav2::TransformBuffer::SharedPtr tf);
+    const std::string & name, nav2::TransformManager::SharedPtr tf_manager);
 
   /**
    * @brief Release the resources acquired in configure().
@@ -237,7 +237,7 @@ protected:
   // Used for collision checking
   bool use_collision_detection_;
   double transform_tolerance_;
-  nav2::TransformBuffer::SharedPtr tf2_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;
