@@ -673,29 +673,21 @@ inline float clamp(
  * @param max_delta Maximum velocity change (acceleration, typically positive)
  * @return Clamped velocity
  */
-template<typename T>
-inline T clampVelocityByAccel(
-  const T last_vel, const T curr_vel,
-  const T min_delta, const T max_delta)
+inline float clampVelocityByAccel(
+  const float last_vel, const float curr_vel,
+  const float min_delta, const float max_delta)
 {
-  // Slowing down through zero within the step speeds up in the other direction for the rest of it
-  const T up = max_delta, down = -min_delta;
-  const bool crossing = down > T(0) && down != up;
-  if (last_vel >= T(0)) {
-    T lower = last_vel - down;
-    if (crossing) {
-      const T through_zero = up / down * last_vel - up;
-      lower = down > up ? std::max(lower, through_zero) : std::min(lower, through_zero);
-    }
-    return std::min(last_vel + up, std::max(curr_vel, lower));
+  // Speeding up (away from zero) by up to max_delta and slowing down by up to -min_delta, where
+  // slowing down through zero speeds up in the other direction for the rest of the step
+  const float speed = std::fabs(last_vel);
+  float slower = speed + min_delta;
+  if (slower < 0.0f) {
+    slower *= max_delta / -min_delta;
   }
-  T upper = last_vel + down;
-  if (crossing) {
-    const T through_zero = up / down * last_vel + up;
-    upper = down > up ? std::min(upper, through_zero) : std::max(upper, through_zero);
-  }
-  return std::min(upper, std::max(curr_vel, last_vel - up));
+  const float faster = speed + max_delta;
+  return last_vel >= 0.0f ? clamp(slower, faster, curr_vel) : clamp(-faster, -slower, curr_vel);
 }
+
 
 /**
  * @brief Inverse of the absolute value, floored so that zero cannot divide by zero

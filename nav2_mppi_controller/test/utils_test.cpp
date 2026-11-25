@@ -586,9 +586,6 @@ TEST(UtilsTests, ClampVelocityByAccelTest)
   auto expect = [](float v, float lower, float upper) {
       EXPECT_NEAR(utils::clampVelocityByAccel(v, -10.0f, -0.15f, 0.015f), lower, 1e-6f) << v;
       EXPECT_NEAR(utils::clampVelocityByAccel(v, 10.0f, -0.15f, 0.015f), upper, 1e-6f) << v;
-      // In double precision too
-      EXPECT_NEAR(utils::clampVelocityByAccel<double>(v, -10.0, -0.15, 0.015), lower, 1e-6) << v;
-      EXPECT_NEAR(utils::clampVelocityByAccel<double>(v, 10.0, -0.15, 0.015), upper, 1e-6) << v;
     };
   // From rest, both directions speed up, at the acceleration rather than the braking rate
   expect(0.0f, -0.015f, 0.015f);

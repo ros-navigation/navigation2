@@ -377,15 +377,18 @@ void Optimizer::prepare(
     // for the latency between measurement and when this command will take effect.
     // Clamp to physically achievable range so prediction never exceeds dynamics.
     const auto & c = settings_.constraints;
-    const double dt = settings_.controller_period;
+    const float dt = settings_.controller_period;
     state_.speed = robot_speed;
     state_.speed.linear.x = utils::clampVelocityByAccel(
-      robot_speed.linear.x, last_command_vel_.linear.x, dt * c.ax_min, dt * c.ax_max);
+      static_cast<float>(robot_speed.linear.x), static_cast<float>(last_command_vel_.linear.x),
+      dt * c.ax_min, dt * c.ax_max);
     state_.speed.angular.z = utils::clampVelocityByAccel(
-      robot_speed.angular.z, last_command_vel_.angular.z, -dt * c.az_max, dt * c.az_max);
+      static_cast<float>(robot_speed.angular.z), static_cast<float>(last_command_vel_.angular.z),
+      -dt * c.az_max, dt * c.az_max);
     if (isHolonomic()) {
       state_.speed.linear.y = utils::clampVelocityByAccel(
-        robot_speed.linear.y, last_command_vel_.linear.y, dt * c.ay_min, dt * c.ay_max);
+        static_cast<float>(robot_speed.linear.y), static_cast<float>(last_command_vel_.linear.y),
+        dt * c.ay_min, dt * c.ay_max);
     }
   }
 

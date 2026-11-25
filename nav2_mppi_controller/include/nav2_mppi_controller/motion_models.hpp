@@ -91,11 +91,9 @@ public:
     model_dt_ = model_dt;
     clamp_raw_controls_ = clamp_raw_controls;
 
-    // Keep the commands sent when the history size is unchanged, e.g. across parameter updates,
-    // as resizing the ring buffer in place would misorder it
-    resizeHistory(history_vx_, offsetSteps(delay_vx_));
-    resizeHistory(history_vy_, offsetSteps(delay_vy_));
-    resizeHistory(history_wz_, offsetSteps(delay_wz_));
+    history_vx_.resize(offsetSteps(delay_vx_), 0.0f);
+    history_vy_.resize(offsetSteps(delay_vy_), 0.0f);
+    history_wz_.resize(offsetSteps(delay_wz_), 0.0f);
   }
 
   /**
@@ -283,16 +281,6 @@ protected:
     if (buf.empty()) {return;}
     std::rotate(buf.begin(), buf.begin() + 1, buf.end());
     buf.back() = v;
-  }
-
-  /**
-    * @brief Resize a ring buffer, zeroing it only when its size changes
-    */
-  static void resizeHistory(std::vector<float> & buf, std::size_t size)
-  {
-    if (buf.size() != size) {
-      buf.assign(size, 0.0f);
-    }
   }
 
   float model_dt_{0.0};

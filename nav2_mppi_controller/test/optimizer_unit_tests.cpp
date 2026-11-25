@@ -1498,12 +1498,14 @@ TEST_P(AccelerationFeasibilityTests, LimitsHeldEveryCycle)
       in_flight.push_back(cmd);
       const auto applied = in_flight.front();
       in_flight.pop_front();
+      const float ax_min = period * c.ax_min, ax_max = period * c.ax_max, az = period * c.az_max;
       robot.linear.x = clampVelocityByAccel(
-        robot.linear.x, applied.linear.x, period * c.ax_min, period * c.ax_max);
+        static_cast<float>(robot.linear.x), static_cast<float>(applied.linear.x), ax_min, ax_max);
       robot.linear.y = omni ? clampVelocityByAccel(
-        robot.linear.y, applied.linear.y, period * c.ax_min, period * c.ax_max) : 0.0;
+        static_cast<float>(robot.linear.y), static_cast<float>(applied.linear.y), ax_min,
+        ax_max) : 0.0;
       robot.angular.z = clampVelocityByAccel(
-        robot.angular.z, applied.angular.z, -period * c.az_max, period * c.az_max);
+        static_cast<float>(robot.angular.z), static_cast<float>(applied.angular.z), -az, az);
       const double yaw = tf2::getYaw(pose.pose.orientation) + robot.angular.z * period;
       pose.pose.position.x += (robot.linear.x * std::cos(yaw) - robot.linear.y * std::sin(yaw)) *
         period;
