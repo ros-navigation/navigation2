@@ -239,7 +239,7 @@ protected:
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
 
   // State Data
-  std::shared_mutex graph_mutex_;  // guards graph_ / id_to_graph_map_ against replacement
+  std::shared_mutex graph_mutex_;
   Graph graph_;
   GraphToIDMap id_to_graph_map_;
   std::string route_frame_, base_frame_;

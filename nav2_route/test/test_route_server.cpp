@@ -13,11 +13,9 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
-#include <atomic>
 #include <chrono>
 #include <memory>
 #include <string>
-#include <thread>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -441,29 +439,9 @@ TEST(RouteServerTest, test_set_graph_while_routing)
   ASSERT_GT(original_size, 0u);
 
   // Keep the robot pose fresh so the tracker keeps running.
-  std::atomic<bool> stop_pub{false};
-  std::thread pub_thread([&]() {
-      auto broadcaster = nav2::create_transform_broadcaster(server);
-      while (!stop_pub) {
-        geometry_msgs::msg::TransformStamped t;
-        t.header.frame_id = "map";
-        t.child_frame_id = "base_link";
-        t.header.stamp = server->now();
-        t.transform.rotation.w = 1.0;
-        broadcaster->sendTransform(t);
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
-      }
-    });
-  struct PubThreadGuard
-  {
-    std::atomic<bool> & stop;
-    std::thread & thread;
-    ~PubThreadGuard()
-    {
-      stop = true;
-      if (thread.joinable()) {thread.join();}
-    }
-  } pub_guard{stop_pub, pub_thread};
+  auto * server_ptr = server.get();
+  auto tf_timer = server->create_wall_timer(
+    std::chrono::milliseconds(20), [server_ptr]() {server_ptr->setRobotTransform();});
 
   auto node2 = std::make_shared<rclcpp::Node>("set_graph_client");
   auto track_client = rclcpp_action::create_client<nav2_msgs::action::ComputeAndTrackRoute>(
