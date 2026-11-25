@@ -278,7 +278,7 @@ This route operation will trigger an external service when a graph node or edge 
 
 | Service                                          | Description                                                    |
 |--------------------------------------------------|----------------------------------------------------------------|
-| `route_server/set_route_graph`                   | Sets new route graph to use                                    |
+| `route_server/set_route_graph`                   | Sets new route graph to use (rejected while a route is running) |
 | `route_server/<DynamicEdgesScorer>/adjust_edges` | Sets adjust edge values and closure from 3rd party application |
 | `route_server/<ReroutingService>/reroute`        | Trigger a reroute from a 3rd party                             |
 
