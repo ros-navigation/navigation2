@@ -338,8 +338,9 @@ void FollowingServer::followObject()
   result->total_elapsed_time = this->now() - action_start_time_;
   result->num_retries = num_retries_;
   publishZeroVelocity();
-  following_action_server_->terminate_current(result);
   dynamic_pose_sub_.reset();
+  lock_reinit.unlock();
+  following_action_server_->terminate_current(result);
 }
 
 bool FollowingServer::approachObject(

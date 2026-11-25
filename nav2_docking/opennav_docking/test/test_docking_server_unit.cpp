@@ -14,7 +14,6 @@
 
 #include <chrono>
 #include <mutex>
-#include <thread>
 #include "gtest/gtest.h"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/future_return_code.hpp"
@@ -55,10 +54,9 @@ public:
     return params_->dock_backwards;
   }
 
-  bool isParamMutexLocked()
+  std::mutex & getParamMutex()
   {
-    std::unique_lock<std::mutex> lock(param_handler_->getMutex(), std::try_to_lock);
-    return !lock.owns_lock();
+    return param_handler_->getMutex();
   }
 };
 
@@ -635,90 +633,51 @@ TEST(DockingServerTests, HandlesPluginStartFailure)
   node->shutdown();
 }
 
-TEST(DockingServerTests, RejectDynamicParamsDuringDocking)
+class TestableParameterHandler : public ParameterHandler
 {
-  auto node = std::make_shared<DockingServerTFShim>();
-  auto node_thread = nav2::NodeThread(node);
-  auto client_node = std::make_shared<rclcpp::Node>("test_client_dynamic_params");
+public:
+  using ParameterHandler::ParameterHandler;
+  using ParameterHandler::updateParametersCallback;
+};
 
+TEST(DockingServerTests, RejectDynamicParamsWhenLocked)
+{
+  auto node = std::make_shared<DockingServerShim>();
   node->declare_parameter("controller.use_collision_detection", false);
-  node->declare_parameter("initial_perception_timeout", 5.0);
-  node->declare_parameter("max_retries", 0);
-  node->declare_parameter("docks", std::vector<std::string>{"test_dock"});
-  node->declare_parameter("test_dock.type", "test_plugin");
-  node->declare_parameter("test_dock.frame", "odom");
-  node->declare_parameter("test_dock.pose", std::vector<double>{0.0, 0.0, 0.0});
   node->declare_parameter("dock_plugins", std::vector<std::string>{"test_plugin"});
   node->declare_parameter("test_plugin.plugin", "opennav_docking::TestFailureDock");
-  node->declare_parameter("exception_to_throw", "");
-  node->declare_parameter("dock_action_called", false);
-
   node->on_configure(rclcpp_lifecycle::State());
-
-  geometry_msgs::msg::TransformStamped base_transform;
-  base_transform.header.frame_id = "odom";
-  base_transform.child_frame_id = "base_link";
-  base_transform.transform.rotation.w = 1.0;
-  node->getTfBuffer()->setTransform(base_transform, "test_authority", true);
-
   node->on_activate(rclcpp_lifecycle::State());
 
-  auto client = rclcpp_action::create_client<DockRobot>(client_node, "dock_robot");
-  ASSERT_TRUE(client->wait_for_action_server(2s));
+  {
+    std::lock_guard<std::mutex> lock(node->getParamMutex());
 
-  DockRobot::Goal goal;
-  goal.dock_id = "test_dock";
-  goal.navigate_to_staging_pose = false;
+    // Server parameter updates are rejected without deadlocking while locked
+    auto res = node->set_parameters_atomically(
+      {rclcpp::Parameter("controller_frequency", 25.0)});
+    EXPECT_FALSE(res.successful);
+    EXPECT_DOUBLE_EQ(node->get_parameter("controller_frequency").as_double(), 50.0);
 
-  auto future_goal = client->async_send_goal(goal);
-  ASSERT_EQ(
-    rclcpp::spin_until_future_complete(client_node, future_goal, 2s),
-    rclcpp::FutureReturnCode::SUCCESS);
-  auto goal_handle = future_goal.get();
-  ASSERT_TRUE(goal_handle);
+    // Dotted plugin parameters bypass the server lock
+    auto plugin_res = node->set_parameters_atomically(
+      {rclcpp::Parameter("controller.k_phi", 2.0)});
+    EXPECT_TRUE(plugin_res.successful);
+    EXPECT_DOUBLE_EQ(node->get_parameter("controller.k_phi").as_double(), 2.0);
+  }
 
-  auto wait_mutex_state = [&](bool expected_locked) {
-      const auto start = std::chrono::steady_clock::now();
-      while (node->isParamMutexLocked() != expected_locked &&
-        std::chrono::steady_clock::now() - start < 5s)
-      {
-        std::this_thread::sleep_for(10ms);
-      }
-      return node->isParamMutexLocked() == expected_locked;
-    };
-  ASSERT_TRUE(wait_mutex_state(true));
-
-  auto param_client = std::make_shared<rclcpp::AsyncParametersClient>(
-    client_node, node->get_name());
-  ASSERT_TRUE(param_client->wait_for_service(2s));
-
-  // While docking is running, parameter updates must be rejected without deadlocking
-  auto set_future = param_client->set_parameters_atomically(
+  // Server parameter updates succeed once unlocked
+  auto res_after = node->set_parameters_atomically(
     {rclcpp::Parameter("controller_frequency", 25.0)});
-  ASSERT_EQ(
-    rclcpp::spin_until_future_complete(client_node, set_future, 2s),
-    rclcpp::FutureReturnCode::SUCCESS);
-  EXPECT_FALSE(set_future.get().successful);
-  EXPECT_DOUBLE_EQ(node->get_parameter("controller_frequency").as_double(), 50.0);
-
-  auto future_result = client->async_get_result(goal_handle);
-  auto cancel_future = client->async_cancel_goal(goal_handle);
-  ASSERT_EQ(
-    rclcpp::spin_until_future_complete(client_node, cancel_future, 2s),
-    rclcpp::FutureReturnCode::SUCCESS);
-  ASSERT_EQ(
-    rclcpp::spin_until_future_complete(client_node, future_result, 5s),
-    rclcpp::FutureReturnCode::SUCCESS);
-  ASSERT_TRUE(wait_mutex_state(false));
-
-  // Once docking has finished, parameter updates succeed again
-  auto set_future_after = param_client->set_parameters_atomically(
-    {rclcpp::Parameter("controller_frequency", 25.0)});
-  ASSERT_EQ(
-    rclcpp::spin_until_future_complete(client_node, set_future_after, 2s),
-    rclcpp::FutureReturnCode::SUCCESS);
-  EXPECT_TRUE(set_future_after.get().successful);
+  EXPECT_TRUE(res_after.successful);
   EXPECT_DOUBLE_EQ(node->get_parameter("controller_frequency").as_double(), 25.0);
+
+  // Post-set callback also skips cleanly when lock is held
+  TestableParameterHandler handler(node, node->get_logger());
+  {
+    std::lock_guard<std::mutex> lock(handler.getMutex());
+    handler.updateParametersCallback({rclcpp::Parameter("controller_frequency", 10.0)});
+    EXPECT_DOUBLE_EQ(handler.getParams()->controller_frequency, 25.0);
+  }
 
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());

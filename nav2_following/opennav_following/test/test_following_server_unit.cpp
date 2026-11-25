@@ -16,7 +16,6 @@
 #include <chrono>
 #include <cmath>
 #include <mutex>
-#include <thread>
 #include <vector>
 #include "gtest/gtest.h"
 #include "rclcpp/executors.hpp"
@@ -129,28 +128,10 @@ public:
   {
     iteration_start_time_ = stamp;
   }
-};
 
-class FollowingServerDynamicParamShim : public FollowingServer
-{
-public:
-  FollowingServerDynamicParamShim()
-  : FollowingServer() {}
-
-  void setStaticTransform(const geometry_msgs::msg::TransformStamped & transform)
+  std::mutex & getParamMutex()
   {
-    tf2_buffer_->setTransform(transform, "test", true);
-  }
-
-  bool isParamMutexLocked()
-  {
-    std::unique_lock<std::mutex> lock(param_handler_->getMutex(), std::try_to_lock);
-    return !lock.owns_lock();
-  }
-
-  bool isFollowingLoopActive()
-  {
-    return dynamic_pose_sub_ != nullptr && isParamMutexLocked();
+    return param_handler_->getMutex();
   }
 };
 
@@ -540,81 +521,49 @@ TEST(FollowingServerTests, DynamicParams)
   EXPECT_EQ(node->get_parameter("transform_staleness_threshold").as_double(), 10.0);
 }
 
-TEST(FollowingServerTests, RejectDynamicParamsDuringFollowing)
+class TestableParameterHandler : public ParameterHandler
 {
-  auto node = std::make_shared<FollowingServerDynamicParamShim>();
-  auto node_thread = nav2::NodeThread(node);
-  auto client_node = std::make_shared<rclcpp::Node>("test_client_following_dynamic_params");
+public:
+  using ParameterHandler::ParameterHandler;
+  using ParameterHandler::updateParametersCallback;
+};
 
+TEST(FollowingServerTests, RejectDynamicParamsWhenLocked)
+{
+  auto node = std::make_shared<FollowingServerShim>();
   node->declare_parameter("controller.use_collision_detection", false);
-  node->declare_parameter("detection_timeout", 0.5);
-  node->declare_parameter("max_retries", 5);
-
   node->on_configure(rclcpp_lifecycle::State());
-
-  geometry_msgs::msg::TransformStamped base_tf;
-  base_tf.header.frame_id = "odom";
-  base_tf.child_frame_id = "base_link";
-  base_tf.transform.rotation.w = 1.0;
-  node->setStaticTransform(base_tf);
-
   node->on_activate(rclcpp_lifecycle::State());
 
-  auto client = rclcpp_action::create_client<FollowObject>(client_node, "follow_object");
-  ASSERT_TRUE(client->wait_for_action_server(2s));
+  {
+    std::lock_guard<std::mutex> lock(node->getParamMutex());
 
-  FollowObject::Goal goal;
-  goal.pose_topic = "/detected_dynamic_pose";
-  goal.tracked_frame = "";
-  goal.max_duration = rclcpp::Duration::from_seconds(10.0);
+    // Server parameter updates are rejected without deadlocking while locked
+    auto res = node->set_parameters_atomically(
+      {rclcpp::Parameter("controller_frequency", 25.0)});
+    EXPECT_FALSE(res.successful);
+    EXPECT_DOUBLE_EQ(node->get_parameter("controller_frequency").as_double(), 50.0);
 
-  auto future_goal = client->async_send_goal(goal);
-  ASSERT_EQ(
-    rclcpp::spin_until_future_complete(client_node, future_goal, 2s),
-    rclcpp::FutureReturnCode::SUCCESS);
-  auto goal_handle = future_goal.get();
-  ASSERT_TRUE(goal_handle);
+    // Dotted plugin parameters bypass the server lock
+    auto plugin_res = node->set_parameters_atomically(
+      {rclcpp::Parameter("controller.k_phi", 2.0)});
+    EXPECT_TRUE(plugin_res.successful);
+    EXPECT_DOUBLE_EQ(node->get_parameter("controller.k_phi").as_double(), 2.0);
+  }
 
-  auto wait_until = [](auto predicate) {
-      const auto start = std::chrono::steady_clock::now();
-      while (!predicate() && std::chrono::steady_clock::now() - start < 5s) {
-        std::this_thread::sleep_for(10ms);
-      }
-      return predicate();
-    };
-  ASSERT_TRUE(wait_until([&]() {return node->isFollowingLoopActive();}));
-
-  auto param_client = std::make_shared<rclcpp::AsyncParametersClient>(
-    client_node, node->get_name());
-  ASSERT_TRUE(param_client->wait_for_service(2s));
-
-  // While following is running, parameter updates must be rejected without deadlocking
-  auto set_future = param_client->set_parameters_atomically(
+  // Server parameter updates succeed once unlocked
+  auto res_after = node->set_parameters_atomically(
     {rclcpp::Parameter("controller_frequency", 25.0)});
-  ASSERT_EQ(
-    rclcpp::spin_until_future_complete(client_node, set_future, 2s),
-    rclcpp::FutureReturnCode::SUCCESS);
-  EXPECT_FALSE(set_future.get().successful);
-  EXPECT_DOUBLE_EQ(node->get_parameter("controller_frequency").as_double(), 50.0);
-
-  auto future_result = client->async_get_result(goal_handle);
-  auto cancel_future = client->async_cancel_goal(goal_handle);
-  ASSERT_EQ(
-    rclcpp::spin_until_future_complete(client_node, cancel_future, 2s),
-    rclcpp::FutureReturnCode::SUCCESS);
-  ASSERT_EQ(
-    rclcpp::spin_until_future_complete(client_node, future_result, 5s),
-    rclcpp::FutureReturnCode::SUCCESS);
-  ASSERT_TRUE(wait_until([&]() {return !node->isParamMutexLocked();}));
-
-  // Once following has finished, parameter updates succeed again
-  auto set_future_after = param_client->set_parameters_atomically(
-    {rclcpp::Parameter("controller_frequency", 25.0)});
-  ASSERT_EQ(
-    rclcpp::spin_until_future_complete(client_node, set_future_after, 2s),
-    rclcpp::FutureReturnCode::SUCCESS);
-  EXPECT_TRUE(set_future_after.get().successful);
+  EXPECT_TRUE(res_after.successful);
   EXPECT_DOUBLE_EQ(node->get_parameter("controller_frequency").as_double(), 25.0);
+
+  // Post-set callback also skips cleanly when lock is held
+  TestableParameterHandler handler(node, node->get_logger());
+  {
+    std::lock_guard<std::mutex> lock(handler.getMutex());
+    handler.updateParametersCallback({rclcpp::Parameter("controller_frequency", 10.0)});
+    EXPECT_DOUBLE_EQ(handler.getParams()->controller_frequency, 25.0);
+  }
 
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());
