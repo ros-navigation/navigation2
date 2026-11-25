@@ -41,7 +41,7 @@
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/collision_monitor_node.hpp"
@@ -515,8 +515,8 @@ void Tester::setGlobalHeightParams(const std::string & source_name, const double
 
 void Tester::sendTransforms(const rclcpp::Time & stamp)
 {
-  nav2::TransformBroadcaster::SharedPtr tf_broadcaster =
-    nav2::create_transform_broadcaster(cm_);
+  nav2::TransformManager::SharedPtr tf_manager =
+    nav2::create_transform_manager(cm_, false);
 
   geometry_msgs::msg::TransformStamped transform;
   transform.transform.rotation.x = 0.0;
@@ -532,12 +532,12 @@ void Tester::sendTransforms(const rclcpp::Time & stamp)
     // base_frame -> source_frame transform
     transform.header.frame_id = BASE_FRAME_ID;
     transform.child_frame_id = SOURCE_FRAME_ID;
-    tf_broadcaster->sendTransform(transform);
+    tf_manager->sendTransform(transform);
 
     // odom_frame -> base_frame transform
     transform.header.frame_id = ODOM_FRAME_ID;
     transform.child_frame_id = BASE_FRAME_ID;
-    tf_broadcaster->sendTransform(transform);
+    tf_manager->sendTransform(transform);
   }
 }
 
@@ -1916,6 +1916,31 @@ TEST_F(Tester, testSourceAssociatedToPolygon)
 
   // Stop Collision Monitor node
   cm_->stop();
+}
+
+TEST(SummariseTriggeringSources, CountsPerSourceMostPointsFirst)
+{
+  using nav2_collision_monitor::Point;
+  using nav2_collision_monitor::summariseTriggeringSources;
+
+  EXPECT_EQ(summariseTriggeringSources({}), "no points");
+
+  // Grouped by source, as from Polygon::getPointsInside.
+  std::vector<Point> points{
+    {0.1, 0.0, 0.0, "scan"},
+    {0.2, 0.0, 0.0, "pointcloud"}, {0.3, 0.0, 0.0, "pointcloud"}, {0.4, 0.0, 0.0, "pointcloud"},
+    {0.5, 0.0, 0.0, "range"}};
+  EXPECT_EQ(
+    summariseTriggeringSources(points),
+    "pointcloud (3 points), range (1 point), scan (1 point)");
+
+  // Ungrouped, with an unnamed source.
+  points = {
+    {0.1, 0.0, 0.0, "scan"}, {0.2, 0.0, 0.0, "range"}, {0.3, 0.0, 0.0, "scan"},
+    {0.4, 0.0, 0.0, ""}};
+  EXPECT_EQ(
+    summariseTriggeringSources(points),
+    "scan (2 points), range (1 point), unnamed source (1 point)");
 }
 
 int main(int argc, char ** argv)

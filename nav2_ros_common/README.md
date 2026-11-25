@@ -18,6 +18,35 @@ This is in some cases a big change from `rclcpp` versions, though most have dire
 It also allows a central and controlled location to make future changes such as adding tracing, replacing APIs, controlling QoS profiles, or enabling advanced settings.
 Thus, see the migration guide below for how to migrate from the previous versions of these objects to the new ones in this package from ROS 2 Kilted to Lyrical.
 
+### Transform manager
+
+The `nav2::TransformManager` enables most of the tf related operations (transform lookup, transform broadcast, pose transformations) from a single object, reducing boilerplate and centralizing TF resource management and error handling.
+
+The manager, unless otherwise configured, automatically starts to listen for transformations and can perform operations at exact time points using the methods:
+
+- `getStampedTransform` to retrieve a transform between frames.
+- `transformStampedPose` to transform a stamped pose into a different frame.
+
+or, if an exact time point is not relevant, it can retrieve the latest available information using the methods:
+
+- `getLatestTransform` / `getLatestPose`
+
+If the latter APIs are used, the manager also provides the option to easily verify if the retrieved information is stale. This can be very handy to prevent prolonged operations on old data, which can potentially be dangerous.
+
+The object is also capable of broadcasting new transformations through the methods:
+
+- `sendTransform()` / `sendStaticTransform()`
+
+which will perform an automatic lazy-broadcaster initialization.
+
+Common conversion helpers are also included alongside the main functionalities for convenience:
+
+`transformToPoseStamped()`, `poseToTransformStamped()`, and `invertTransform()`.
+
+For operations requiring direct buffer access, the manager still exposes the usual tf buffer interfaces using `getRawBuffer()`, which returns a shared pointer to the wrapped TF buffer.
+
+All the methods provide error information through optional strings, leaving the logging responsibility to the caller.
+
 ## Migration Guide
 
 To see an example of migration, see the [migration example](https://github.com/ros-navigation/navigation2/pull/5288) of the Nav2 stack.

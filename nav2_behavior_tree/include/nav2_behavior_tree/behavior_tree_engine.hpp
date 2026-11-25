@@ -132,6 +132,11 @@ public:
   void registerTreeFromFile(const std::string & file_path);
 
   /**
+   * @brief Clear all registered behavior trees
+   */
+  void clearRegisteredBehaviorTrees();
+
+  /**
    * @brief Function to explicitly reset all BT nodes to initial state
    * @param tree Tree to halt
    */

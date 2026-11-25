@@ -32,6 +32,7 @@
 #include "opennav_following/following_server.hpp"
 #include "nav2_ros_common/node_thread.hpp"
 #include "tf2/utils.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 // Testing unit functions in following server, smoke/system tests in python file
 
@@ -50,14 +51,9 @@ public:
 
   using FollowingServer::getRobotPose;
 
-  void setUsingDedicatedThread()
-  {
-    tf2_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-  }
-
   void setTransform(const geometry_msgs::msg::TransformStamped & transform)
   {
-    tf2_buffer_->setTransform(transform, "test", false);
+    tf_manager_->getRawBuffer()->setTransform(transform, "test", false);
   }
 
   virtual bool approachObject(geometry_msgs::msg::PoseStamped &, const std::string &)
@@ -268,7 +264,6 @@ TEST(FollowingServerTests, GetPoseAtDistance)
   auto node = std::make_shared<opennav_following::FollowingServerShim>();
   node->declare_parameter("base_frame", rclcpp::ParameterValue("my_frame"));
   node->on_configure(rclcpp_lifecycle::State());
-  node->setUsingDedicatedThread();
 
   geometry_msgs::msg::PoseStamped pose;
   pose.header.stamp = node->now();
@@ -307,7 +302,6 @@ TEST(FollowingServerTests, IsGoalReached)
   auto node = std::make_shared<opennav_following::FollowingServerShim>();
   node->declare_parameter("base_frame", rclcpp::ParameterValue("my_frame"));
   node->on_configure(rclcpp_lifecycle::State());
-  node->setUsingDedicatedThread();
 
   geometry_msgs::msg::PoseStamped pose;
   pose.header.stamp = node->now();

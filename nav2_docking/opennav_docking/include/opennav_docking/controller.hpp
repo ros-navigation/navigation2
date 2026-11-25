@@ -29,7 +29,7 @@
 #include "nav2_graceful_controller/smooth_control_law.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace opennav_docking
 {
@@ -44,11 +44,11 @@ public:
    * @brief Create a controller instance. Configure ROS 2 parameters.
    *
    * @param node Lifecycle node
-   * @param tf tf2_ros TF buffer
+   * @param tf_manager Transform manager
    * @param base_frame Robot base frame
    */
   Controller(
-    const nav2::LifecycleNode::SharedPtr & node, nav2::TransformBuffer::SharedPtr tf,
+    const nav2::LifecycleNode::SharedPtr & node, nav2::TransformManager::SharedPtr tf_manager,
     std::string base_frame);
 
   /**
@@ -152,7 +152,7 @@ protected:
   double simulation_time_step_;
   double dock_collision_threshold_;
   double transform_tolerance_;
-  nav2::TransformBuffer::SharedPtr tf2_buffer_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   std::unique_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_sub_;
   std::unique_ptr<nav2_costmap_2d::FootprintSubscriber> footprint_sub_;
   std::shared_ptr<nav2_costmap_2d::CostmapTopicCollisionChecker> collision_checker_;

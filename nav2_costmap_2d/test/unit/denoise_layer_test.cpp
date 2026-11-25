@@ -22,7 +22,7 @@
 
 #include "nav2_costmap_2d/denoise_layer.hpp"
 #include "image_tests_helper.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace nav2_costmap_2d
 {
@@ -452,16 +452,16 @@ std::shared_ptr<nav2_costmap_2d::DenoiseLayer> constructLayer(
   nav2::LifecycleNode::SharedPtr node =
   std::make_shared<nav2::LifecycleNode>("test_node"))
 {
-  auto tf = nav2::create_transform_buffer(node);
+  auto tf_manager = nav2::create_transform_manager(node);
   auto layers = std::make_shared<nav2_costmap_2d::LayeredCostmap>("frame", false, false);
 
-  auto deleter = [node, tf, layers](nav2_costmap_2d::DenoiseLayer * ptr)
+  auto deleter = [node, tf_manager, layers](nav2_costmap_2d::DenoiseLayer * ptr)
     {
       delete ptr;
     };
   auto layer = std::shared_ptr<nav2_costmap_2d::DenoiseLayer>(
     new nav2_costmap_2d::DenoiseLayer, deleter);
-  layer->initialize(layers.get(), "test_layer", tf.get(), node, nullptr);
+  layer->initialize(layers.get(), "test_layer", tf_manager.get(), node, nullptr);
   return layer;
 }
 

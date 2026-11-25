@@ -29,11 +29,10 @@
 #include "nav_msgs/msg/path.hpp"
 #include "nav2_navfn_planner/navfn.hpp"
 #include "nav2_navfn_planner/parameter_handler.hpp"
-#include "nav2_util/robot_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace nav2_navfn_planner
 {
@@ -55,12 +54,12 @@ public:
    * @brief Configuring plugin
    * @param parent Lifecycle node pointer
    * @param name Name of plugin map
-   * @param tf Shared ptr of TF2 buffer
+   * @param tf_manager Shared pointer to the transform manager
    * @param costmap_ros Costmap2DROS object
    */
   void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    std::string name, nav2::TransformBuffer::SharedPtr tf,
+    std::string name, nav2::TransformManager::SharedPtr tf_manager,
     std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
   /**
@@ -188,8 +187,8 @@ protected:
   // Planner based on ROS1 NavFn algorithm
   std::unique_ptr<NavFn> planner_;
 
-  // TF buffer
-  nav2::TransformBuffer::SharedPtr tf_;
+  // Transform manager
+  nav2::TransformManager::SharedPtr tf_manager_;
 
   // Clock
   rclcpp::Clock::SharedPtr clock_;

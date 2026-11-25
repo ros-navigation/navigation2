@@ -12,22 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "nav2_behavior_tree/plugins/condition/is_goal_nearby_condition.hpp"
 
 #include "nav2_util/geometry_utils.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
-#include "nav2_util/robot_utils.hpp"
 
 namespace nav2_behavior_tree
 {
 
 IsGoalNearbyCondition::IsGoalNearbyCondition(
   const std::string & condition_name, const BT::NodeConfiguration & conf)
-: BT::ConditionNode(condition_name, conf), transform_tolerance_(0.1)
+: BT::ConditionNode(condition_name, conf)
 {
   node_ = config().blackboard->get<nav2::LifecycleNode::SharedPtr>("node");
   clock_ = node_->get_clock();
-  tf_buffer_ = config().blackboard->get<nav2::TransformBuffer::SharedPtr>("tf_buffer");
+  tf_manager_ = config().blackboard->get<nav2::TransformManager::SharedPtr>("transform_manager");
   node_->get_parameter("transform_tolerance", transform_tolerance_);
   transform_staleness_threshold_ = node_->declare_or_get_parameter(
     "transform_staleness_threshold", 0.0);
@@ -61,22 +60,25 @@ BT::NodeStatus IsGoalNearbyCondition::tick()
   }
 
   geometry_msgs::msg::PoseStamped pose;
-  if (!nav2_util::getFreshPose(
-      *tf_buffer_, global_frame_, robot_base_frame_, clock_->now(), transform_staleness_threshold_,
-      pose))
-  {
-    RCLCPP_ERROR(node_->get_logger(), "Failed to get current robot pose");
+  std::string pose_result_error;
+  const auto pose_result = tf_manager_->getLatestPose(
+    global_frame_, robot_base_frame_, transform_staleness_threshold_, &pose_result_error);
+  if (!pose_result) {
+    RCLCPP_ERROR(node_->get_logger(), "Failed to get current robot pose: %s",
+        pose_result_error.c_str());
     return BT::NodeStatus::FAILURE;
   }
+  pose = *pose_result;
 
   // let's get the pose of the robot in the frame of the plan
-  geometry_msgs::msg::PoseStamped robot_pose;
-  if (!nav2_util::transformPoseInTargetFrame(
-      pose, robot_pose, *tf_buffer_, path_.header.frame_id))
-  {
+
+  std::string robot_pose_error;
+  const auto robot_pose = tf_manager_->transformStampedPose(
+    path_.header.frame_id, pose, transform_tolerance_, &robot_pose_error);
+  if (!robot_pose) {
     RCLCPP_ERROR(
-      node_->get_logger(), "Failed to transform robot pose to path frame '%s'",
-      path_.header.frame_id.c_str());
+      node_->get_logger(), "Failed to transform robot pose to path frame '%s': %s",
+      path_.header.frame_id.c_str(), robot_pose_error.c_str());
     return BT::NodeStatus::FAILURE;
   }
 
@@ -92,7 +94,7 @@ BT::NodeStatus IsGoalNearbyCondition::tick()
   auto closest_pose_it = nav2_util::geometry_utils::min_by(
     closest_pose_detection_begin_, closest_pose_upper_bound,
     [&robot_pose](const geometry_msgs::msg::PoseStamped & ps) {
-      return nav2_util::geometry_utils::euclidean_distance(robot_pose, ps);
+      return nav2_util::geometry_utils::euclidean_distance(*robot_pose, ps);
     });
 
   closest_pose_detection_begin_ = closest_pose_it;

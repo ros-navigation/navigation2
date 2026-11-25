@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "nav2_ros_common/tf_manager.hpp"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/parameter.hpp"
@@ -30,7 +31,6 @@
 
 #include "geometry_msgs/msg/polygon_stamped.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
 
 #include "nav2_msgs/srv/add_exclusion_zone.hpp"
 #include "nav2_msgs/srv/remove_exclusion_zone.hpp"
@@ -50,7 +50,7 @@ static const char ZONE_FRAME_ID[]{"zone_frame"};
 static const char MISSING_FRAME_ID[]{"missing_frame"};
 static const char ZONE_NAME[]{"dock"};
 static const char SOURCE_NAME[]{"TestSource"};
-static const tf2::Duration TRANSFORM_TOLERANCE{tf2::durationFromSec(0.5)};
+static const double TRANSFORM_TOLERANCE{0.5};
 static const rclcpp::Duration SOURCE_TIMEOUT{rclcpp::Duration::from_seconds(5.0)};
 
 // A square polygon (in VVF format) spanning x, y in [-1, 1].
@@ -149,15 +149,6 @@ TEST(PolygonUtilsTest, CircleToPolygonHasCorrectVertices)
 // ExclusionZone tests (require a node + TF)
 // ---------------------------------------------------------------------------
 
-class TestNode : public nav2::LifecycleNode
-{
-public:
-  TestNode()
-  : nav2::LifecycleNode("exclusion_zone_test_node")
-  {
-  }
-};  // TestNode
-
 // Minimal concrete Source that appends a fixed set of points, used to exercise
 // Source::getData()'s exclusion-zone masking of newly-added points.
 class FakeSource : public nav2_collision_monitor::Source
@@ -166,10 +157,10 @@ public:
   FakeSource(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const nav2::TransformBuffer::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id)
   : nav2_collision_monitor::Source(
-      node, source_name, tf_buffer, base_frame_id, base_frame_id,
+      node, source_name, tf_manager, base_frame_id, base_frame_id,
       TRANSFORM_TOLERANCE, SOURCE_TIMEOUT, false)
   {
   }
@@ -198,86 +189,30 @@ class ExclusionZoneTester : public ::testing::Test
 public:
   ExclusionZoneTester()
   {
-    node_ = std::make_shared<TestNode>();
-    tf_buffer_ = nav2::create_transform_buffer(node_);
-    tf_buffer_->setUsingDedicatedThread(true);
-    tf_listener_ = nav2::create_transform_listener(*tf_buffer_, node_);
-    tf_broadcaster_ = nav2::create_transform_broadcaster(node_);
+    node_ = std::make_shared<nav2::LifecycleNode>("exclusion_zone_test_node");
+    tf_manager_ = std::make_shared<nav2::TransformManager>(node_, false, false);
     executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
     executor_->add_node(node_->get_node_base_interface());
   }
 
   ~ExclusionZoneTester() override
   {
-    tf_broadcaster_.reset();
-    tf_listener_.reset();
-    tf_buffer_.reset();
+    tf_manager_.reset();
     node_.reset();
   }
 
 protected:
-  // Broadcast a base_frame -> child transform and wait for it to be available.
-  // Also publishes an identity odom -> base_link leg, because the zone resolves
-  // its (possibly held) pose through the global frame, so that leg must exist.
-  void broadcastTransform(
-    const std::string & child_frame, double tx, double ty)
+  // Use static transforms for tests that do not exercise TF freshness.
+  void setTransform(const std::string & child_frame, double tx, double ty)
   {
-    const rclcpp::Time stamp = node_->now();
-
-    geometry_msgs::msg::TransformStamped odom_msg;
-    odom_msg.header.frame_id = GLOBAL_FRAME_ID;
-    odom_msg.child_frame_id = BASE_FRAME_ID;
-    odom_msg.header.stamp = stamp;
-    odom_msg.transform.rotation.w = 1.0;
-    tf_broadcaster_->sendTransform(odom_msg);
-
-    geometry_msgs::msg::TransformStamped tf_msg;
-    tf_msg.header.frame_id = BASE_FRAME_ID;
-    tf_msg.child_frame_id = child_frame;
-    tf_msg.header.stamp = stamp;
-    tf_msg.transform.translation.x = tx;
-    tf_msg.transform.translation.y = ty;
-    tf_msg.transform.rotation.w = 1.0;
-    tf_broadcaster_->sendTransform(tf_msg);
-
-    // Wait for both legs to propagate into the buffer.
-    rclcpp::Time start = node_->now();
-    while (rclcpp::ok() && (node_->now() - start) < rclcpp::Duration::from_seconds(5.0)) {
-      if (tf_buffer_->canTransform(child_frame, BASE_FRAME_ID, tf2::TimePointZero) &&
-        tf_buffer_->canTransform(BASE_FRAME_ID, GLOBAL_FRAME_ID, tf2::TimePointZero))
-      {
-        return;
-      }
-      executor_->spin_some();
-      std::this_thread::sleep_for(10ms);
-    }
-    FAIL() << "Transforms for " << child_frame << " never became available";
+    const auto stamp = node_->now();
+    setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp, true);
+    setFrame(BASE_FRAME_ID, child_frame, tx, ty, stamp, true);
   }
 
-  // Spin until the latest odom -> base_link transform reports the expected x of
-  // base_link expressed in odom (used when a moved pose is broadcast at a newer
-  // stamp and we must wait for it to become the latest available transform).
-  void waitForLatestBaseInOdomX(double expected_x)
-  {
-    rclcpp::Time start = node_->now();
-    while (rclcpp::ok() && (node_->now() - start) < rclcpp::Duration::from_seconds(5.0)) {
-      try {
-        const auto t =
-          tf_buffer_->lookupTransform(GLOBAL_FRAME_ID, BASE_FRAME_ID, tf2::TimePointZero);
-        if (std::abs(t.transform.translation.x - expected_x) < 1e-6) {
-          return;
-        }
-      } catch (const tf2::TransformException &) {}
-      executor_->spin_some();
-      std::this_thread::sleep_for(10ms);
-    }
-    FAIL() << "Latest odom -> base_link never reached x = " << expected_x;
-  }
-
-  // Broadcast an arbitrary parent -> child transform and wait for it to be available.
-  void broadcastFrame(
+  void setFrame(
     const std::string & parent_frame, const std::string & child_frame, double tx, double ty,
-    const rclcpp::Time & stamp)
+    const rclcpp::Time & stamp, bool is_static = false)
   {
     geometry_msgs::msg::TransformStamped tf_msg;
     tf_msg.header.frame_id = parent_frame;
@@ -285,18 +220,7 @@ protected:
     tf_msg.header.stamp = stamp;
     tf_msg.transform.translation.x = tx;
     tf_msg.transform.translation.y = ty;
-    tf_msg.transform.rotation.w = 1.0;
-    tf_broadcaster_->sendTransform(tf_msg);
-
-    rclcpp::Time start = node_->now();
-    while (rclcpp::ok() && (node_->now() - start) < rclcpp::Duration::from_seconds(5.0)) {
-      if (tf_buffer_->canTransform(child_frame, parent_frame, tf2::TimePointZero)) {
-        return;
-      }
-      executor_->spin_some();
-      std::this_thread::sleep_for(10ms);
-    }
-    FAIL() << "Transform " << parent_frame << " -> " << child_frame << " never became available";
+    ASSERT_TRUE(tf_manager_->getRawBuffer()->setTransform(tf_msg, "test", is_static));
   }
 
   // Declare the parameters describing a zone before it is configured.
@@ -313,14 +237,12 @@ protected:
     bool base_shift_correction = false)
   {
     return std::make_shared<nav2_collision_monitor::ExclusionZone>(
-      node_, ZONE_NAME, tf_buffer_, BASE_FRAME_ID, GLOBAL_FRAME_ID,
-      TRANSFORM_TOLERANCE, base_shift_correction);
+      node_, ZONE_NAME, tf_manager_, BASE_FRAME_ID, GLOBAL_FRAME_ID,
+      base_shift_correction);
   }
 
-  std::shared_ptr<TestNode> node_;
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
-  nav2::TransformBroadcaster::SharedPtr tf_broadcaster_;
+  nav2::LifecycleNode::SharedPtr node_;
+  nav2::TransformManager::SharedPtr tf_manager_;
   rclcpp::executors::SingleThreadedExecutor::SharedPtr executor_;
 };  // ExclusionZoneTester
 
@@ -328,7 +250,7 @@ TEST_F(ExclusionZoneTester, DisabledZoneKeepsAllPoints)
 {
   declareZoneParams(ZONE_NAME, "polygon", false, ZONE_FRAME_ID);
   node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
-  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+  setTransform(ZONE_FRAME_ID, 0.0, 0.0);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
@@ -345,7 +267,7 @@ TEST_F(ExclusionZoneTester, PolygonZoneMasksInsideKeepsOutside)
 {
   declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
   node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
-  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+  setTransform(ZONE_FRAME_ID, 0.0, 0.0);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
@@ -368,7 +290,7 @@ TEST_F(ExclusionZoneTester, MaskTracksZoneFrameTranslation)
   declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
   node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
   // Shift the zone frame by (10, 0): the mask now covers base-frame x in [9, 11].
-  broadcastTransform(ZONE_FRAME_ID, 10.0, 0.0);
+  setTransform(ZONE_FRAME_ID, 10.0, 0.0);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
@@ -387,10 +309,10 @@ TEST_F(ExclusionZoneTester, BaseShiftCorrectionMasksViaGlobalFrame)
   node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
   // With base-shift correction the zone lookup is bridged through the global
   // frame, so the TF tree must connect zone_frame and base_link via odom.
-  // Broadcast and evaluate at a single stamp so the time-aware lookup matches exactly.
+  // Populate and evaluate at a single stamp so the time-aware lookup matches exactly.
   const rclcpp::Time stamp = node_->now();
-  broadcastFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp);
-  broadcastFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 0.0, 0.0, stamp);
+  setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp);
+  setFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 0.0, 0.0, stamp);
 
   auto zone = makeZone(/*base_shift_correction=*/true);
   ASSERT_TRUE(zone->configure());
@@ -410,7 +332,7 @@ TEST_F(ExclusionZoneTester, HeightBandLimitsMasking)
   node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
   node_->declare_parameter(std::string(ZONE_NAME) + ".min_height", rclcpp::ParameterValue(0.0));
   node_->declare_parameter(std::string(ZONE_NAME) + ".max_height", rclcpp::ParameterValue(0.5));
-  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+  setTransform(ZONE_FRAME_ID, 0.0, 0.0);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
@@ -430,7 +352,7 @@ TEST_F(ExclusionZoneTester, CircleZoneMasksWithinRadius)
 {
   declareZoneParams(ZONE_NAME, "circle", true, ZONE_FRAME_ID);
   node_->declare_parameter(std::string(ZONE_NAME) + ".radius", rclcpp::ParameterValue(1.0));
-  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+  setTransform(ZONE_FRAME_ID, 0.0, 0.0);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
@@ -463,7 +385,7 @@ TEST_F(ExclusionZoneTester, DynamicEnableToggle)
 {
   declareZoneParams(ZONE_NAME, "polygon", false, ZONE_FRAME_ID);
   node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
-  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+  setTransform(ZONE_FRAME_ID, 0.0, 0.0);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
@@ -482,7 +404,7 @@ TEST_F(ExclusionZoneTester, DynamicPointsUpdateChangesMask)
 {
   declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
   node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
-  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+  setTransform(ZONE_FRAME_ID, 0.0, 0.0);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
@@ -512,7 +434,7 @@ TEST_F(ExclusionZoneTester, DynamicPointsUpdateRejectsInvalidPolygon)
 {
   declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
   node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
-  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+  setTransform(ZONE_FRAME_ID, 0.0, 0.0);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
@@ -533,7 +455,7 @@ TEST_F(ExclusionZoneTester, DynamicRadiusUpdateChangesMask)
 {
   declareZoneParams(ZONE_NAME, "circle", true, ZONE_FRAME_ID);
   node_->declare_parameter(std::string(ZONE_NAME) + ".radius", rclcpp::ParameterValue(1.0));
-  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+  setTransform(ZONE_FRAME_ID, 0.0, 0.0);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
@@ -561,7 +483,7 @@ TEST_F(ExclusionZoneTester, DynamicRadiusUpdateRejectsNonPositive)
 {
   declareZoneParams(ZONE_NAME, "circle", true, ZONE_FRAME_ID);
   node_->declare_parameter(std::string(ZONE_NAME) + ".radius", rclcpp::ParameterValue(1.0));
-  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+  setTransform(ZONE_FRAME_ID, 0.0, 0.0);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
@@ -584,7 +506,7 @@ TEST_F(ExclusionZoneTester, DynamicHeightBandUpdateChangesMask)
   node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
   node_->declare_parameter(std::string(ZONE_NAME) + ".min_height", rclcpp::ParameterValue(0.0));
   node_->declare_parameter(std::string(ZONE_NAME) + ".max_height", rclcpp::ParameterValue(0.5));
-  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+  setTransform(ZONE_FRAME_ID, 0.0, 0.0);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
@@ -626,24 +548,19 @@ TEST_F(ExclusionZoneTester, DynamicTransformStalenessThresholdUpdateExtendsWindo
   node_->declare_parameter(
     std::string(ZONE_NAME) + ".transform_staleness_threshold", rclcpp::ParameterValue(1.0));
 
-  const rclcpp::Time stamp0 = node_->now();
-  broadcastFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp0);
-  broadcastFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 0.0, 0.0, stamp0);
+  const auto now = node_->now();
+  const auto stamp0 = now - rclcpp::Duration::from_seconds(3.0);
+  setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp0);
+  setFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 0.0, 0.0, stamp0);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
 
-  // 3 s after the last detection exceeds the 1 s hold window -> fail safe.
-  const rclcpp::Time later = stamp0 + rclcpp::Duration::from_seconds(3.0);
-  geometry_msgs::msg::TransformStamped fresh_base;
-  fresh_base.header.frame_id = GLOBAL_FRAME_ID;
-  fresh_base.child_frame_id = BASE_FRAME_ID;
-  fresh_base.header.stamp = later;
-  fresh_base.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf_buffer_->setTransform(fresh_base, "test"));
+  // A detection from 3 s ago exceeds the 1 s hold window -> fail safe.
+  setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, now);
   {
     std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
-    zone->apply(later, data);
+    zone->apply(now, data);
     EXPECT_EQ(data.size(), 2u);
   }
 
@@ -654,7 +571,7 @@ TEST_F(ExclusionZoneTester, DynamicTransformStalenessThresholdUpdateExtendsWindo
   EXPECT_TRUE(result.successful);
   {
     std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
-    zone->apply(later, data);
+    zone->apply(now, data);
     ASSERT_EQ(data.size(), 1u);
     EXPECT_NEAR(data[0].x, 5.0, EPSILON);
   }
@@ -666,7 +583,7 @@ TEST_F(ExclusionZoneTester, DynamicTransformStalenessThresholdUpdateRejectsNegat
   node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
   node_->declare_parameter(
     std::string(ZONE_NAME) + ".transform_staleness_threshold", rclcpp::ParameterValue(1.0));
-  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+  setTransform(ZONE_FRAME_ID, 0.0, 0.0);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
@@ -716,13 +633,16 @@ TEST_F(ExclusionZoneTester, HeldZoneDoesNotMaskWithStaleRobotPose)
   node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
   node_->declare_parameter(
     std::string(ZONE_NAME) + ".transform_staleness_threshold", rclcpp::ParameterValue(5.0));
-  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+  const auto now = node_->now();
+  const auto stamp = now - rclcpp::Duration::from_seconds(2.0);
+  setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp);
+  setFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 0.0, 0.0, stamp);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
 
   std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}};
-  zone->apply(node_->now() + rclcpp::Duration::from_seconds(2.0), data);
+  zone->apply(now, data);
   EXPECT_EQ(data.size(), 1u);
 }
 
@@ -734,24 +654,19 @@ TEST_F(ExclusionZoneTester, HeldZoneKeepsMaskingWithinWindow)
     std::string(ZONE_NAME) + ".transform_staleness_threshold", rclcpp::ParameterValue(5.0));
 
   // Detection at stamp0; robot at the odom origin, zone at the origin.
-  const rclcpp::Time stamp0 = node_->now();
-  broadcastFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp0);
-  broadcastFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 0.0, 0.0, stamp0);
+  const auto now = node_->now();
+  const auto stamp0 = now - rclcpp::Duration::from_seconds(2.0);
+  setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp0);
+  setFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 0.0, 0.0, stamp0);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
 
-  // 2 s later the frame has not refreshed, but that is within the 5 s hold
+  // The detection is 2 s old, which is within the 5 s hold
   // window, so the zone must keep masking at its last known pose.
-  const rclcpp::Time later = stamp0 + rclcpp::Duration::from_seconds(2.0);
-  geometry_msgs::msg::TransformStamped fresh_base;
-  fresh_base.header.frame_id = GLOBAL_FRAME_ID;
-  fresh_base.child_frame_id = BASE_FRAME_ID;
-  fresh_base.header.stamp = later;
-  fresh_base.transform.rotation.w = 1.0;
-  ASSERT_TRUE(tf_buffer_->setTransform(fresh_base, "test"));
+  setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, now);
   std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
-  zone->apply(later, data);
+  zone->apply(now, data);
   ASSERT_EQ(data.size(), 1u);
   EXPECT_NEAR(data[0].x, 5.0, EPSILON);
 }
@@ -763,17 +678,19 @@ TEST_F(ExclusionZoneTester, HeldZoneFailsSafeAfterWindowExpires)
   node_->declare_parameter(
     std::string(ZONE_NAME) + ".transform_staleness_threshold", rclcpp::ParameterValue(1.0));
 
-  const rclcpp::Time stamp0 = node_->now();
-  broadcastFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp0);
-  broadcastFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 0.0, 0.0, stamp0);
+  const auto now = node_->now();
+  const auto stamp0 = now - rclcpp::Duration::from_seconds(3.0);
+  setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp0);
+  setFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 0.0, 0.0, stamp0);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
 
-  // 3 s later exceeds the 1 s hold window -> fail safe, keep all points.
-  const rclcpp::Time later = stamp0 + rclcpp::Duration::from_seconds(3.0);
+  // A detection from 3 s ago exceeds the 1 s hold window. Keep the robot
+  // pose fresh so only the expired zone transform causes the fail-safe.
+  setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, now);
   std::vector<nav2_collision_monitor::Point> data{{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
-  zone->apply(later, data);
+  zone->apply(now, data);
   EXPECT_EQ(data.size(), 2u);
 }
 
@@ -785,14 +702,13 @@ TEST_F(ExclusionZoneTester, HeldZoneStaysFixedInWorldAsRobotMoves)
     std::string(ZONE_NAME) + ".transform_staleness_threshold", rclcpp::ParameterValue(5.0));
 
   // Robot at the odom origin; charger detected 10 m ahead -> world pose (10, 0).
-  const rclcpp::Time stamp0 = node_->now();
-  broadcastFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp0);
-  broadcastFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 10.0, 0.0, stamp0);
+  const auto stamp1 = node_->now();
+  const auto stamp0 = stamp1 - rclcpp::Duration::from_seconds(0.5);
+  setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 0.0, 0.0, stamp0);
+  setFrame(BASE_FRAME_ID, ZONE_FRAME_ID, 10.0, 0.0, stamp0);
 
   // Robot drives +5 m in x; the detection is NOT refreshed (zone frozen at stamp0).
-  const rclcpp::Time stamp1 = stamp0 + rclcpp::Duration::from_seconds(0.5);
-  broadcastFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 5.0, 0.0, stamp1);
-  waitForLatestBaseInOdomX(5.0);
+  setFrame(GLOBAL_FRAME_ID, BASE_FRAME_ID, 5.0, 0.0, stamp1);
 
   auto zone = makeZone();
   ASSERT_TRUE(zone->configure());
@@ -817,7 +733,7 @@ TEST_F(ExclusionZoneTester, VisualizationPublishesMaskInBaseFrame)
   declareZoneParams(ZONE_NAME, "polygon", true, ZONE_FRAME_ID);
   node_->declare_parameter(std::string(ZONE_NAME) + ".points", rclcpp::ParameterValue(UNIT_SQUARE));
   node_->declare_parameter(std::string(ZONE_NAME) + ".visualize", rclcpp::ParameterValue(true));
-  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+  setTransform(ZONE_FRAME_ID, 0.0, 0.0);
 
   geometry_msgs::msg::PolygonStamped::ConstSharedPtr received;
   auto sub = node_->create_subscription<geometry_msgs::msg::PolygonStamped>(
@@ -831,9 +747,9 @@ TEST_F(ExclusionZoneTester, VisualizationPublishesMaskInBaseFrame)
 
   // Publishing is decoupled from the flaky zone frame: the polygon must be
   // emitted in the smooth base frame so a consumer never depends on that frame.
-  rclcpp::Time start = node_->now();
+  const auto start = std::chrono::steady_clock::now();
   while (rclcpp::ok() && !received &&
-    (node_->now() - start) < rclcpp::Duration::from_seconds(5.0))
+    (std::chrono::steady_clock::now() - start) < 5s)
   {
     zone->publish();
     executor_->spin_some();
@@ -857,9 +773,9 @@ TEST_F(ExclusionZoneTester, SourceMasksOnlyNewlyAddedPoints)
   node_->declare_parameter(
     std::string(SOURCE_NAME) + ".exclusion_zones",
     rclcpp::ParameterValue(std::vector<std::string>{ZONE_NAME}));
-  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+  setTransform(ZONE_FRAME_ID, 0.0, 0.0);
 
-  auto source = std::make_shared<FakeSource>(node_, SOURCE_NAME, tf_buffer_, BASE_FRAME_ID);
+  auto source = std::make_shared<FakeSource>(node_, SOURCE_NAME, tf_manager_, BASE_FRAME_ID);
   ASSERT_TRUE(source->setupExclusionZones());
 
   // The source will append one point inside the zone and one outside.
@@ -883,7 +799,7 @@ TEST_F(ExclusionZoneTester, SourceWithoutZonesLeavesDataUnchanged)
     std::string(SOURCE_NAME) + ".exclusion_zones",
     rclcpp::ParameterValue(std::vector<std::string>{}));
 
-  auto source = std::make_shared<FakeSource>(node_, SOURCE_NAME, tf_buffer_, BASE_FRAME_ID);
+  auto source = std::make_shared<FakeSource>(node_, SOURCE_NAME, tf_manager_, BASE_FRAME_ID);
   ASSERT_TRUE(source->setupExclusionZones());
 
   source->points_to_add = {{0.0, 0.0, 0.0, ""}, {5.0, 5.0, 0.0, ""}};
@@ -900,7 +816,7 @@ TEST_F(ExclusionZoneTester, SourceActivatePublishDeactivateForwardsToZones)
   node_->declare_parameter(
     std::string(SOURCE_NAME) + ".exclusion_zones",
     rclcpp::ParameterValue(std::vector<std::string>{ZONE_NAME}));
-  broadcastTransform(ZONE_FRAME_ID, 0.0, 0.0);
+  setTransform(ZONE_FRAME_ID, 0.0, 0.0);
 
   geometry_msgs::msg::PolygonStamped::ConstSharedPtr received;
   auto sub = node_->create_subscription<geometry_msgs::msg::PolygonStamped>(
@@ -908,15 +824,15 @@ TEST_F(ExclusionZoneTester, SourceActivatePublishDeactivateForwardsToZones)
     [&](geometry_msgs::msg::PolygonStamped::ConstSharedPtr msg) {received = msg;},
     nav2::qos::StandardTopicQoS());
 
-  auto source = std::make_shared<FakeSource>(node_, SOURCE_NAME, tf_buffer_, BASE_FRAME_ID);
+  auto source = std::make_shared<FakeSource>(node_, SOURCE_NAME, tf_manager_, BASE_FRAME_ID);
   ASSERT_TRUE(source->setupExclusionZones());
 
   // The source must forward activate() / publishExclusionZones() to its zones,
   // so the zone polygon is emitted (in the base frame) once activated.
   source->activate();
-  rclcpp::Time start = node_->now();
+  const auto start = std::chrono::steady_clock::now();
   while (rclcpp::ok() && !received &&
-    (node_->now() - start) < rclcpp::Duration::from_seconds(5.0))
+    (std::chrono::steady_clock::now() - start) < 5s)
   {
     source->publishExclusionZones();
     executor_->spin_some();
@@ -938,7 +854,7 @@ protected:
       std::string(SOURCE_NAME) + ".exclusion_zones",
       rclcpp::ParameterValue(std::vector<std::string>{}));
 
-    source_ = std::make_shared<FakeSource>(node_, SOURCE_NAME, tf_buffer_, BASE_FRAME_ID);
+    source_ = std::make_shared<FakeSource>(node_, SOURCE_NAME, tf_manager_, BASE_FRAME_ID);
     ASSERT_TRUE(source_->setupExclusionZones());
     source_->activate();
 

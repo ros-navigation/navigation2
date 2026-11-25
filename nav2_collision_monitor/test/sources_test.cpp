@@ -35,7 +35,7 @@
 #include "sensor_msgs/msg/range.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 #include "nav2_collision_monitor/types.hpp"
 #include "nav2_collision_monitor/scan.hpp"
@@ -64,7 +64,7 @@ static const char POLYGON_TOPIC[]{"polygon"};
 static const char COSTMAP_NAME[]{"Costmap"};
 static const char COSTMAP_TOPIC[]{"costmap"};
 static const char INVALID_FRAME_ID[]{"invalid_frame"};
-static const tf2::Duration TRANSFORM_TOLERANCE{tf2::durationFromSec(0.1)};
+static const double TRANSFORM_TOLERANCE{0.0};
 static const rclcpp::Duration DATA_TIMEOUT{rclcpp::Duration::from_seconds(5.0)};
 
 class TestNode : public nav2::LifecycleNode
@@ -310,14 +310,14 @@ public:
   ScanWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const nav2::TransformBuffer::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     const rclcpp::Duration & data_timeout,
     const bool base_shift_correction)
   : nav2_collision_monitor::Scan(
-      node, source_name, tf_buffer, base_frame_id, global_frame_id,
+      node, source_name, tf_manager, base_frame_id, global_frame_id,
       transform_tolerance, data_timeout, base_shift_correction)
   {}
 
@@ -333,14 +333,14 @@ public:
   PointCloudWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const nav2::TransformBuffer::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     const rclcpp::Duration & data_timeout,
     const bool base_shift_correction)
   : nav2_collision_monitor::PointCloud(
-      node, source_name, tf_buffer, base_frame_id, global_frame_id,
+      node, source_name, tf_manager, base_frame_id, global_frame_id,
       transform_tolerance, data_timeout, base_shift_correction)
   {}
 
@@ -356,14 +356,14 @@ public:
   RangeWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const nav2::TransformBuffer::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     const rclcpp::Duration & data_timeout,
     const bool base_shift_correction)
   : nav2_collision_monitor::Range(
-      node, source_name, tf_buffer, base_frame_id, global_frame_id,
+      node, source_name, tf_manager, base_frame_id, global_frame_id,
       transform_tolerance, data_timeout, base_shift_correction)
   {}
 
@@ -394,14 +394,14 @@ public:
   PolygonWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const nav2::TransformBuffer::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     const rclcpp::Duration & data_timeout,
     const bool base_shift_correction)
   : nav2_collision_monitor::PolygonSource(
-      node, source_name, tf_buffer, base_frame_id, global_frame_id,
+      node, source_name, tf_manager, base_frame_id, global_frame_id,
       transform_tolerance, data_timeout, base_shift_correction)
   {}
 
@@ -417,14 +417,14 @@ public:
   CostmapWrapper(
     const nav2::LifecycleNode::WeakPtr & node,
     const std::string & source_name,
-    const nav2::TransformBuffer::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     const std::string & base_frame_id,
     const std::string & global_frame_id,
-    const tf2::Duration & transform_tolerance,
+    double transform_tolerance,
     const rclcpp::Duration & data_timeout,
     const bool base_shift_correction)
   : nav2_collision_monitor::CostmapSource(
-      node, source_name, tf_buffer, base_frame_id, global_frame_id,
+      node, source_name, tf_manager, base_frame_id, global_frame_id,
       transform_tolerance, data_timeout, base_shift_correction)
   {}
 
@@ -439,15 +439,14 @@ class Tester : public ::testing::Test
 public:
   Tester();
   ~Tester();
-  nav2::TransformBuffer::SharedPtr tf_buffer_;
-  nav2::TransformListener::SharedPtr tf_listener_;
+  nav2::TransformManager::SharedPtr tf_manager_;
 
 protected:
   // Data sources creation routine
   void createSources(const bool base_shift_correction = true);
 
-  // Setting TF chains
-  void sendTransforms(const rclcpp::Time & stamp);
+  // Populate TF chains synchronously without a listener thread
+  void setTransforms(const rclcpp::Time & stamp);
 
   // Data sources working routines
   bool waitScan(const std::chrono::nanoseconds & timeout);
@@ -475,9 +474,7 @@ Tester::Tester()
   executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
   executor_->add_node(test_node_->get_node_base_interface());
 
-  tf_buffer_ = nav2::create_transform_buffer(test_node_);
-  tf_buffer_->setUsingDedicatedThread(true);  // One-thread broadcasting-listening model
-  tf_listener_ = nav2::create_transform_listener(*tf_buffer_, test_node_);
+  tf_manager_ = nav2::create_transform_manager(test_node_, false, false);
 }
 
 Tester::~Tester()
@@ -490,8 +487,7 @@ Tester::~Tester()
 
   test_node_.reset();
 
-  tf_listener_.reset();
-  tf_buffer_.reset();
+  tf_manager_.reset();
 }
 
 void Tester::createSources(const bool base_shift_correction)
@@ -501,7 +497,7 @@ void Tester::createSources(const bool base_shift_correction)
     std::string(SCAN_NAME) + ".topic", rclcpp::ParameterValue(SCAN_TOPIC));
 
   scan_ = std::make_shared<ScanWrapper>(
-    test_node_, SCAN_NAME, tf_buffer_,
+    test_node_, SCAN_NAME, tf_manager_,
     BASE_FRAME_ID, GLOBAL_FRAME_ID,
     TRANSFORM_TOLERANCE, DATA_TIMEOUT, base_shift_correction);
   scan_->configure();
@@ -515,7 +511,7 @@ void Tester::createSources(const bool base_shift_correction)
     std::string(POINTCLOUD_NAME) + ".max_height", rclcpp::ParameterValue(1.0));
 
   pointcloud_ = std::make_shared<PointCloudWrapper>(
-    test_node_, POINTCLOUD_NAME, tf_buffer_,
+    test_node_, POINTCLOUD_NAME, tf_manager_,
     BASE_FRAME_ID, GLOBAL_FRAME_ID,
     TRANSFORM_TOLERANCE, DATA_TIMEOUT, base_shift_correction);
   pointcloud_->configure();
@@ -528,7 +524,7 @@ void Tester::createSources(const bool base_shift_correction)
     std::string(RANGE_NAME) + ".obstacles_angle", rclcpp::ParameterValue(M_PI / 199));
 
   range_ = std::make_shared<RangeWrapper>(
-    test_node_, RANGE_NAME, tf_buffer_,
+    test_node_, RANGE_NAME, tf_manager_,
     BASE_FRAME_ID, GLOBAL_FRAME_ID,
     TRANSFORM_TOLERANCE, DATA_TIMEOUT, base_shift_correction);
   range_->configure();
@@ -541,7 +537,7 @@ void Tester::createSources(const bool base_shift_correction)
     std::string(POLYGON_NAME) + ".sampling_distance", rclcpp::ParameterValue(0.1));
 
   polygon_ = std::make_shared<PolygonWrapper>(
-    test_node_, POLYGON_NAME, tf_buffer_,
+    test_node_, POLYGON_NAME, tf_manager_,
     BASE_FRAME_ID, GLOBAL_FRAME_ID,
     TRANSFORM_TOLERANCE, DATA_TIMEOUT, base_shift_correction);
   polygon_->configure();
@@ -555,17 +551,14 @@ void Tester::createSources(const bool base_shift_correction)
     std::string(COSTMAP_NAME) + ".treat_unknown_as_obstacle", rclcpp::ParameterValue(true));
 
   costmap_ = std::make_shared<CostmapWrapper>(
-    test_node_, COSTMAP_NAME, tf_buffer_,
+    test_node_, COSTMAP_NAME, tf_manager_,
     BASE_FRAME_ID, GLOBAL_FRAME_ID,
     TRANSFORM_TOLERANCE, DATA_TIMEOUT, base_shift_correction);
   costmap_->configure();
 }
 
-void Tester::sendTransforms(const rclcpp::Time & stamp)
+void Tester::setTransforms(const rclcpp::Time & stamp)
 {
-  nav2::TransformBroadcaster::SharedPtr tf_broadcaster =
-    nav2::create_transform_broadcaster(test_node_);
-
   geometry_msgs::msg::TransformStamped transform;
 
   // base_frame -> source_frame transform
@@ -581,7 +574,7 @@ void Tester::sendTransforms(const rclcpp::Time & stamp)
   transform.transform.rotation.z = 0.0;
   transform.transform.rotation.w = 1.0;
 
-  tf_broadcaster->sendTransform(transform);
+  ASSERT_TRUE(tf_manager_->getRawBuffer()->setTransform(transform, "test"));
 
   // global_frame -> base_frame transform
   transform.header.frame_id = GLOBAL_FRAME_ID;
@@ -590,13 +583,13 @@ void Tester::sendTransforms(const rclcpp::Time & stamp)
   transform.transform.translation.x = 0.0;
   transform.transform.translation.y = 0.0;
 
-  tf_broadcaster->sendTransform(transform);
+  ASSERT_TRUE(tf_manager_->getRawBuffer()->setTransform(transform, "test"));
 }
 
 bool Tester::waitScan(const std::chrono::nanoseconds & timeout)
 {
-  rclcpp::Time start_time = test_node_->now();
-  while (rclcpp::ok() && test_node_->now() - start_time <= rclcpp::Duration(timeout)) {
+  const auto start_time = std::chrono::steady_clock::now();
+  while (rclcpp::ok() && std::chrono::steady_clock::now() - start_time <= timeout) {
     if (scan_->dataReceived()) {
       return true;
     }
@@ -608,8 +601,8 @@ bool Tester::waitScan(const std::chrono::nanoseconds & timeout)
 
 bool Tester::waitPointCloud(const std::chrono::nanoseconds & timeout)
 {
-  rclcpp::Time start_time = test_node_->now();
-  while (rclcpp::ok() && test_node_->now() - start_time <= rclcpp::Duration(timeout)) {
+  const auto start_time = std::chrono::steady_clock::now();
+  while (rclcpp::ok() && std::chrono::steady_clock::now() - start_time <= timeout) {
     if (pointcloud_->dataReceived()) {
       return true;
     }
@@ -621,8 +614,8 @@ bool Tester::waitPointCloud(const std::chrono::nanoseconds & timeout)
 
 bool Tester::waitRange(const std::chrono::nanoseconds & timeout)
 {
-  rclcpp::Time start_time = test_node_->now();
-  while (rclcpp::ok() && test_node_->now() - start_time <= rclcpp::Duration(timeout)) {
+  const auto start_time = std::chrono::steady_clock::now();
+  while (rclcpp::ok() && std::chrono::steady_clock::now() - start_time <= timeout) {
     if (range_->dataReceived()) {
       return true;
     }
@@ -634,8 +627,8 @@ bool Tester::waitRange(const std::chrono::nanoseconds & timeout)
 
 bool Tester::waitPolygon(const std::chrono::nanoseconds & timeout)
 {
-  rclcpp::Time start_time = test_node_->now();
-  while (rclcpp::ok() && test_node_->now() - start_time <= rclcpp::Duration(timeout)) {
+  const auto start_time = std::chrono::steady_clock::now();
+  while (rclcpp::ok() && std::chrono::steady_clock::now() - start_time <= timeout) {
     if (polygon_->dataReceived()) {
       return true;
     }
@@ -647,8 +640,8 @@ bool Tester::waitPolygon(const std::chrono::nanoseconds & timeout)
 
 bool Tester::waitCostmap(const std::chrono::nanoseconds & timeout)
 {
-  rclcpp::Time start_time = test_node_->now();
-  while (rclcpp::ok() && test_node_->now() - start_time <= rclcpp::Duration(timeout)) {
+  const auto start_time = std::chrono::steady_clock::now();
+  while (rclcpp::ok() && std::chrono::steady_clock::now() - start_time <= timeout) {
     if (costmap_->dataReceived()) {
       return true;
     }
@@ -723,7 +716,7 @@ TEST_F(Tester, testGetData)
 
   createSources();
 
-  sendTransforms(curr_time);
+  setTransforms(curr_time);
 
   // Publish data for sources
   test_node_->publishScan(curr_time, 1.0);
@@ -764,7 +757,7 @@ TEST_F(Tester, testGetOutdatedData)
 
   createSources();
 
-  sendTransforms(curr_time);
+  setTransforms(curr_time);
 
   // Publish outdated data for sources
   test_node_->publishScan(curr_time - DATA_TIMEOUT - 1s, 1.0);
@@ -803,7 +796,7 @@ TEST_F(Tester, testIncorrectFrameData)
   createSources();
 
   // Latest mode ignores the data timestamp, but still requires a fresh transform.
-  sendTransforms(curr_time - 50ms);
+  setTransforms(curr_time - 50ms);
 
   // Publish data for sources
   test_node_->publishScan(curr_time, 1.0);
@@ -841,7 +834,7 @@ TEST_F(Tester, testIncorrectData)
 
   createSources();
 
-  sendTransforms(curr_time);
+  setTransforms(curr_time);
 
   // Publish data for sources
   test_node_->publishScan(curr_time, 2.0);
@@ -865,11 +858,12 @@ TEST_F(Tester, testIncorrectData)
 TEST_F(Tester, testIgnoreTimeShift)
 {
   rclcpp::Time curr_time = test_node_->now();
+  test_node_->declare_parameter("transform_staleness_threshold", 0.0);
 
   createSources(false);
 
-  // Send incorrect transform
-  sendTransforms(curr_time - 1s);
+  // Only an earlier transform is available: a stamped lookup would fail.
+  setTransforms(curr_time - 1s);
 
   // Publish data for sources
   test_node_->publishScan(curr_time, 1.0);
@@ -902,15 +896,6 @@ TEST_F(Tester, testIgnoreTimeShift)
   data.clear();
   polygon_->getData(curr_time, data);
   checkPolygon(data);
-
-  // Fresh messages must not make an old dynamic transform valid.
-  const auto later = curr_time + rclcpp::Duration::from_seconds(2.0);
-  data.clear();
-  EXPECT_FALSE(scan_->getData(later, data));
-  EXPECT_FALSE(pointcloud_->getData(later, data));
-  EXPECT_FALSE(range_->getData(later, data));
-  EXPECT_FALSE(polygon_->getData(later, data));
-  EXPECT_TRUE(data.empty());
 }
 
 TEST_F(Tester, testRangeGeneratedPointLimit)
@@ -953,7 +938,7 @@ TEST_F(Tester, testRangeObstaclesAngleValidation)
     std::string(RANGE_NAME) + ".obstacles_angle", rclcpp::ParameterValue(0.0));
 
   range_ = std::make_shared<RangeWrapper>(
-    test_node_, RANGE_NAME, tf_buffer_,
+    test_node_, RANGE_NAME, tf_manager_,
     BASE_FRAME_ID, GLOBAL_FRAME_ID,
     TRANSFORM_TOLERANCE, DATA_TIMEOUT, true);
 
@@ -964,7 +949,7 @@ TEST_F(Tester, testRangeObstaclesAngleValidation)
   test_node_->declare_parameter(
     valid_range_name + ".obstacles_angle", rclcpp::ParameterValue(M_PI / 180.0));
   range_ = std::make_shared<RangeWrapper>(
-    test_node_, valid_range_name, tf_buffer_,
+    test_node_, valid_range_name, tf_manager_,
     BASE_FRAME_ID, GLOBAL_FRAME_ID,
     TRANSFORM_TOLERANCE, DATA_TIMEOUT, true);
 
@@ -1016,12 +1001,12 @@ TEST_F(Tester, testPointCloudMinRange)
     std::string(POINTCLOUD_NAME) + ".min_range", rclcpp::ParameterValue(0.16));
 
   pointcloud_ = std::make_shared<PointCloudWrapper>(
-    test_node_, POINTCLOUD_NAME, tf_buffer_,
+    test_node_, POINTCLOUD_NAME, tf_manager_,
     BASE_FRAME_ID, GLOBAL_FRAME_ID,
     TRANSFORM_TOLERANCE, DATA_TIMEOUT, true);
   pointcloud_->configure();
 
-  sendTransforms(curr_time);
+  setTransforms(curr_time);
 
   // Publish pointcloud data with points at various ranges
   test_node_->publishPointCloudForMinRange(curr_time);

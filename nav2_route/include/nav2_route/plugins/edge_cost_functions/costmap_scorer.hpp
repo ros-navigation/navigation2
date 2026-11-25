@@ -23,7 +23,7 @@
 #include "nav2_util/line_iterator.hpp"
 #include "nav2_ros_common/node_utils.hpp"
 #include "nav2_costmap_2d/costmap_subscriber.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 namespace nav2_route
 {
@@ -51,7 +51,7 @@ public:
    */
   void configure(
     const nav2::LifecycleNode::SharedPtr node,
-    const nav2::TransformBuffer::SharedPtr tf_buffer,
+    const nav2::TransformManager::SharedPtr tf_manager,
     std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber,
     const std::string & name) override;
 

@@ -20,7 +20,7 @@
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 
 namespace opennav_docking_core
@@ -49,11 +49,11 @@ public:
   /**
    * @param  parent pointer to user's node
    * @param  name The name of this planner
-   * @param  tf A pointer to a TF buffer
+   * @param  tf_manager A pointer to a transform manager
    */
   virtual void configure(
     const nav2::LifecycleNode::WeakPtr & parent,
-    const std::string & name, nav2::TransformBuffer::SharedPtr tf) = 0;
+    const std::string & name, nav2::TransformManager::SharedPtr tf_manager) = 0;
 
   /**
    * @brief Method to cleanup resources used on shutdown.

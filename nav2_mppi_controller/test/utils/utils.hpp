@@ -22,7 +22,7 @@
 
 #include <rclcpp/executors.hpp>
 
-#include "nav2_ros_common/tf2_factories.hpp"
+#include "nav2_ros_common/tf_manager.hpp"
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
@@ -46,7 +46,7 @@ void waitSome(const std::chrono::nanoseconds & duration, TNode & node)
 
 void sendTf(
   std::string_view source, std::string_view dest,
-  nav2::TransformBroadcaster::SharedPtr tf_broadcaster,
+  nav2::TransformManager::SharedPtr tf_manager,
   nav2::LifecycleNode::SharedPtr node, size_t n)
 {
   while (--n != 0u) {
@@ -63,9 +63,9 @@ void sendTf(
     t.transform.rotation.z = 0.0;
     t.transform.rotation.w = 1.0;
 
-    tf_broadcaster->sendTransform(t);
+    tf_manager->sendTransform(t);
 
-    // Allow tf_buffer_ to be filled by listener
+    // Allow tf_manager_ to be filled by listener
     waitSome(10ms, node);
   }
 }
