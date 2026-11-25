@@ -90,6 +90,11 @@ void GeoJsonGraphFileSaver::loadEdgesFromGraph(
 {
   for (const auto & node : graph) {
     for (const auto & edge : node.neighbors) {
+      if (edge.start->nodeid == std::numeric_limits<int>::max() ||
+        edge.end->nodeid == std::numeric_limits<int>::max())
+      {
+        continue;
+      }
       Json json_edge, json_properties, json_geometry, json_metadata, json_operations;
       json_geometry["type"] = "MultiLineString";
       json_edge["geometry"] = json_geometry;
