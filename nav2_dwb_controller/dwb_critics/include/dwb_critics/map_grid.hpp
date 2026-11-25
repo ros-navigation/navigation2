@@ -131,11 +131,17 @@ protected:
   void propagateManhattanDistances();
 
   /**
+   * @brief Set a cell to 0 and enqueue it as a source of the distance propagation
+   * @param x X coordinate of the cell
+   * @param y Y coordinate of the cell
+   */
+  void enqueueSeed(unsigned int x, unsigned int y);
+
+  /**
    * @brief Go through the queue and set the cells to the Manhattan distance walked around
    * lethal obstacles. Lethal cells are set as obstacles and the search does not pass them.
-   * @return The source cells taken from the queue, blocked ones included
    */
-  std::vector<costmap_queue::CellData> propagateObstacleAwareManhattanDistances();
+  void propagateObstacleAwareManhattanDistances();
 
   /**
    * @brief Set the cells to their distance from the queued seeds
@@ -152,6 +158,7 @@ protected:
   std::shared_ptr<MapGridQueue> queue_;
   nav2_costmap_2d::Costmap2D * costmap_;
   std::vector<double> cell_values_;
+  std::vector<std::pair<unsigned int, unsigned int>> seeds_;
   double obstacle_score_, unreachable_score_;  ///< Special cell_values
   bool stop_on_failure_;
   bool obstacle_aware_propagation_;

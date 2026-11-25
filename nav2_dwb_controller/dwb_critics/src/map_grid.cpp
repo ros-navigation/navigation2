@@ -97,10 +97,18 @@ void MapGridCritic::setAsObstacle(unsigned int index)
 void MapGridCritic::reset()
 {
   queue_->reset();
+  seeds_.clear();
   cell_values_.resize(costmap_->getSizeInCellsX() * costmap_->getSizeInCellsY());
   obstacle_score_ = static_cast<double>(cell_values_.size());
   unreachable_score_ = obstacle_score_ + 1.0;
   std::fill(cell_values_.begin(), cell_values_.end(), unreachable_score_);
+}
+
+void MapGridCritic::enqueueSeed(unsigned int x, unsigned int y)
+{
+  cell_values_[costmap_->getIndex(x, y)] = 0.0;
+  queue_->enqueueCell(x, y);
+  seeds_.emplace_back(x, y);
 }
 
 void MapGridCritic::propagateManhattanDistances()
@@ -112,16 +120,11 @@ void MapGridCritic::propagateManhattanDistances()
   }
 }
 
-std::vector<CellData> MapGridCritic::propagateObstacleAwareManhattanDistances()
+void MapGridCritic::propagateObstacleAwareManhattanDistances()
 {
-  // Seeds are the only cells at distance 0, so the search sees them all first
-  std::vector<CellData> seeds;
   queue_->setObstacleAware(true);
   while (!queue_->isEmpty()) {
     const CellData cell = queue_->getNextCell();
-    if (cell.distance_ == 0.0) {
-      seeds.push_back(cell);
-    }
     // Inscribed and unknown cells may be free for this footprint, so other critics judge them
     if (costmap_->getCost(cell.index_) == nav2_costmap_2d::LETHAL_OBSTACLE) {
       setAsObstacle(cell.index_);
@@ -130,34 +133,31 @@ std::vector<CellData> MapGridCritic::propagateObstacleAwareManhattanDistances()
     }
   }
   queue_->setObstacleAware(false);
-  return seeds;
 }
 
 void MapGridCritic::propagateDistances(const geometry_msgs::msg::Pose & robot_pose)
 {
-  if (!obstacle_aware_propagation_) {
-    propagateManhattanDistances();
-    return;
+  if (obstacle_aware_propagation_) {
+    propagateObstacleAwareManhattanDistances();
+
+    unsigned int robot_x, robot_y;
+    if (costmap_->worldToMap(robot_pose.position.x, robot_pose.position.y, robot_x, robot_y) &&
+      getScore(robot_x, robot_y) < obstacle_score_)
+    {
+      return;
+    }
+
+    RCLCPP_DEBUG_THROTTLE(
+      rclcpp::get_logger("MapGridCritic"), *costmap_ros_->get_clock(), 1000,
+      "%s: the robot is not reachable around obstacles, falling back to Manhattan distances.",
+      name_.c_str());
+    const auto seeds = seeds_;
+    reset();
+    for (const auto & [x, y] : seeds) {
+      enqueueSeed(x, y);
+    }
   }
 
-  const std::vector<CellData> seeds = propagateObstacleAwareManhattanDistances();
-
-  unsigned int robot_x, robot_y;
-  if (costmap_->worldToMap(robot_pose.position.x, robot_pose.position.y, robot_x, robot_y) &&
-    getScore(robot_x, robot_y) < obstacle_score_)
-  {
-    return;
-  }
-
-  RCLCPP_DEBUG_THROTTLE(
-    rclcpp::get_logger("MapGridCritic"), *costmap_ros_->get_clock(), 1000,
-    "%s: the robot is not reachable around obstacles, falling back to Manhattan distances.",
-    name_.c_str());
-  reset();
-  for (const CellData & seed : seeds) {
-    cell_values_[seed.index_] = 0.0;
-    queue_->enqueueCell(seed.x_, seed.y_);
-  }
   propagateManhattanDistances();
 }
 
