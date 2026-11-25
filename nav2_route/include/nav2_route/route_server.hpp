@@ -21,6 +21,7 @@
 #include <vector>
 #include <unordered_map>
 #include <mutex>
+#include <shared_mutex>
 
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_ros_common/tf_manager.hpp"
@@ -238,6 +239,7 @@ protected:
   std::shared_ptr<nav2_costmap_2d::CostmapSubscriber> costmap_subscriber_;
 
   // State Data
+  std::shared_mutex graph_mutex_;
   Graph graph_;
   GraphToIDMap id_to_graph_map_;
   std::string route_frame_, base_frame_;

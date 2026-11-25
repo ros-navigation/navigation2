@@ -13,6 +13,7 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
@@ -148,6 +149,11 @@ public:
   size_t graphSize() const
   {
     return graph_.size();
+  }
+
+  bool trackingRunning()
+  {
+    return compute_and_track_route_server_->is_running();
   }
 
   void useErrorCodePlanner()
@@ -416,6 +422,78 @@ TEST(RouteServerTest, test_error_codes)
   server->shutdown();
   node_thread.reset();
   server.reset();
+}
+
+TEST(RouteServerTest, test_set_graph_while_routing)
+{
+  std::string pkg_share_dir = nav2::get_package_share_directory("nav2_route");
+
+  rclcpp::NodeOptions options;
+  auto server = std::make_shared<RouteServerWrapper>(options);
+  server->declare_parameter(
+    "graph_filepath", rclcpp::ParameterValue(pkg_share_dir + "/graphs/aws_graph.geojson"));
+  auto node_thread = std::make_unique<nav2::NodeThread>(server);
+  server->startup();
+  server->setRobotTransform();
+  const size_t original_size = server->graphSize();
+  ASSERT_GT(original_size, 0u);
+
+  // Keep the robot pose fresh so the tracker keeps running.
+  auto * server_ptr = server.get();
+  auto tf_timer = server->create_wall_timer(
+    std::chrono::milliseconds(20), [server_ptr]() {server_ptr->setRobotTransform();});
+
+  auto node2 = std::make_shared<rclcpp::Node>("set_graph_client");
+  auto track_client = rclcpp_action::create_client<nav2_msgs::action::ComputeAndTrackRoute>(
+    node2, "compute_and_track_route");
+
+  nav2_msgs::action::ComputeAndTrackRoute::Goal goal;
+  goal.start_id = 1u;
+  goal.goal_id = 20u;
+  goal.use_poses = false;
+  auto future_goal = track_client->async_send_goal(goal);
+  ASSERT_EQ(
+    rclcpp::spin_until_future_complete(node2, future_goal, std::chrono::seconds(5)),
+    rclcpp::FutureReturnCode::SUCCESS);
+  auto goal_handle = future_goal.get();
+  ASSERT_TRUE(goal_handle != nullptr);
+
+  auto wait_running = [&](bool expected) {
+      const auto start = std::chrono::steady_clock::now();
+      while (server->trackingRunning() != expected &&
+        std::chrono::steady_clock::now() - start < std::chrono::seconds(5))
+      {
+        rclcpp::sleep_for(std::chrono::milliseconds(20));
+      }
+      return server->trackingRunning() == expected;
+    };
+  ASSERT_TRUE(wait_running(true));
+
+  auto srv_node = std::make_shared<rclcpp::Node>("set_graph_srv_client");
+  auto srv_client = nav2::ServiceClient<nav2_msgs::srv::SetRouteGraph>(
+    "route_server/set_route_graph", srv_node);
+  auto req = std::make_shared<nav2_msgs::srv::SetRouteGraph::Request>();
+  req->graph_filepath = pkg_share_dir + "/graphs/sample_graph.geojson";
+
+  // A route is running: replacing the graph now would free the nodes it points at.
+  auto resp = srv_client.invoke(req, std::chrono::seconds(2));
+  ASSERT_TRUE(resp != nullptr);
+  EXPECT_FALSE(resp->success);
+  EXPECT_EQ(server->graphSize(), original_size);
+
+  track_client->async_cancel_all_goals();
+  auto result_future = track_client->async_get_result(goal_handle);
+  rclcpp::spin_until_future_complete(node2, result_future, std::chrono::seconds(5));
+  ASSERT_TRUE(wait_running(false));
+
+  // No route running anymore, so the graph can be replaced.
+  auto resp2 = srv_client.invoke(req, std::chrono::seconds(2));
+  ASSERT_TRUE(resp2 != nullptr);
+  EXPECT_TRUE(resp2->success);
+  EXPECT_NE(server->graphSize(), original_size);
+
+  server->shutdown();
+  node_thread.reset();
 }
 
 int main(int argc, char ** argv)
