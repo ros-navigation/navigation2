@@ -17,6 +17,7 @@
 #include <memory>
 #include <set>
 
+#include "rcl/time.h"
 #include "rclcpp/duration.hpp"
 #include "rclcpp/qos.hpp"
 #include "rclcpp/time.hpp"
@@ -74,26 +75,36 @@ CheckStopStatusTestFixture::odom_smoother_ = nullptr;
 
 TEST_F(CheckStopStatusTestFixture, test_behavior)
 {
+  // Set up a fake controllable clock so we never need to sleep for real time
+  auto clock = node_->get_clock();
+  rcl_enable_ros_time_override(clock->get_clock_handle());
+  auto set_time = [&](rclcpp::Time t) {
+    rcl_set_ros_time_override(clock->get_clock_handle(), t.nanoseconds());
+  };
+
+  // Start at t = 10s (arbitrary, avoids zero-timestamp edge cases)
+  set_time(rclcpp::Time(10, 0, RCL_ROS_TIME));
+
   nav_msgs::msg::Odometry odom_msg;
 
   // Test FAILURE when robot is moving
-  odom_msg.header.stamp = node_->now() - rclcpp::Duration::from_seconds(0.5);
+  odom_msg.header.stamp = clock->now() - rclcpp::Duration::from_seconds(0.5);
   odom_msg.twist.twist.linear.x = 1.0;
   odom_smoother_->inject(odom_msg);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
 
-  // Test RUNNING when robot is stopped but not long enough
-  odom_msg.header.stamp = node_->now() - rclcpp::Duration::from_seconds(0.05);
+  // Test RUNNING when robot is stopped but not long enough (stopped for 0.05s, need 0.1s)
+  odom_msg.header.stamp = clock->now() - rclcpp::Duration::from_seconds(0.05);
   odom_msg.twist.twist.linear.x = 0.001;
   odom_smoother_->inject(odom_msg);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
 
-  // Test SUCCESS when robot is stopped for long enough
-  std::this_thread::sleep_for(60ms);  // 50ms + 60ms = 110ms
+  // Advance the fake clock by 0.2s — now stopped for 0.25s, well past the 0.1s threshold
+  set_time(rclcpp::Time(10, 0, RCL_ROS_TIME) + rclcpp::Duration::from_seconds(0.2));
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
 
   // Test FAILURE immediately after robot starts moving
-  odom_msg.header.stamp = node_->now();
+  odom_msg.header.stamp = clock->now();
   odom_msg.twist.twist.angular.z = 0.1;
   odom_smoother_->inject(odom_msg);
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::FAILURE);
@@ -105,7 +116,7 @@ TEST_F(CheckStopStatusTestFixture, test_behavior)
     std::static_pointer_cast<nav2_util::OdomSmoother>(odom_smoother_));
   bt_node_ = std::make_shared<nav2_behavior_tree::CheckStopStatus>("check_stop_status", *config_);
 
-  odom_msg.header.stamp = node_->now() - rclcpp::Duration(2, 0);
+  odom_msg.header.stamp = clock->now() - rclcpp::Duration(2, 0);
   odom_msg.twist.twist.angular.z = 0;
   odom_msg.twist.twist.linear.x = 0.001;
   odom_smoother_->inject(odom_msg);
@@ -118,12 +129,14 @@ TEST_F(CheckStopStatusTestFixture, test_behavior)
     std::static_pointer_cast<nav2_util::OdomSmoother>(odom_smoother_));
   bt_node_ = std::make_shared<nav2_behavior_tree::CheckStopStatus>("check_stop_status", *config_);
 
+  set_time(rclcpp::Time(20, 0, RCL_ROS_TIME));
   odom_msg.header.stamp = rclcpp::Time(0, 0, RCL_ROS_TIME);
   odom_msg.twist.twist.linear.x = 0.001;
   odom_smoother_->inject(odom_msg);
-  // In the first tick, the timestamp is set
+  // In the first tick, the timestamp is set to clock->now() (t=20s)
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::RUNNING);
-  std::this_thread::sleep_for(110ms);
+  // Advance clock by 0.2s — stopped for 0.2s, past the 0.1s threshold
+  set_time(rclcpp::Time(20, 0, RCL_ROS_TIME) + rclcpp::Duration::from_seconds(0.2));
   EXPECT_EQ(bt_node_->executeTick(), BT::NodeStatus::SUCCESS);
 }
 
