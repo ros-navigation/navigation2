@@ -47,7 +47,8 @@ public:
   void SetUp()
   {
     auto clock_handle = node_->get_clock()->get_clock_handle();
-    rcl_enable_ros_time_override(clock_handle);
+    auto ret = rcl_enable_ros_time_override(clock_handle);
+    (void) ret;
 
     odom_smoother_ = std::make_shared<TestOdomSmoother>(node_);
     config_->blackboard->set(
@@ -68,7 +69,8 @@ public:
   void setClock(const rclcpp::Time & time)
   {
     auto clock_handle = node_->get_clock()->get_clock_handle();
-    rcl_set_ros_time_override(clock_handle, time.nanoseconds());
+    auto ret = rcl_set_ros_time_override(clock_handle, time.nanoseconds());
+    (void) ret;
   }
 
 protected:
