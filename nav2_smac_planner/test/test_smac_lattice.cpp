@@ -13,8 +13,10 @@
 // limitations under the License. Reserved.
 
 #include <math.h>
+#include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -246,4 +248,126 @@ TEST(SmacTest, test_smac_lattice_omni_reconfigure)
   costmap_ros->on_cleanup(rclcpp_lifecycle::State());
   costmap_ros.reset();
   nodeLattice.reset();
+}
+
+namespace
+{
+
+std::string samplePrimitives(const std::string & set)
+{
+  return ament_index_cpp::get_package_share_directory("nav2_smac_planner") +
+         "/sample_primitives/5cm_resolution/" + set + "/output.json";
+}
+
+std::shared_ptr<nav2_costmap_2d::Costmap2DROS> makeEmptyCostmap()
+{
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("global_costmap");
+  costmap_ros->set_parameters(
+    {rclcpp::Parameter("resolution", 0.05), rclcpp::Parameter("width", 10),
+      rclcpp::Parameter("height", 8), rclcpp::Parameter("robot_radius", 0.2)});
+  costmap_ros->on_configure(rclcpp_lifecycle::State());
+  return costmap_ros;
+}
+
+// Turn around: 1 m ahead, facing back towards the start
+nav_msgs::msg::Path planTurnAround(nav2_smac_planner::SmacPlannerLattice & planner)
+{
+  geometry_msgs::msg::PoseStamped start, goal;
+  start.pose.position.x = 4.0;
+  start.pose.position.y = 4.0;
+  start.pose.orientation.w = 1.0;
+  goal.pose.position.x = 5.0;
+  goal.pose.position.y = 4.0;
+  goal.pose.orientation.z = 1.0;
+  goal.pose.orientation.w = 0.0;
+  return planner.createPlan(start, goal, []() {return false;});
+}
+
+bool samePath(const nav_msgs::msg::Path & a, const nav_msgs::msg::Path & b)
+{
+  if (a.poses.size() != b.poses.size()) {
+    return false;
+  }
+  for (size_t i = 0; i < a.poses.size(); ++i) {
+    if (std::hypot(
+        a.poses[i].pose.position.x - b.poses[i].pose.position.x,
+        a.poses[i].pose.position.y - b.poses[i].pose.position.y) > 1e-6)
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+}  // namespace
+
+TEST(SmacTest, test_smac_lattice_switching_planners)
+{
+  // Two lattice planners in one server, as when switching with a planner selector
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacLatticeSwitchTest");
+  auto costmap_ros = makeEmptyCostmap();
+
+  const std::vector<std::pair<std::string, std::string>> sets = {
+    {"diff", "0.5m_turning_radius/diff"},
+    {"ackermann", "0.5m_turning_radius/ackermann"},
+    {"ackermann_1m", "1m_turning_radius/ackermann"}};
+  std::map<std::string, std::unique_ptr<nav2_smac_planner::SmacPlannerLattice>> planners;
+  for (const auto & set : sets) {
+    node->declare_parameter(set.first + ".lattice_filepath", samplePrimitives(set.second));
+    node->declare_parameter(set.first + ".smooth_path", false);
+    planners[set.first] = std::make_unique<nav2_smac_planner::SmacPlannerLattice>();
+    planners[set.first]->configure(node, set.first, nullptr, costmap_ros);
+    planners[set.first]->activate();
+  }
+
+  // Each planner must keep planning with its own lattice file, whichever planned before it
+  std::map<std::string, nav_msgs::msg::Path> first_plans;
+  for (const std::string name :
+    {"diff", "ackermann", "ackermann_1m", "diff", "ackermann", "diff", "ackermann_1m"})
+  {
+    nav_msgs::msg::Path plan = planTurnAround(*planners[name]);
+    ASSERT_FALSE(plan.poses.empty());
+    if (first_plans.count(name) == 0) {
+      first_plans[name] = plan;
+    } else {
+      EXPECT_TRUE(samePath(plan, first_plans[name])) << name;
+    }
+  }
+  EXPECT_FALSE(samePath(first_plans["diff"], first_plans["ackermann"]));
+  EXPECT_FALSE(samePath(first_plans["ackermann"], first_plans["ackermann_1m"]));
+
+  for (auto & planner : planners) {
+    planner.second->deactivate();
+    planner.second->cleanup();
+  }
+  planners.clear();
+  costmap_ros->on_cleanup(rclcpp_lifecycle::State());
+}
+
+TEST(SmacTest, test_smac_lattice_reconfigure_lattice_filepath)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacLatticeFileReconfTest");
+  auto costmap_ros = makeEmptyCostmap();
+  node->declare_parameter("test.lattice_filepath", samplePrimitives("0.5m_turning_radius/diff"));
+  node->declare_parameter("test.smooth_path", false);
+
+  auto planner = std::make_unique<LatticeWrap>();
+  planner->configure(node, "test", nullptr, costmap_ros);
+  planner->activate();
+  nav_msgs::msg::Path diff_plan = planTurnAround(*planner);
+
+  // A new lattice file must replace the primitives of the previous one
+  planner->callDynamicParams(
+    {rclcpp::Parameter(
+        "test.lattice_filepath", samplePrimitives("0.5m_turning_radius/ackermann"))});
+  nav_msgs::msg::Path ackermann_plan = planTurnAround(*planner);
+  EXPECT_FALSE(samePath(diff_plan, ackermann_plan));
+
+  planner->callDynamicParams(
+    {rclcpp::Parameter("test.lattice_filepath", samplePrimitives("0.5m_turning_radius/diff"))});
+  EXPECT_TRUE(samePath(diff_plan, planTurnAround(*planner)));
+
+  planner->deactivate();
+  planner->cleanup();
+  costmap_ros->on_cleanup(rclcpp_lifecycle::State());
 }
