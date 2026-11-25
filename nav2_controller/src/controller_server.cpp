@@ -753,7 +753,7 @@ void ControllerServer::computeAndPublishVelocity()
     }
   }
 
-  geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getRawTwist());
+  geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getTwist());
 
   geometry_msgs::msg::PoseStamped goal =
     path_handlers_[current_path_handler_]->getTransformedGoal(pose.header.stamp);
@@ -965,6 +965,7 @@ void ControllerServer::onGoalExit(bool force_stop)
 
 bool ControllerServer::isGoalReached()
 {
+<<<<<<< HEAD
   geometry_msgs::msg::PoseStamped pose;
 
   if (!getRobotPose(pose)) {
@@ -972,6 +973,9 @@ bool ControllerServer::isGoalReached()
   }
 
   geometry_msgs::msg::Twist velocity = getThresholdedTwist(odom_sub_->getRawTwist());
+=======
+  geometry_msgs::msg::Twist velocity = getThresholdedTwist(odom_sub_->getTwist());
+>>>>>>> eb5de6c (Use smoothed twist instead of raw twist in controller, docking, and following servers (#6845))
 
   return goal_checkers_[current_goal_checker_]->isGoalReached(
     pose.pose, transformed_end_pose_.pose,

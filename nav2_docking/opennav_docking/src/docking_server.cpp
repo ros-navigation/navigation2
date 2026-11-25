@@ -448,7 +448,7 @@ void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_po
     }
 
     auto current_vel = std::make_unique<geometry_msgs::msg::TwistStamped>();
-    current_vel->twist.angular.z = odom_sub_->getRawTwist().angular.z;
+    current_vel->twist.angular.z = odom_sub_->getTwist().angular.z;
 
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
     command->header = robot_pose.header;
