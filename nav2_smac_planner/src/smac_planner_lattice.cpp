@@ -354,18 +354,17 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
 
   std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
 
-  // If another SmacPlannerLattice instance has loaded a different lattice file since this
-  // one last planned, load this planner's lattice file again, and rebuild the distance
-  // heuristic lookup table if it was built for different settings
-  if (NodeLattice::motion_table.current_lattice_filepath != _search_info.lattice_filepath) {
-    const float lookup_table_dim =
-      getLookupTableDim(_lookup_table_size, _costmap->getResolution());
-    if (!distanceHeuristicMatches(lookup_table_dim, _metadata, _search_info)) {
-      NodeLattice::precomputeDistanceHeuristic(
-        lookup_table_dim, _motion_model, _metadata.number_of_headings, _search_info);
-    }
-    loadLatticeMotionTable(_costmap, _metadata.number_of_headings, _search_info);
+  // Another SmacPlannerLattice instance may have used the shared tables since this one last
+  // planned. Rebuild the distance heuristic lookup table if it was built for different
+  // settings, and restore this planner's settings and lattice file in the motion table
+  // (the file is only read again if it changed)
+  const float lookup_table_dim =
+    getLookupTableDim(_lookup_table_size, _costmap->getResolution());
+  if (!distanceHeuristicMatches(lookup_table_dim, _metadata, _search_info)) {
+    NodeLattice::precomputeDistanceHeuristic(
+      lookup_table_dim, _motion_model, _metadata.number_of_headings, _search_info);
   }
+  loadLatticeMotionTable(_costmap, _metadata.number_of_headings, _search_info);
 
   // Set collision checker and costmap information
   _collision_checker.setFootprint(

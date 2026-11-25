@@ -344,6 +344,46 @@ TEST(SmacTest, test_smac_lattice_switching_planners)
   costmap_ros->on_cleanup(rclcpp_lifecycle::State());
 }
 
+TEST(SmacTest, test_smac_lattice_switching_planners_same_file)
+{
+  // Two lattice planners with the same lattice file but different settings
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacLatticeSameFileTest");
+  auto costmap_ros = makeEmptyCostmap();
+
+  std::map<std::string, std::unique_ptr<nav2_smac_planner::SmacPlannerLattice>> planners;
+  for (const std::string name : {"forward", "reverse"}) {
+    node->declare_parameter(
+      name + ".lattice_filepath", samplePrimitives("0.5m_turning_radius/ackermann"));
+    node->declare_parameter(name + ".smooth_path", false);
+    node->declare_parameter(name + ".allow_reverse_expansion", name == "reverse");
+    // Each switch rebuilds the heuristic table, keep it small to keep the test quick
+    node->declare_parameter(name + ".lookup_table_size", 5.0);
+    planners[name] = std::make_unique<nav2_smac_planner::SmacPlannerLattice>();
+    planners[name]->configure(node, name, nullptr, costmap_ros);
+    planners[name]->activate();
+  }
+
+  // Each planner must keep planning with its own settings, whichever planned before it
+  std::map<std::string, nav_msgs::msg::Path> first_plans;
+  for (const std::string name : {"forward", "reverse", "forward", "reverse"}) {
+    nav_msgs::msg::Path plan = planTurnAround(*planners[name]);
+    ASSERT_FALSE(plan.poses.empty());
+    if (first_plans.count(name) == 0) {
+      first_plans[name] = plan;
+    } else {
+      EXPECT_TRUE(samePath(plan, first_plans[name])) << name;
+    }
+  }
+  EXPECT_FALSE(samePath(first_plans["forward"], first_plans["reverse"]));
+
+  for (auto & planner : planners) {
+    planner.second->deactivate();
+    planner.second->cleanup();
+  }
+  planners.clear();
+  costmap_ros->on_cleanup(rclcpp_lifecycle::State());
+}
+
 TEST(SmacTest, test_smac_lattice_reconfigure_lattice_filepath)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("SmacLatticeFileReconfTest");
