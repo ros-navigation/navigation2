@@ -16,6 +16,7 @@
 #include <fstream>
 #include <limits>
 #include <string>
+#include <vector>
 #include <nlohmann/json.hpp>
 
 #include "nav2_ros_common/node_utils.hpp"
@@ -25,6 +26,12 @@
 
 using namespace nav2_route; // NOLINT
 using Json = nlohmann::json;
+
+class GeoJsonGraphFileSaverWrapper : public GeoJsonGraphFileSaver
+{
+public:
+  using GeoJsonGraphFileSaver::loadEdgesFromGraph;
+};
 
 Json g_simple_graph = nlohmann::json::parse(
   R"(
@@ -352,8 +359,6 @@ TEST(GeoJsonGraphFileSaver, test_deleted_node_edges)
   graph.resize(4);
   for (unsigned int i = 0; i != graph.size(); i++) {
     graph[i].nodeid = i + 1;
-    graph[i].coords.x = static_cast<float>(i);
-    graph[i].coords.frame_id = "map";
   }
   EdgeCost edge_cost;
   edge_cost.cost = 1.0f;
@@ -362,16 +367,13 @@ TEST(GeoJsonGraphFileSaver, test_deleted_node_edges)
   graph[2].addEdge(edge_cost, &graph[3], 3);
   graph[1].nodeid = std::numeric_limits<int>::max();
 
-  const std::string file_path = "deleted_node_graph.geojson";
-  GeoJsonGraphFileSaver saver;
-  ASSERT_TRUE(saver.saveGraphToFile(graph, file_path));
+  GeoJsonGraphFileSaverWrapper saver;
+  std::vector<Json> edges;
+  saver.loadEdgesFromGraph(graph, edges);
 
-  Graph loaded;
-  GraphToIDMap ids;
-  GeoJsonGraphFileLoader loader;
-  EXPECT_NO_THROW(loader.loadGraphFromFile(loaded, ids, file_path));
-  EXPECT_EQ(loaded.size(), 3u);
-  std::filesystem::remove(file_path);
+  ASSERT_EQ(edges.size(), 1u);
+  EXPECT_EQ(edges[0]["properties"]["startid"], 3);
+  EXPECT_EQ(edges[0]["properties"]["endid"], 4);
 }
 
 int main(int argc, char ** argv)
