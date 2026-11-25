@@ -27,6 +27,8 @@
 //                                   trajectories as CSV
 //   MPPI_BENCH_PLANT_ACCEL=1        the robot's velocity also changes within the configured
 //                                   acceleration limits, as a real robot's would
+//   MPPI_BENCH_SOFT_RESET=1         apply a 50% speed limit while driving, then update a parameter
+//                                   while it is active, which resets the optimizer
 
 #include <algorithm>
 #include <chrono>
@@ -51,6 +53,7 @@
 #include "nav2_core/controller_exceptions.hpp"
 #include "nav2_core/goal_checker.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_costmap_2d/costmap_filters/filter_values.hpp"
 #include "nav2_mppi_controller/controller.hpp"
 #include "nav2_ros_common/tf2_factories.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -327,6 +330,10 @@ struct RunResult
   double cycle_ms{0.0};
   // Hash of every command, to check whether a change leaves the behavior bit-identical
   uint64_t cmd_hash{0};
+  // With MPPI_BENCH_SOFT_RESET: commands above the speed limit after the parameter update, and how
+  // far the command at the update exceeds the acceleration limits, in per-step velocity changes
+  int limit_lost{0};
+  double reset_jump{0.0};
 };
 
 void hashCombine(uint64_t & hash, double value)
@@ -536,6 +543,12 @@ protected:
     const std::string & csv_path = "")
   {
     controller_->reset();
+    const bool soft_reset = std::getenv("MPPI_BENCH_SOFT_RESET") != nullptr;
+    constexpr int kSpeedLimitCycle = 100, kParamUpdateCycle = 140;
+    static int param_updates = 0;
+    if (soft_reset) {
+      controller_->setSpeedLimit(nav2_costmap_2d::NO_SPEED_LIMIT, true);
+    }
     BenchmarkGoalChecker checker;
     tf_->clear();
 
@@ -677,6 +690,15 @@ protected:
         result.time_to_speed = k * kControlDt;
       }
 
+      if (soft_reset && k == kSpeedLimitCycle) {
+        controller_->setSpeedLimit(50.0, true);
+      }
+      if (soft_reset && k == kParamUpdateCycle) {
+        const double weight = 5.0 + 1e-3 * (++param_updates % 2);
+        const std::string param = "FollowPath.PathFollowCritic.cost_weight";
+        node_->set_parameters({rclcpp::Parameter(param, weight)});
+      }
+
       geometry_msgs::msg::Twist cmd;
       bool failed = false;
       try {
@@ -703,6 +725,14 @@ protected:
 
       hashCombine(result.cmd_hash, cmd.linear.x);
       hashCombine(result.cmd_hash, cmd.angular.z);
+      if (soft_reset && !failed && k >= kParamUpdateCycle && cmd.linear.x > 0.25 + 1e-3) {
+        result.limit_lost++;
+      }
+      if (soft_reset && !failed && k == kParamUpdateCycle) {
+        const auto [lo, hi] = reachable(prev_v, c.ax_max, -c.ax_min, kControlDt);
+        result.reset_jump = std::max(0.0, std::max(lo - cmd.linear.x, cmd.linear.x - hi)) /
+          (c.ax_max * kControlDt);
+      }
       if (!failed && !prev_failed) {
         // Commands are a control period apart, starting from rest
         const auto [v_lo, v_hi] = reachable(prev_v, c.ax_max, -c.ax_min, kControlDt);
@@ -947,7 +977,7 @@ TEST_F(MPPILatencyBenchmark, swathsAndSCurves)
     runs_csv.open(std::string(csv_dir) + "/runs.csv");
     runs_csv << "path,plant,controller,repeat,success,rms_cte,max_cte,time,goal_overshoot," <<
       "final_yaw_error,failures,prediction_error,jitter_v,jitter_w,accel_violations," <<
-      "time_to_speed,cycle_ms,cmd_hash\n";
+      "time_to_speed,cycle_ms,cmd_hash,limit_lost,reset_jump\n";
   }
 
   printf(
@@ -975,7 +1005,7 @@ TEST_F(MPPILatencyBenchmark, swathsAndSCurves)
               r.goal_overshoot << "," << r.final_yaw_error << "," << r.failures << "," <<
               r.prediction_error << "," << r.jitter_v << "," << r.jitter_w << "," <<
               r.accel_violations << "," << r.time_to_speed << "," << r.cycle_ms << "," <<
-              r.cmd_hash << "\n";
+              r.cmd_hash << "," << r.limit_lost << "," << r.reset_jump << "\n";
             runs_csv.flush();
           }
         }
