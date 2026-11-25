@@ -40,6 +40,16 @@ public:
   explicit SmootherWrapper(const SmootherParams & params)
   : nav2_smac_planner::Smoother(params)
   {}
+
+  using nav2_smac_planner::Smoother::findBoundaryExpansion;
+  using nav2_smac_planner::Smoother::enforceStartBoundaryConditions;
+  using nav2_smac_planner::Smoother::enforceEndBoundaryConditions;
+
+  // smooth() sets the footprint checker's costmap, so do the same when testing its parts
+  void setFootprintCostmap(const nav2_costmap_2d::Costmap2D * costmap)
+  {
+    footprint_checker_.setCostmap(const_cast<nav2_costmap_2d::Costmap2D *>(costmap));
+  }
 };
 
 TEST(SmootherTest, test_full_smoother)
@@ -267,6 +277,216 @@ TEST(SmootherTest, rejects_non_circular_footprint_collision)
   EXPECT_FALSE(footprint_collision);
 }
 
+<<<<<<< HEAD
+=======
+TEST(SmootherTest, boundary_expansion_checks_footprint)
+{
+  nav2_smac_planner::SmootherParams params;
+  params.tolerance_ = 2.0;
+  params.max_its_ = 1000;
+  params.w_data_ = 0.2;
+  params.w_smooth_ = 0.3;
+  params.do_refinement_ = false;
+  params.refinement_num_ = 0;
+  params.holonomic_ = false;
+
+  SmootherWrapper smoother(params);
+  smoother.initialize(0.4 /*turning radius*/);
+
+  // Reference point on the rear axle, so the body extends well ahead of it
+  std::vector<geometry_msgs::msg::Point> footprint(4);
+  footprint[0].x = 0.65;
+  footprint[0].y = 0.275;
+  footprint[1].x = -0.15;
+  footprint[1].y = 0.275;
+  footprint[2].x = -0.15;
+  footprint[2].y = -0.275;
+  footprint[3].x = 0.65;
+  footprint[3].y = -0.275;
+
+  geometry_msgs::msg::Pose start, end;
+  start.position.x = 1.0;
+  start.position.y = 2.5;
+  start.orientation.w = 1.0;
+  end.position.x = 2.2;
+  end.position.y = 2.9;
+  end.orientation.w = 1.0;
+
+  auto expand = [&](
+    const nav2_costmap_2d::Costmap2D & costmap,
+    const std::vector<geometry_msgs::msg::Point> & robot) {
+      nav2_smac_planner::BoundaryExpansion expansion;
+      expansion.path_end_idx = 40;
+      expansion.original_path_length = 10.0;
+      smoother.setFootprintCostmap(&costmap);
+      smoother.findBoundaryExpansion(start, end, expansion, &costmap, robot);
+      return expansion.in_collision;
+    };
+
+  // This cell is passed by the front corner, but is far from the reference point
+  nav2_costmap_2d::Costmap2D costmap(100, 100, 0.05, 0.0, 0.0, 0);
+  costmap.setCost(49, 66, nav2_costmap_2d::LETHAL_OBSTACLE);
+  EXPECT_FALSE(expand(costmap, {}));
+  EXPECT_TRUE(expand(costmap, footprint));
+
+  nav2_costmap_2d::Costmap2D empty_costmap(100, 100, 0.05, 0.0, 0.0, 0);
+  EXPECT_FALSE(expand(empty_costmap, footprint));
+}
+
+TEST(SmootherTest, reversing_boundary_conditions_check_footprint)
+{
+  nav2_smac_planner::SmootherParams params;
+  params.tolerance_ = 2.0;
+  params.max_its_ = 1000;
+  params.w_data_ = 0.2;
+  params.w_smooth_ = 0.3;
+  params.do_refinement_ = false;
+  params.refinement_num_ = 0;
+  params.holonomic_ = false;
+
+  SmootherWrapper smoother(params);
+  smoother.initialize(0.4 /*turning radius*/);
+
+  // Reference point on the rear axle, so the body extends well ahead of it
+  std::vector<geometry_msgs::msg::Point> footprint(4);
+  footprint[0].x = 0.65;
+  footprint[0].y = 0.275;
+  footprint[1].x = -0.15;
+  footprint[1].y = 0.275;
+  footprint[2].x = -0.15;
+  footprint[2].y = -0.275;
+  footprint[3].x = 0.65;
+  footprint[3].y = -0.275;
+
+  // Facing +x while driving towards -x, offset from both boundary poses
+  nav_msgs::msg::Path reversing_path;
+  for (unsigned int i = 0; i <= 40; ++i) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = 3.0 - 0.05 * i;
+    pose.pose.position.y = 2.5;
+    pose.pose.orientation.w = 1.0;
+    reversing_path.poses.push_back(pose);
+  }
+
+  geometry_msgs::msg::Pose start_pose, end_pose;
+  start_pose.position.x = 3.0;
+  start_pose.position.y = 2.7;
+  start_pose.orientation.w = 1.0;
+  end_pose.position.x = 1.0;
+  end_pose.position.y = 2.7;
+  end_pose.orientation.w = 1.0;
+
+  auto start_y = [&](
+    const nav2_costmap_2d::Costmap2D & costmap,
+    const std::vector<geometry_msgs::msg::Point> & robot) {
+      nav_msgs::msg::Path path = reversing_path;
+      smoother.setFootprintCostmap(&costmap);
+      smoother.enforceStartBoundaryConditions(start_pose, path, &costmap, true, robot);
+      return path.poses.front().pose.position.y;
+    };
+  auto end_y = [&](
+    const nav2_costmap_2d::Costmap2D & costmap,
+    const std::vector<geometry_msgs::msg::Point> & robot) {
+      nav_msgs::msg::Path path = reversing_path;
+      smoother.setFootprintCostmap(&costmap);
+      smoother.enforceEndBoundaryConditions(end_pose, path, &costmap, true, robot);
+      return path.poses.back().pose.position.y;
+    };
+
+  // Every candidate curve includes the boundary pose, where these cells are
+  // under the front edge of the robot but far from its reference point
+  nav2_costmap_2d::Costmap2D start_blocked(100, 100, 0.05, 0.0, 0.0, 0);
+  nav2_costmap_2d::Costmap2D end_blocked(100, 100, 0.05, 0.0, 0.0, 0);
+  for (unsigned int offset = 0; offset != 3; ++offset) {
+    start_blocked.setCost(72 + offset, 54, nav2_costmap_2d::LETHAL_OBSTACLE);
+    end_blocked.setCost(32 + offset, 54, nav2_costmap_2d::LETHAL_OBSTACLE);
+  }
+  nav2_costmap_2d::Costmap2D empty_costmap(100, 100, 0.05, 0.0, 0.0, 0);
+
+  // A curve is applied, moving the boundary of the path onto the boundary pose,
+  // unless the footprint rejects every candidate and the path is left as it was
+  EXPECT_NEAR(start_y(start_blocked, {}), 2.7, 1e-3);
+  EXPECT_NEAR(start_y(start_blocked, footprint), 2.5, 1e-3);
+  EXPECT_NEAR(start_y(empty_costmap, footprint), 2.7, 1e-3);
+
+  EXPECT_NEAR(end_y(end_blocked, {}), 2.7, 1e-3);
+  EXPECT_NEAR(end_y(end_blocked, footprint), 2.5, 1e-3);
+  EXPECT_NEAR(end_y(empty_costmap, footprint), 2.7, 1e-3);
+}
+
+TEST(SmootherTest, respects_max_traversal_cost)
+{
+  nav2_smac_planner::SmootherParams params;
+  params.tolerance_ = 2.0;
+  params.max_its_ = 1000;
+  params.w_data_ = 0.2;
+  params.w_smooth_ = 0.3;
+  params.do_refinement_ = false;
+  params.refinement_num_ = 0;
+  params.holonomic_ = false;
+
+  nav2_costmap_2d::Costmap2D costmap(
+    200, 200, 0.1, 0.0, 0.0, nav2_costmap_2d::FREE_SPACE);
+
+  // High cost, but non-lethal, area inside of the path's corner
+  for (unsigned int x = 21; x <= 40; ++x) {
+    for (unsigned int y = 100; y <= 119; ++y) {
+      costmap.setCost(x, y, 230);
+    }
+  }
+
+  auto make_path = []() {
+      nav_msgs::msg::Path path;
+      geometry_msgs::msg::PoseStamped pose;
+      for (unsigned int i = 0; i <= 5; ++i) {
+        pose.pose.position.x = 2.0;
+        pose.pose.position.y = 2.0 + 2.0 * i;
+        pose.pose.orientation =
+          nav2_util::geometry_utils::orientationAroundZAxis(i == 5 ? 0.0 : M_PI_2);
+        path.poses.push_back(pose);
+      }
+      for (unsigned int i = 1; i <= 6; ++i) {
+        pose.pose.position.x = 2.0 + 2.0 * i;
+        pose.pose.position.y = 12.0;
+        pose.pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(0.0);
+        path.poses.push_back(pose);
+      }
+      return path;
+    };
+
+  auto max_path_cost = [&](const nav_msgs::msg::Path & path) {
+      unsigned int max_cost = 0;
+      for (const auto & path_pose : path.poses) {
+        unsigned int mx, my;
+        if (costmap.worldToMap(path_pose.pose.position.x, path_pose.pose.position.y, mx, my)) {
+          max_cost = std::max(max_cost, static_cast<unsigned int>(costmap.getCost(mx, my)));
+        }
+      }
+      return max_cost;
+    };
+
+  // Without a max cost, smoothing pulls the corner into the high cost area
+  nav_msgs::msg::Path path = make_path();
+  ASSERT_EQ(max_path_cost(path), 0u);
+  SmootherWrapper smoother(params);
+  smoother.initialize(0.4);
+  EXPECT_TRUE(smoother.smooth(path, &costmap, 1.0));
+  EXPECT_EQ(max_path_cost(path), 230u);
+
+  // With a max cost below it, the update entering it is rejected and rolled back
+  nav2_smac_planner::GridCollisionChecker checker(nullptr, 72, nullptr);
+  checker.setCostmap(&costmap);
+  checker.setMaxCost(200.0f, 0.0f, 20.0f, 20.0f, 140.0f, 120.0f);
+  path = make_path();
+  SmootherWrapper max_cost_smoother(params);
+  max_cost_smoother.initialize(0.4);
+  EXPECT_FALSE(
+    max_cost_smoother.smooth(
+      path, &costmap, 1.0, std::vector<geometry_msgs::msg::Point>(), &checker));
+  EXPECT_LE(max_path_cost(path), 200u);
+}
+
+>>>>>>> 346bd05 (Smac smoother: check robot footprint in boundary expansions (#6757))
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
