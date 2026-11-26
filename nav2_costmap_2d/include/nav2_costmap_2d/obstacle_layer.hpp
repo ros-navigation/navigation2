@@ -230,7 +230,7 @@ protected:
   std::vector<geometry_msgs::msg::Point> transformed_footprint_;
   bool footprint_clearing_enabled_;
   /**
-   * @brief Clear costmap layer info below the robot's footprint
+   * @brief Compute the robot footprint in the costmap frame and expand the bounds to include it
    */
   void updateFootprint(
     double robot_x, double robot_y, double robot_yaw, double * min_x,

@@ -185,7 +185,7 @@ protected:
   bool footprint_clearing_enabled_;
   bool restore_cleared_footprint_;
   /**
-   * @brief Clear costmap layer info below the robot's footprint
+   * @brief Compute the robot footprint in the costmap frame and expand the bounds to include it
    */
   void updateFootprint(
     double robot_x, double robot_y, double robot_yaw, double * min_x,
