@@ -51,6 +51,10 @@ bool GeoJsonGraphFileSaver::saveGraphToFile(
     std::ofstream file(filepath);
     file << json_graph.dump(4) << std::endl;
     file.close();
+    if (file.fail()) {
+      RCLCPP_ERROR(logger_, "Failed to write graph file: %s", filepath.c_str());
+      return false;
+    }
   } catch (const std::exception & e) {
     RCLCPP_ERROR(logger_, "An error occurred: %s", e.what());
     return false;
