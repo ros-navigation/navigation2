@@ -43,10 +43,8 @@ namespace dwb_critics
 
 void PathAlignCritic::onInit()
 {
-  PathDistCritic::onInit();
+  MapGridCritic::onInit();
   stop_on_failure_ = false;
-  // Obstacle cells would be a huge finite score here instead of a rejection
-  obstacle_aware_propagation_ = false;
 
   auto node = node_.lock();
   if (!node) {

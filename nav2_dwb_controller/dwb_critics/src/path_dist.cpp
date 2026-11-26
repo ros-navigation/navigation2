@@ -40,6 +40,20 @@
 
 namespace dwb_critics
 {
+void PathDistCritic::onInit()
+{
+  MapGridCritic::onInit();
+
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  setObstacleAwarePropagation(
+    node->declare_or_get_parameter(
+      dwb_plugin_name_ + "." + name_ + ".obstacle_aware_propagation", false));
+}
+
 bool PathDistCritic::prepare(
   const geometry_msgs::msg::Pose & pose, const nav_2d_msgs::msg::Twist2D &,
   const geometry_msgs::msg::Pose &,

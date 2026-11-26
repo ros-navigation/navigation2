@@ -84,9 +84,6 @@ void MapGridCritic::onInit()
       aggro_str.c_str());
     aggregationType_ = ScoreAggregationType::Last;
   }
-
-  obstacle_aware_propagation_ = node->declare_or_get_parameter(
-    dwb_plugin_name_ + "." + name_ + ".obstacle_aware_propagation", false);
 }
 
 void MapGridCritic::setAsObstacle(unsigned int index)
@@ -135,29 +132,39 @@ void MapGridCritic::propagateObstacleAwareManhattanDistances()
   queue_->setObstacleAware(false);
 }
 
+bool MapGridCritic::robotReachable(const geometry_msgs::msg::Pose & robot_pose)
+{
+  unsigned int robot_x, robot_y;
+  return costmap_->worldToMap(robot_pose.position.x, robot_pose.position.y, robot_x, robot_y) &&
+         getScore(robot_x, robot_y) < obstacle_score_;
+}
+
+void MapGridCritic::reseed()
+{
+  const auto seeds = seeds_;
+  reset();
+  for (const auto & [x, y] : seeds) {
+    enqueueSeed(x, y);
+  }
+}
+
 void MapGridCritic::propagateDistances(const geometry_msgs::msg::Pose & robot_pose)
 {
-  if (obstacle_aware_propagation_) {
-    propagateObstacleAwareManhattanDistances();
-
-    unsigned int robot_x, robot_y;
-    if (costmap_->worldToMap(robot_pose.position.x, robot_pose.position.y, robot_x, robot_y) &&
-      getScore(robot_x, robot_y) < obstacle_score_)
-    {
-      return;
-    }
-
-    RCLCPP_DEBUG_THROTTLE(
-      rclcpp::get_logger("MapGridCritic"), *costmap_ros_->get_clock(), 1000,
-      "%s: the robot is not reachable around obstacles, falling back to Manhattan distances.",
-      name_.c_str());
-    const auto seeds = seeds_;
-    reset();
-    for (const auto & [x, y] : seeds) {
-      enqueueSeed(x, y);
-    }
+  if (!obstacle_aware_propagation_) {
+    propagateManhattanDistances();
+    return;
   }
 
+  propagateObstacleAwareManhattanDistances();
+  if (robotReachable(robot_pose)) {
+    return;
+  }
+
+  RCLCPP_DEBUG_THROTTLE(
+    rclcpp::get_logger("MapGridCritic"), *costmap_ros_->get_clock(), 1000,
+    "%s: the robot is not reachable around obstacles, falling back to Manhattan distances.",
+    name_.c_str());
+  reseed();
   propagateManhattanDistances();
 }
 
