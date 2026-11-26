@@ -143,6 +143,7 @@ void ComputeAndTrackRouteAction::on_wait_for_result(
     setOutput("route", feedback_.route);
     setOutput("path", feedback_.path);
     setOutput("rerouted", feedback_.rerouted);
+    setOutput("operations_triggered", feedback_.operations_triggered);
   }
 }
 
@@ -156,12 +157,14 @@ void ComputeAndTrackRouteAction::resetFeedbackAndOutputPorts()
   feedback_.route = empty_route;
   feedback_.path = empty_path;
   feedback_.rerouted = false;
+  feedback_.operations_triggered.clear();
   setOutput("last_node_id", feedback_.last_node_id);
   setOutput("next_node_id", feedback_.next_node_id);
   setOutput("current_edge_id", feedback_.current_edge_id);
   setOutput("route", feedback_.route);
   setOutput("path", feedback_.path);
   setOutput("rerouted", feedback_.rerouted);
+  setOutput("operations_triggered", feedback_.operations_triggered);
 }
 
 }  // namespace nav2_behavior_tree
