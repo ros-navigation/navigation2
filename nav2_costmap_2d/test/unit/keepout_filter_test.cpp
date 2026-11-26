@@ -25,6 +25,9 @@
 #include "tf2_ros/buffer.hpp"
 #include "tf2_ros/transform_listener.hpp"
 #include "tf2_ros/transform_broadcaster.hpp"
+#include "tf2/LinearMath/Quaternion.hpp"
+#include "tf2/LinearMath/Transform.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_util/occ_grid_values.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -106,8 +109,11 @@ protected:
   void rePublishInfo(double base, double multiplier);
   void rePublishMask();
   void waitSome(const std::chrono::nanoseconds & duration);
-  void createKeepoutFilter(const std::string & global_frame);
+  void createKeepoutFilter(const std::string & global_frame, bool override_lethal_cost = false);
   void createTFBroadcaster(const std::string & mask_frame, const std::string & global_frame);
+  void createTiltedTF(
+    const std::string & mask_frame, const std::string & global_frame,
+    double robot_x, double robot_y);
   void verifyMasterGrid(unsigned char free_value, unsigned char keepout_value);
   void testStandardScenario(unsigned char free_value, unsigned char keepout_value);
   void testFramesScenario(unsigned char free_value, unsigned char keepout_value);
@@ -208,7 +214,7 @@ void TestNode::waitSome(const std::chrono::nanoseconds & duration)
   }
 }
 
-void TestNode::createKeepoutFilter(const std::string & global_frame)
+void TestNode::createKeepoutFilter(const std::string & global_frame, bool override_lethal_cost)
 {
   node_ = std::make_shared<nav2::LifecycleNode>("test_node");
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
@@ -225,6 +231,9 @@ void TestNode::createKeepoutFilter(const std::string & global_frame)
     std::string(FILTER_NAME) + ".filter_info_topic", rclcpp::ParameterValue(INFO_TOPIC));
   node_->set_parameter(
     rclcpp::Parameter(std::string(FILTER_NAME) + ".filter_info_topic", INFO_TOPIC));
+  node_->declare_parameter(
+    std::string(FILTER_NAME) + ".override_lethal_cost",
+    rclcpp::ParameterValue(override_lethal_cost));
 
   keepout_filter_ = std::make_shared<nav2_costmap_2d::KeepoutFilter>();
   keepout_filter_->initialize(&layers, std::string(FILTER_NAME), tf_buffer_.get(), node_, nullptr);
@@ -260,6 +269,36 @@ void TestNode::createTFBroadcaster(const std::string & mask_frame, const std::st
 
   // Allow tf_buffer_ to be filled by listener
   waitSome(100ms);
+}
+
+void TestNode::createTiltedTF(
+  const std::string & mask_frame, const std::string & global_frame,
+  double robot_x, double robot_y)
+{
+  // Robot 25 m above the costmap plane, and global_frame tilted in mask_frame. At the robot height,
+  // mask_frame is global_frame shifted by (1, 1) as in createTFBroadcaster(), but 25 m lower a
+  // 3D transform shifts y by another 25 m * sin(0.05) = 1.25 m.
+  const double robot_height = 25.0;
+  tf2::Quaternion tilt;
+  tilt.setRPY(0.05, 0.0, 0.0);
+  const tf2::Transform global_in_mask(
+    tilt,
+    tf2::Vector3(1.0, 1.0, 0.0) - tf2::quatRotate(tilt, tf2::Vector3(0.0, 0.0, robot_height)));
+
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = mask_frame;
+  transform.child_frame_id = global_frame;
+  transform.transform = tf2::toMsg(global_in_mask);
+  tf_buffer_->setTransform(transform, "test", true);
+
+  geometry_msgs::msg::TransformStamped robot_transform;
+  robot_transform.header.frame_id = global_frame;
+  robot_transform.child_frame_id = "base_link";
+  robot_transform.transform.translation.x = robot_x;
+  robot_transform.transform.translation.y = robot_y;
+  robot_transform.transform.translation.z = robot_height;
+  robot_transform.transform.rotation.w = 1.0;
+  tf_buffer_->setTransform(robot_transform, "test", true);
 }
 
 void TestNode::verifyMasterGrid(unsigned char free_value, unsigned char keepout_value)
@@ -464,6 +503,46 @@ TEST_F(TestNode, testDifferentFrames)
 
   // Test KeepoutFilter
   testFramesScenario(nav2_costmap_2d::FREE_SPACE, nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  // Clean-up
+  keepout_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testDifferentFramesWithHeightAndTilt)
+{
+  // Initialize test system
+  createMaps(nav2_costmap_2d::FREE_SPACE, nav2_util::OCC_GRID_OCCUPIED, "map");
+  publishMaps();
+  createKeepoutFilter("odom");
+  createTiltedTF("map", "odom", 0.0, 0.0);
+
+  // Test KeepoutFilter: same keepout points as without height and tilt
+  testFramesScenario(nav2_costmap_2d::FREE_SPACE, nav2_costmap_2d::LETHAL_OBSTACLE);
+
+  // Clean-up
+  keepout_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testRobotInKeepoutWithHeightAndTilt)
+{
+  // Initialize test system
+  createMaps(nav2_costmap_2d::FREE_SPACE, nav2_util::OCC_GRID_OCCUPIED, "map");
+  publishMaps();
+  createKeepoutFilter("odom", true);
+  // Robot at (4.5, 5.494) in the mask frame: inside the keepout zone, but outside of it if
+  // transformed at height 0 (y = 6.744)
+  const double robot_x = 3.5;
+  const double robot_y = 4.5;
+  createTiltedTF("map", "odom", robot_x, robot_y);
+
+  // Test KeepoutFilter: the first update only takes the received mask bounds,
+  // the second one checks the robot pose
+  double min_x, min_y, max_x, max_y;
+  keepout_filter_->updateBounds(robot_x, robot_y, 0.0, &min_x, &min_y, &max_x, &max_y);
+  keepout_filter_->updateBounds(robot_x, robot_y, 0.0, &min_x, &min_y, &max_x, &max_y);
+  testFramesScenario(nav2_costmap_2d::FREE_SPACE, nav2_costmap_2d::MAX_NON_OBSTACLE);
 
   // Clean-up
   keepout_filter_->resetFilter();

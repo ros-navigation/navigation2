@@ -27,6 +27,9 @@
 #include "tf2_ros/buffer.hpp"
 #include "tf2_ros/transform_listener.hpp"
 #include "tf2_ros/transform_broadcaster.hpp"
+#include "tf2/LinearMath/Quaternion.hpp"
+#include "tf2/LinearMath/Transform.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "nav2_util/occ_grid_values.hpp"
 #include "nav2_costmap_2d/cost_values.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -213,6 +216,9 @@ protected:
   void rePublishMask();
   bool createSpeedFilter(const std::string & global_frame);
   void createTFBroadcaster(const std::string & mask_frame, const std::string & global_frame);
+  void createTiltedTF(
+    const std::string & mask_frame, const std::string & global_frame,
+    double robot_x, double robot_y);
   void publishTransform();
 
   // Test methods
@@ -223,6 +229,7 @@ protected:
     uint8_t type, double base, double multiplier,
     double tr_x, double tr_y);
   void testOutOfMask(uint8_t type, double base, double multiplier);
+  void testTiltedFrame(double robot_x, double robot_y, unsigned int x, unsigned int y);
   void testIncorrectLimits(uint8_t type, double base, double multiplier);
 
   void reset();
@@ -407,6 +414,37 @@ void TestNode::createTFBroadcaster(const std::string & mask_frame, const std::st
   waitSome(100ms);
 }
 
+void TestNode::createTiltedTF(
+  const std::string & mask_frame, const std::string & global_frame,
+  double robot_x, double robot_y)
+{
+  // Robot 25 m above the costmap plane, and global_frame tilted in mask_frame. At the robot height,
+  // mask_frame is global_frame shifted by (1, 1) as in createTFBroadcaster(), but 25 m lower a
+  // 3D transform shifts y by another 25 m * sin(0.05) = 1.25 m.
+  const double robot_height = 25.0;
+  tf2::Quaternion tilt;
+  tilt.setRPY(0.05, 0.0, 0.0);
+  const tf2::Transform global_in_mask(
+    tilt,
+    tf2::Vector3(TRANSLATION_X, TRANSLATION_Y, 0.0) -
+    tf2::quatRotate(tilt, tf2::Vector3(0.0, 0.0, robot_height)));
+
+  geometry_msgs::msg::TransformStamped transform;
+  transform.header.frame_id = mask_frame;
+  transform.child_frame_id = global_frame;
+  transform.transform = tf2::toMsg(global_in_mask);
+  tf_buffer_->setTransform(transform, "test", true);
+
+  geometry_msgs::msg::TransformStamped robot_transform;
+  robot_transform.header.frame_id = global_frame;
+  robot_transform.child_frame_id = "base_link";
+  robot_transform.transform.translation.x = robot_x;
+  robot_transform.transform.translation.y = robot_y;
+  robot_transform.transform.translation.z = robot_height;
+  robot_transform.transform.rotation.w = 1.0;
+  tf_buffer_->setTransform(robot_transform, "test", true);
+}
+
 void TestNode::publishTransform()
 {
   if (tf_broadcaster_) {
@@ -556,6 +594,17 @@ void TestNode::testSimpleMask(
   speed_limit = getSpeedLimit();
   ASSERT_TRUE(speed_limit != nullptr);
   EXPECT_EQ(speed_limit->speed_limit, nav2_costmap_2d::NO_SPEED_LIMIT);
+}
+
+void TestNode::testTiltedFrame(double robot_x, double robot_y, unsigned int x, unsigned int y)
+{
+  // The robot height is taken in updateBounds() and used in updateCosts()
+  double min_x, min_y, max_x, max_y;
+  speed_filter_->updateBounds(robot_x, robot_y, 0.0, &min_x, &min_y, &max_x, &max_y);
+  speed_filter_->updateCosts(*master_grid_, 0, 0, width_ + 4, height_ + 4);
+  nav2_msgs::msg::SpeedLimit::ConstSharedPtr speed_limit = waitSpeedLimit();
+  ASSERT_TRUE(speed_limit != nullptr);
+  verifySpeedLimit(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, x, y, speed_limit);
 }
 
 void TestNode::testOutOfMask(uint8_t type, double base, double multiplier)
@@ -772,6 +821,26 @@ TEST_F(TestNode, testDifferentFrame)
 
   // Test SpeedFilter
   testFullMask(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0, TRANSLATION_X, TRANSLATION_Y);
+
+  // Clean-up
+  speed_filter_->resetFilter();
+  reset();
+}
+
+TEST_F(TestNode, testDifferentFrameWithHeightAndTilt)
+{
+  // Initialize test system
+  createMaps("map");
+  publishMaps(nav2_costmap_2d::SPEED_FILTER_PERCENT, 0.0, 1.0);
+  EXPECT_TRUE(createSpeedFilter("odom"));
+  // Robot at (4.5, 5.494) in the mask frame: in cell (4, 5), but in cell (4, 6) if transformed
+  // at height 0 (y = 6.744)
+  const double robot_x = 3.5;
+  const double robot_y = 4.5;
+  createTiltedTF("map", "odom", robot_x, robot_y);
+
+  // Test SpeedFilter
+  testTiltedFrame(robot_x, robot_y, 4, 5);
 
   // Clean-up
   speed_filter_->resetFilter();

@@ -186,6 +186,14 @@ protected:
     geometry_msgs::msg::Pose & mask_pose) const;
 
   /**
+   * @brief Get the robot height in the costmap frame.
+   * @details The costmap is 2D, so its points are transformed to the mask frame at the robot height
+   * a tilted transform would otherwise turn the height difference into an x-y shift.
+   * @return The robot height, or 0 if the robot pose is not available
+   */
+  double getRobotHeight() const;
+
+  /**
    * @brief  Get the data of a cell in the filter mask
    * @param  filter_mask Filter mask to get the data from
    * @param  mx The x coordinate of the cell
@@ -226,6 +234,11 @@ protected:
   tf2::Duration transform_tolerance_;
 
   /**
+   * @brief: Frame of the robot
+   */
+  std::string robot_base_frame_;
+
+  /**
    * @brief: A service to enable/disable costmap filter
    */
   nav2::ServiceServer<std_srvs::srv::SetBool>::SharedPtr enable_service_;
@@ -235,6 +248,11 @@ private:
    * @brief: Latest robot position
    */
   geometry_msgs::msg::Pose latest_pose_;
+
+  /**
+   * @brief: Frame of the costmap
+   */
+  std::string costmap_frame_;
 
   /**
    * @brief: Mutex for locking filter's resources

@@ -77,6 +77,11 @@ void CostmapFilter::onInitialize()
     double transform_tolerance = node->declare_or_get_parameter(name_ + "." + "transform_tolerance",
       0.1);
     transform_tolerance_ = tf2::durationFromSec(transform_tolerance);
+    robot_base_frame_ = node->declare_or_get_parameter("robot_base_frame",
+      std::string("base_link"));
+    if (layered_costmap_) {
+      costmap_frame_ = layered_costmap_->getGlobalFrameID();
+    }
 
     // Costmap Filter enabling service
     enable_service_ = node->create_service<std_srvs::srv::SetBool>(
@@ -117,7 +122,7 @@ void CostmapFilter::updateBounds(
 
   latest_pose_.position.x = robot_x;
   latest_pose_.position.y = robot_y;
-  latest_pose_.position.z = 0.0;
+  latest_pose_.position.z = getRobotHeight();
   latest_pose_.orientation = nav2_util::geometry_utils::orientationAroundZAxis(robot_yaw);
 }
 
@@ -155,7 +160,7 @@ bool CostmapFilter::transformPose(
 {
   if (mask_frame != global_frame) {
     // Filter mask and current layer are in different frames:
-    // Transform (global_pose.position.x, global_pose.position.y) point from current layer frame
+    // Transform the global_pose position from current layer frame
     // to mask_pose in mask_frame
     geometry_msgs::msg::TransformStamped transform;
     geometry_msgs::msg::PointStamped in, out;
@@ -163,7 +168,7 @@ bool CostmapFilter::transformPose(
     in.header.frame_id = global_frame;
     in.point.x = global_pose.position.x;
     in.point.y = global_pose.position.y;
-    in.point.z = 0.0;
+    in.point.z = global_pose.position.z;
 
     try {
       tf_->transform(in, out, mask_frame, transform_tolerance_);
@@ -205,6 +210,20 @@ unsigned char CostmapFilter::getMaskCost(
     return std::round(
       static_cast<double>(data) * (LETHAL_OBSTACLE - FREE_SPACE) /
       (nav2_util::OCC_GRID_OCCUPIED - nav2_util::OCC_GRID_FREE));
+  }
+}
+
+double CostmapFilter::getRobotHeight() const
+{
+  try {
+    return tf_->lookupTransform(
+      costmap_frame_, robot_base_frame_, tf2::TimePointZero).transform.translation.z;
+  } catch (tf2::TransformException & ex) {
+    RCLCPP_WARN_THROTTLE(
+      logger_, *(clock_), 2000,
+      "CostmapFilter: Failed to get robot frame (%s) in costmap frame (%s), using height 0: %s",
+      robot_base_frame_.c_str(), costmap_frame_.c_str(), ex.what());
+    return 0.0;
   }
 }
 

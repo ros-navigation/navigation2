@@ -204,7 +204,7 @@ void KeepoutFilter::updateBounds(
     geometry_msgs::msg::Pose pose;
     pose.position.x = robot_x;
     pose.position.y = robot_y;
-    pose.position.z = 0.0;
+    pose.position.z = filter_mask_->header.frame_id != global_frame_ ? getRobotHeight() : 0.0;
     pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(robot_yaw);
     geometry_msgs::msg::Pose mask_pose;
     if (transformPose(global_frame_, pose, filter_mask_->header.frame_id, mask_pose)) {
@@ -261,6 +261,7 @@ void KeepoutFilter::process(
 
   tf2::Transform tf2_transform;
   tf2_transform.setIdentity();  // initialize by identical transform
+  double robot_height = 0.0;  // height in global_frame_ to transform the master_grid points at
   int mg_min_x, mg_min_y;  // master_grid indexes of bottom-left window corner
   int mg_max_x, mg_max_y;  // master_grid indexes of top-right window corner
 
@@ -283,6 +284,7 @@ void KeepoutFilter::process(
       return;
     }
     tf2::fromMsg(transform.transform, tf2_transform);
+    robot_height = getRobotHeight();
 
     mg_min_x = min_i;
     mg_min_y = min_j;
@@ -366,7 +368,7 @@ void KeepoutFilter::process(
       master_grid.mapToWorld(i, j, gl_wx, gl_wy);
       if (mask_frame != global_frame_) {
         // Transform (i, j) point from global_frame_ to mask_frame
-        tf2::Vector3 point(gl_wx, gl_wy, 0);
+        tf2::Vector3 point(gl_wx, gl_wy, robot_height);
         point = tf2_transform * point;
         msk_wx = point.x();
         msk_wy = point.y();
