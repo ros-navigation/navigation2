@@ -24,6 +24,18 @@
 namespace opennav_docking
 {
 
+namespace
+{
+
+bool hasServerParameter(const std::vector<rclcpp::Parameter> & parameters)
+{
+  return std::any_of(
+    parameters.begin(), parameters.end(),
+    [](const auto & p) {return p.get_name().find('.') == std::string::npos;});
+}
+
+}  // namespace
+
 using nav2::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
 
@@ -70,20 +82,18 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
 {
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
-  const bool has_server_param = std::any_of(
-    parameters.begin(), parameters.end(),
-    [](const auto & p) {return p.get_name().find('.') == std::string::npos;});
-  if (!has_server_param) {
+  if (!hasServerParameter(parameters)) {
     return result;
   }
 
-  std::unique_lock<std::mutex> lock(mutex_, std::try_to_lock);
-  if (!lock.owns_lock()) {
+  std::unique_lock<std::mutex> param_lock(mutex_, std::try_to_lock);
+  if (!param_lock.owns_lock()) {
     RCLCPP_WARN(
       logger_,
-      "Unable to dynamically change parameters while a docking action is currently running.");
+      "Unable to change docking server parameters while the docking action is running.");
     result.successful = false;
-    result.reason = "Cannot update parameters while a docking action is running.";
+    result.reason =
+      "Unable to change docking server parameters while the docking action is running.";
     return result;
   }
 
@@ -118,18 +128,15 @@ void
 ParameterHandler::updateParametersCallback(
   const std::vector<rclcpp::Parameter> & parameters)
 {
-  const bool has_server_param = std::any_of(
-    parameters.begin(), parameters.end(),
-    [](const auto & p) {return p.get_name().find('.') == std::string::npos;});
-  if (!has_server_param) {
+  if (!hasServerParameter(parameters)) {
     return;
   }
 
-  std::unique_lock<std::mutex> lock_reinit(mutex_, std::try_to_lock);
-  if (!lock_reinit.owns_lock()) {
+  std::unique_lock<std::mutex> param_lock(mutex_, std::try_to_lock);
+  if (!param_lock.owns_lock()) {
     RCLCPP_WARN(
       logger_,
-      "Unable to dynamically change parameters while a docking action is currently running.");
+      "Unable to change docking server parameters while the docking action is running.");
     return;
   }
 

@@ -199,6 +199,9 @@ TEST(FollowingServerTests, ErrorExceptions)
     } else {
       EXPECT_TRUE(false);
     }
+    {
+      std::lock_guard<std::mutex> lock(node->getParamMutex());
+    }
   }
 
   // Set follow_action_called to true to simulate robot following object

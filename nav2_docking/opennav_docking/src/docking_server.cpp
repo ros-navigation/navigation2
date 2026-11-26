@@ -174,7 +174,7 @@ bool DockingServer::checkAndWarnIfPreempted(
 
 void DockingServer::dockRobot()
 {
-  std::unique_lock<std::mutex> lock_reinit(param_handler_->getMutex());
+  std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
   action_start_time_ = this->now();
   nav2::Rate loop_rate(this, params_->controller_frequency);
 
@@ -287,7 +287,6 @@ void DockingServer::dockRobot()
             publishZeroVelocity();
             dock->plugin->stopDetectionProcess();
             stashDockData(goal->use_dock_id, dock, true);
-            lock_reinit.unlock();
             docking_action_server_->succeeded_current(result);
             return;
           }
@@ -371,7 +370,6 @@ void DockingServer::dockRobot()
   }
   // Store dock state for later undocking and delete temp dock, if applicable
   stashDockData(goal->use_dock_id, dock, false);
-  lock_reinit.unlock();
   docking_action_server_->terminate_current(result);
 }
 
@@ -658,7 +656,7 @@ bool DockingServer::getCommandToPose(
 
 void DockingServer::undockRobot()
 {
-  std::unique_lock<std::mutex> lock_reinit(param_handler_->getMutex());
+  std::lock_guard<std::mutex> lock_reinit(param_handler_->getMutex());
   action_start_time_ = this->now();
   nav2::Rate loop_rate(this, params_->controller_frequency);
 
@@ -804,7 +802,6 @@ void DockingServer::undockRobot()
   }
 
   publishZeroVelocity();
-  lock_reinit.unlock();
   undocking_action_server_->terminate_current(result);
 }
 

@@ -237,6 +237,10 @@ TEST(DockingServerTests, testErrorExceptions)
     } else {
       EXPECT_TRUE(false);
     }
+    // Wait for the action callback to release the parameter mutex before the next set_parameter
+    {
+      std::lock_guard<std::mutex> lock(node->getParamMutex());
+    }
   }
 
   // Now for undocking
@@ -277,6 +281,9 @@ TEST(DockingServerTests, testErrorExceptions)
       }
     } else {
       EXPECT_TRUE(false);
+    }
+    {
+      std::lock_guard<std::mutex> lock(node->getParamMutex());
     }
   }
   node->on_deactivate(rclcpp_lifecycle::State());
@@ -522,6 +529,9 @@ TEST(DockingServerTests, ExceptionHandlingDuringDocking)
 
     auto result = future_result.get();
     EXPECT_EQ(result.code, rclcpp_action::ResultCode::ABORTED);
+    {
+      std::lock_guard<std::mutex> lock(node->getParamMutex());
+    }
   }
 
   node->on_deactivate(rclcpp_lifecycle::State());
