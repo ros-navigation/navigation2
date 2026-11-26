@@ -80,7 +80,7 @@ public:
 
   /**
     * @brief Transforms a predefined segment of the global plan into the costmap global frame.
-    * The plan poses are transformed at the robot height, see planPoseHeight().
+    * The plan poses are transformed at their height relative to the robot, see planPoseHeight().
     * @param closest_point Iterator to the starting pose of the path segment.
     * @param pruned_plan_end Iterator to the ending pose of the path segment.
     * @return nav_msgs::msg::Path The transformed local plan segment in the costmap global frame.
@@ -91,7 +91,7 @@ public:
 
   /**
    * @brief Get the global goal pose transformed to the costmap global frame.
-   * The goal is transformed at the robot height, see planPoseHeight().
+   * The goal is transformed at its height relative to the robot, see planPoseHeight().
    * @param stamp Time to get the goal pose at
    * @return Transformed goal pose
    */
@@ -134,9 +134,20 @@ protected:
   void prunePlan(nav_msgs::msg::Path & plan, const nav2_core::PathIterator end);
 
   /**
-    * @brief Get the height to transform a plan pose at. Plans are 2D, their height may be a
-    * placeholder, so a tilted transform would turn the height difference to the robot into an
-    * x-y shift. The pose is placed at the robot height of the last findPlanSegment() call.
+    * @brief Check that the plan heights are consistent: the height between consecutive poses
+    * changes by at most max_plan_slope per meter, plus a tolerance for noise.
+    * A larger change means the plan mixes placeholder heights and real heights.
+    * @param plan Plan to check
+    * @return bool If the plan heights are consistent
+    */
+  bool hasConsistentHeights(const nav_msgs::msg::Path & plan) const;
+
+  /**
+    * @brief Get the height to transform a plan pose at
+    * @details The pose is placed at the robot height plus the height change along the plan from the
+    * closest pose, or at the robot height if the plan heights are inconsistent.
+    * This avoids an x-y shift in the transformed pose due to a height difference between the robot
+    * and the plan pose.
     * @param pose Plan pose
     * @return double Height in the plan frame
     */
@@ -156,7 +167,9 @@ protected:
   geometry_msgs::msg::PoseStamped global_pose_;
   unsigned int constraint_locale_{0u};
   bool reject_unit_path_, enforce_path_inversion_, enforce_path_rotation_;
-  double max_robot_pose_search_dist_, transform_tolerance_, prune_distance_;
+  double max_robot_pose_search_dist_, transform_tolerance_, prune_distance_, max_plan_slope_;
+  bool use_plan_heights_{false};  // If the plan heights are consistent and can be used
+  double plan_height_offset_{0.0};  // Robot height minus the height of the closest plan pose
   float inversion_xy_tolerance_, inversion_yaw_tolerance_, minimum_rotation_angle_;
 
   /**

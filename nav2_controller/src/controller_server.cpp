@@ -680,7 +680,8 @@ void ControllerServer::computeAndPublishVelocity()
   // Get the [start, end) iterators under map frame to be used for control.
   auto [closest_point, pruned_plan_end] =
     path_handlers_[current_path_handler_]->findPlanSegment(pose);
-  // After findPlanSegment(), which updates the robot pose used to transform the goal
+  // After findPlanSegment(), which updates the robot pose and the plan height offset used to
+  // transform the goal
   geometry_msgs::msg::PoseStamped goal =
     path_handlers_[current_path_handler_]->getTransformedGoal(pose.header.stamp);
   transformed_global_plan_ =

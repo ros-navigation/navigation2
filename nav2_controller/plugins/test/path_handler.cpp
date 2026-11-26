@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <chrono>
 #include <thread>
 #include <vector>
@@ -405,6 +406,38 @@ TEST(PathHandlerTests, TestTransformsIgnorePlaceholderHeights)
 {
   // Plan heights are a placeholder of 0, the plan is transformed at the robot height
   expectPlanAtRobotHeight(transformTiltedPlan(std::vector<double>(20, 0.0)));
+}
+
+TEST(PathHandlerTests, TestTransformsUsePlanHeightChanges)
+{
+  // 10 % ramp, with heights 9.5 m above the robot height in the plan frame: only the height change
+  // along the plan is used, the poses are at (0.1 * i, 0, -7.5 + 0.01 * i) in the plan frame
+  std::vector<double> heights(20);
+  for (unsigned int i = 0; i != heights.size(); i++) {
+    heights[i] = 2.0 + 0.01 * i;
+  }
+  const auto result = transformTiltedPlan(heights);
+  ASSERT_EQ(result.plan.poses.size(), heights.size());
+  for (unsigned int i = 0; i != result.plan.poses.size(); i++) {
+    const auto expected = result.plan_in_costmap * tf2::Vector3(0.1 * i, 0.0, -7.5 + 0.01 * i);
+    const auto & position = result.plan.poses[i].pose.position;
+    EXPECT_NEAR(position.x, expected.x(), 1e-6);
+    EXPECT_NEAR(position.y, expected.y(), 1e-6);
+    EXPECT_NEAR(position.z, expected.z(), 1e-6);
+  }
+  const auto expected_goal = result.plan_in_costmap * tf2::Vector3(1.9, 0.0, -7.5 + 0.19);
+  EXPECT_NEAR(result.goal.pose.position.x, expected_goal.x(), 1e-6);
+  EXPECT_NEAR(result.goal.pose.position.y, expected_goal.y(), 1e-6);
+  EXPECT_NEAR(result.goal.pose.position.z, expected_goal.z(), 1e-6);
+}
+
+TEST(PathHandlerTests, TestTransformsWithInconsistentHeights)
+{
+  // Plan mixing placeholder and real heights: 7.5 m jump between two poses, the plan is transformed
+  // at the robot height
+  std::vector<double> heights(20, 0.0);
+  std::fill(heights.begin() + 10, heights.end(), -7.5);
+  expectPlanAtRobotHeight(transformTiltedPlan(heights));
 }
 
 TEST(PathHandlerTests, TestDynamicParams)

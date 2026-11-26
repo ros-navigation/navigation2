@@ -14,6 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cmath>
 #include <memory>
 #include "angles/angles.h"
 #include "pluginlib/class_list_macros.hpp"
@@ -73,6 +74,10 @@ void FeasiblePathHandler::initialize(
     plugin_name + ".inversion_yaw_tolerance", 0.4);
   minimum_rotation_angle_ = node->declare_or_get_parameter(
     plugin_name + ".minimum_rotation_angle", 0.785);
+  // 0.5 m/m (27 deg): steeper than any drivable slope, but lower than a jump between
+  // placeholder and real heights (meters within one plan step)
+  max_plan_slope_ = node->declare_or_get_parameter(
+    plugin_name + ".max_plan_slope", 0.5);
   if (max_robot_pose_search_dist_ < 0.0) {
     RCLCPP_WARN(
       logger_, "Max robot search distance is negative, setting to max to search"
@@ -130,6 +135,7 @@ void FeasiblePathHandler::setPlan(const nav_msgs::msg::Path & path)
   std::lock_guard<std::mutex> lock_reinit(mutex_);
   global_plan_ = path;
   global_plan_up_to_constraint_ = global_plan_;
+  use_plan_heights_ = hasConsistentHeights(global_plan_);
   if (enforce_path_inversion_ || enforce_path_rotation_) {
     constraint_locale_ = nav2_util::removePosesAfterFirstConstraint(global_plan_up_to_constraint_,
       enforce_path_inversion_, minimum_rotation_angle_);
@@ -191,6 +197,10 @@ nav2_core::PathSegment FeasiblePathHandler::findPlanSegment(
     closest_point = std::prev(std::prev(closest_pose_upper_bound));
   }
 
+  if (closest_point != global_plan_up_to_constraint_.poses.end()) {
+    plan_height_offset_ = global_pose_.pose.position.z - closest_point->pose.position.z;
+  }
+
   auto pruned_plan_end =
     nav2_util::geometry_utils::first_after_integrated_distance(
     closest_point, global_plan_up_to_constraint_.poses.end(), prune_distance_);
@@ -218,7 +228,7 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
     geometry_msgs::msg::PoseStamped costmap_plan_pose;
     global_plan_pose->header.stamp = global_pose_.header.stamp;
     global_plan_pose->header.frame_id = global_plan_.header.frame_id;
-    // Transform at the robot height, as the plan height may be a placeholder value
+    // Transform at the height relative to the robot, as the plan height may be a placeholder value
     geometry_msgs::msg::PoseStamped plan_pose = *global_plan_pose;
     plan_pose.pose.position.z = planPoseHeight(plan_pose);
     nav2_util::transformPoseInTargetFrame(plan_pose, costmap_plan_pose, *tf_,
@@ -255,9 +265,32 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
   return transformed_plan;
 }
 
-double FeasiblePathHandler::planPoseHeight(const geometry_msgs::msg::PoseStamped & /*pose*/) const
+bool FeasiblePathHandler::hasConsistentHeights(const nav_msgs::msg::Path & plan) const
 {
-  return global_pose_.pose.position.z;
+  // Absorbs height noise between close poses
+  constexpr double height_tolerance = 0.1;
+  for (size_t i = 1; i < plan.poses.size(); ++i) {
+    const auto & previous = plan.poses[i - 1].pose.position;
+    const auto & current = plan.poses[i].pose.position;
+    const double height_change = std::abs(current.z - previous.z);
+    const double distance = std::hypot(current.x - previous.x, current.y - previous.y);
+    if (height_change > max_plan_slope_ * distance + height_tolerance) {
+      RCLCPP_ERROR(
+        logger_, "Plan height changes by %.2f m over %.2f m at pose %zu, more than %.2f m/m: "
+        "the plan may mix placeholder and real heights. Transforming it at the robot height.",
+        height_change, distance, i, max_plan_slope_);
+      return false;
+    }
+  }
+  return true;
+}
+
+double FeasiblePathHandler::planPoseHeight(const geometry_msgs::msg::PoseStamped & pose) const
+{
+  if (!use_plan_heights_) {
+    return global_pose_.pose.position.z;
+  }
+  return pose.pose.position.z + plan_height_offset_;
 }
 
 geometry_msgs::msg::PoseStamped FeasiblePathHandler::getTransformedGoal(
@@ -328,6 +361,8 @@ FeasiblePathHandler::updateParametersCallback(
         prune_distance_ = parameter.as_double();
       } else if (param_name == plugin_name_ + ".minimum_rotation_angle") {
         minimum_rotation_angle_ = parameter.as_double();
+      } else if (param_name == plugin_name_ + ".max_plan_slope") {
+        max_plan_slope_ = parameter.as_double();
       }
     } else if (param_type == ParameterType::PARAMETER_BOOL) {
       if (param_name == plugin_name_ + ".enforce_path_inversion") {
