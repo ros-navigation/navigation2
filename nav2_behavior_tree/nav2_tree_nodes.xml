@@ -154,6 +154,7 @@
       <output_port name="route" type="nav2_msgs::msg::Route">List of RouteNodes to go from start to end.</output_port>
       <output_port name="path" type="nav_msgs::msg::Path">Path created by ComputeAndTrackRoute node.</output_port>
       <output_port name="rerouted" type="bool">Whether the plan has rerouted.</output_port>
+      <output_port name="operations_triggered" type="vector&lt;string&gt;">Route operations triggered since the last feedback.</output_port>
       <output_port name="error_code_id" type="uint16">Compute route error code. See `ComputeAndTrackRoute` action message for the enumerated set of error codes.</output_port>
       <output_port name="error_msg" type="string">Compute route error message. See `ComputeAndTrackRoute` action message for the enumerated set of error codes.</output_port>
     </Action>
