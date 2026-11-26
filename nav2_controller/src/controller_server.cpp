@@ -677,11 +677,12 @@ void ControllerServer::computeAndPublishVelocity()
 
   geometry_msgs::msg::Twist twist = getThresholdedTwist(odom_sub_->getRawTwist());
 
-  geometry_msgs::msg::PoseStamped goal =
-    path_handlers_[current_path_handler_]->getTransformedGoal(pose.header.stamp);
   // Get the [start, end) iterators under map frame to be used for control.
   auto [closest_point, pruned_plan_end] =
     path_handlers_[current_path_handler_]->findPlanSegment(pose);
+  // After findPlanSegment(), which updates the robot pose used to transform the goal
+  geometry_msgs::msg::PoseStamped goal =
+    path_handlers_[current_path_handler_]->getTransformedGoal(pose.header.stamp);
   transformed_global_plan_ =
     path_handlers_[current_path_handler_]->transformLocalPlan(closest_point, pruned_plan_end);
   auto path = std::make_unique<nav_msgs::msg::Path>(transformed_global_plan_);
@@ -733,15 +734,8 @@ void ControllerServer::computeAndPublishVelocity()
 
   nav2_msgs::msg::TrackingFeedback current_tracking_feedback;
 
-  // Use the current robot pose's timestamp for the transformation
-  end_pose_.header.stamp = pose.header.stamp;
-
-  if (!nav2_util::transformPoseInTargetFrame(
-      end_pose_, transformed_end_pose_, *costmap_ros_->getTfBuffer(),
-      costmap_ros_->getGlobalFrameID(), transform_tolerance_))
-  {
-    throw nav2_core::ControllerTFError("Failed to transform end pose to global frame");
-  }
+  // The path handler's goal is the end pose in the costmap frame, transformed at the robot height
+  transformed_end_pose_ = goal;
 
   if (current_path_.poses.size() >= 2) {
     double current_distance_to_goal = nav2_util::geometry_utils::euclidean_distance(

@@ -218,7 +218,10 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
     geometry_msgs::msg::PoseStamped costmap_plan_pose;
     global_plan_pose->header.stamp = global_pose_.header.stamp;
     global_plan_pose->header.frame_id = global_plan_.header.frame_id;
-    nav2_util::transformPoseInTargetFrame(*global_plan_pose, costmap_plan_pose, *tf_,
+    // Transform at the robot height, as the plan height may be a placeholder value
+    geometry_msgs::msg::PoseStamped plan_pose = *global_plan_pose;
+    plan_pose.pose.position.z = planPoseHeight(plan_pose);
+    nav2_util::transformPoseInTargetFrame(plan_pose, costmap_plan_pose, *tf_,
       costmap_ros_->getGlobalFrameID(), transform_tolerance_);
 
     // Check if pose is inside the costmap
@@ -252,12 +255,19 @@ nav_msgs::msg::Path FeasiblePathHandler::transformLocalPlan(
   return transformed_plan;
 }
 
+double FeasiblePathHandler::planPoseHeight(const geometry_msgs::msg::PoseStamped & /*pose*/) const
+{
+  return global_pose_.pose.position.z;
+}
+
 geometry_msgs::msg::PoseStamped FeasiblePathHandler::getTransformedGoal(
   const builtin_interfaces::msg::Time & stamp)
 {
+  std::lock_guard<std::mutex> lock_reinit(mutex_);
   auto goal = global_plan_.poses.back();
   goal.header.frame_id = global_plan_.header.frame_id;
   goal.header.stamp = stamp;
+  goal.pose.position.z = planPoseHeight(goal);
   if (goal.header.frame_id.empty()) {
     throw nav2_core::ControllerTFError("Goal pose has an empty frame_id");
   }

@@ -80,6 +80,7 @@ public:
 
   /**
     * @brief Transforms a predefined segment of the global plan into the costmap global frame.
+    * The plan poses are transformed at the robot height, see planPoseHeight().
     * @param closest_point Iterator to the starting pose of the path segment.
     * @param pruned_plan_end Iterator to the ending pose of the path segment.
     * @return nav_msgs::msg::Path The transformed local plan segment in the costmap global frame.
@@ -89,7 +90,8 @@ public:
     const nav2_core::PathIterator & pruned_plan_end) override;
 
   /**
-   * @brief Get the global goal pose transformed to the costmap global frame
+   * @brief Get the global goal pose transformed to the costmap global frame.
+   * The goal is transformed at the robot height, see planPoseHeight().
    * @param stamp Time to get the goal pose at
    * @return Transformed goal pose
    */
@@ -130,6 +132,15 @@ protected:
     * @param end Final path iterator
     */
   void prunePlan(nav_msgs::msg::Path & plan, const nav2_core::PathIterator end);
+
+  /**
+    * @brief Get the height to transform a plan pose at. Plans are 2D, their height may be a
+    * placeholder, so a tilted transform would turn the height difference to the robot into an
+    * x-y shift. The pose is placed at the robot height of the last findPlanSegment() call.
+    * @param pose Plan pose
+    * @return double Height in the plan frame
+    */
+  double planPoseHeight(const geometry_msgs::msg::PoseStamped & pose) const;
 
   // Dynamic parameters handler
   std::mutex mutex_;

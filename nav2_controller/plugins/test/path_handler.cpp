@@ -14,11 +14,15 @@
 
 #include <chrono>
 #include <thread>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "rclcpp/rclcpp.hpp"
 #include "nav2_controller/plugins/feasible_path_handler.hpp"
 #include "tf2_ros/transform_broadcaster.hpp"
+#include "tf2/LinearMath/Quaternion.hpp"
+#include "tf2/LinearMath/Transform.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 using namespace std::chrono_literals;
 
@@ -323,6 +327,84 @@ TEST(PathHandlerTests, TestTransformedGoal)
     path.poses[i].header.frame_id = "map";
   }
   EXPECT_THROW(handler.getTransformedGoal(stamp), std::runtime_error);
+}
+
+struct TiltedPlanResult
+{
+  nav_msgs::msg::Path plan;
+  geometry_msgs::msg::PoseStamped goal;
+  tf2::Transform plan_in_costmap;
+};
+
+// Transforms a plan with poses every 0.1 m along x and the given heights into the costmap
+// frame. The plan frame is tilted in the costmap frame, and the robot is at (2.5, 2.5, 0) in
+// the costmap frame and at (0, 0, -7.5) in the plan frame: a 3D transform of the plan at z = 0
+// would shift y by 7.5 m * sin(0.05) = 0.37 m.
+TiltedPlanResult transformTiltedPlan(const std::vector<double> & heights)
+{
+  PathHandlerWrapper handler;
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(99999.9));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  rclcpp_lifecycle::State state;
+  costmap_ros->on_configure(state);
+  handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfBuffer());
+
+  const tf2::Vector3 robot_in_costmap(2.5, 2.5, 0.0);
+  const tf2::Vector3 robot_in_plan(0.0, 0.0, -7.5);
+  tf2::Quaternion tilt;
+  tilt.setRPY(0.05, 0.0, 0.0);
+  TiltedPlanResult result;
+  result.plan_in_costmap = tf2::Transform(
+    tilt, robot_in_costmap - tf2::quatRotate(tilt, robot_in_plan));
+  geometry_msgs::msg::TransformStamped t;
+  t.header.frame_id = costmap_ros->getGlobalFrameID();
+  t.child_frame_id = "plan_frame";
+  t.transform = tf2::toMsg(result.plan_in_costmap);
+  costmap_ros->getTfBuffer()->setTransform(t, "test", true);
+
+  nav_msgs::msg::Path path;
+  path.header.frame_id = "plan_frame";
+  path.poses.resize(heights.size());
+  for (unsigned int i = 0; i != path.poses.size(); i++) {
+    path.poses[i].pose.position.x = 0.1 * i;
+    path.poses[i].pose.position.z = heights[i];
+    path.poses[i].pose.orientation.w = 1.0;
+  }
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = costmap_ros->getGlobalFrameID();
+  robot_pose.pose.position.x = robot_in_costmap.x();
+  robot_pose.pose.position.y = robot_in_costmap.y();
+  robot_pose.pose.orientation.w = 1.0;
+
+  handler.setPlan(path);
+  auto [closest, pruned_plan_end] = handler.findPlanSegmentWrapper(robot_pose);
+  result.plan = handler.transformLocalPlanWrapper(closest, pruned_plan_end);
+  result.goal = handler.getTransformedGoalWrapper(robot_pose.header.stamp);
+  EXPECT_EQ(result.goal.header.frame_id, costmap_ros->getGlobalFrameID());
+  return result;
+}
+
+// Expects poses every 0.1 m along x from the robot at (2.5, 2.5, 0), at the robot height
+void expectPlanAtRobotHeight(const TiltedPlanResult & result)
+{
+  ASSERT_EQ(result.plan.poses.size(), 20u);
+  for (unsigned int i = 0; i != result.plan.poses.size(); i++) {
+    const auto & position = result.plan.poses[i].pose.position;
+    EXPECT_NEAR(position.x, 2.5 + 0.1 * i, 1e-6);
+    EXPECT_NEAR(position.y, 2.5, 1e-6);
+    EXPECT_NEAR(position.z, 0.0, 1e-6);
+  }
+  EXPECT_NEAR(result.goal.pose.position.x, 4.4, 1e-6);
+  EXPECT_NEAR(result.goal.pose.position.y, 2.5, 1e-6);
+  EXPECT_NEAR(result.goal.pose.position.z, 0.0, 1e-6);
+}
+
+TEST(PathHandlerTests, TestTransformsIgnorePlaceholderHeights)
+{
+  // Plan heights are a placeholder of 0, the plan is transformed at the robot height
+  expectPlanAtRobotHeight(transformTiltedPlan(std::vector<double>(20, 0.0)));
 }
 
 TEST(PathHandlerTests, TestDynamicParams)
