@@ -376,6 +376,24 @@ TEST(GeoJsonGraphFileSaver, test_deleted_node_edges)
   EXPECT_EQ(edges[0]["properties"]["endid"], 4);
 }
 
+
+TEST(GeoJsonGraphFileSaver, test_unwritable_path)
+{
+  auto node = std::make_shared<nav2::LifecycleNode>("graph_saver_test");
+  GeoJsonGraphFileSaver saver;
+  saver.configure(node);
+
+  Graph graph;
+  graph.resize(1);
+  graph[0].nodeid = 1;
+  graph[0].coords.x = 0.0f;
+  graph[0].coords.y = 0.0f;
+  graph[0].coords.frame_id = "map";
+
+  // A directory cannot be opened as a writable file.
+  EXPECT_FALSE(saver.saveGraphToFile(graph, "."));
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
