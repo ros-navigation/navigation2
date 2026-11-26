@@ -17,6 +17,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "nav2_msgs/action/compute_and_track_route.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
@@ -126,6 +127,9 @@ public:
         BT::OutputPort<bool>(
           "rerouted",
           "Whether the plan has rerouted"),
+        BT::OutputPort<std::vector<std::string>>(
+          "operations_triggered",
+          "Route operations triggered since the last feedback"),
       });
   }
 
