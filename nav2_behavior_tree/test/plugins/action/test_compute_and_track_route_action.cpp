@@ -13,9 +13,13 @@
 // limitations under the License.
 
 #include <gtest/gtest.h>
+#include <atomic>
+#include <chrono>
 #include <memory>
 #include <set>
 #include <string>
+#include <thread>
+#include <vector>
 
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -33,6 +37,11 @@ public:
   : TestActionServer("compute_and_track_route")
   {}
 
+  void setFinish(bool finish)
+  {
+    finish_ = finish;
+  }
+
 protected:
   void execute(
     const typename std::shared_ptr<
@@ -40,10 +49,23 @@ protected:
   override
   {
     const auto goal = goal_handle->get_goal();
+    auto feedback = std::make_shared<nav2_msgs::action::ComputeAndTrackRoute::Feedback>();
+    feedback->operations_triggered = {"AdjustSpeedLimit"};
+    while (!finish_ && rclcpp::ok()) {
+      goal_handle->publish_feedback(feedback);
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    if (!rclcpp::ok()) {
+      return;
+    }
+
     auto result = std::make_shared<nav2_msgs::action::ComputeAndTrackRoute::Result>();
     result->execution_duration = rclcpp::Duration::from_seconds(0.1);
     goal_handle->succeed(result);
   }
+
+private:
+  std::atomic<bool> finish_{true};
 };
 
 class ComputeAndTrackRouteActionTestFixture : public ::testing::Test
@@ -95,6 +117,7 @@ public:
 
   void TearDown() override
   {
+    action_server_->setFinish(true);
     tree_.reset();
   }
 
@@ -121,7 +144,7 @@ TEST_F(ComputeAndTrackRouteActionTestFixture, test_tick_poses)
     R"(
       <root BTCPP_format="4">
         <BehaviorTree ID="MainTree">
-            <ComputeAndTrackRoute goal="{goal}" start="{start}" use_poses="true" use_start="true" execution_duration="{execution_duration}"/>
+            <ComputeAndTrackRoute goal="{goal}" start="{start}" use_poses="true" use_start="true" execution_duration="{execution_duration}" operations_triggered="{operations_triggered}"/>
         </BehaviorTree>
       </root>)";
 
@@ -139,7 +162,22 @@ TEST_F(ComputeAndTrackRouteActionTestFixture, test_tick_poses)
   goal.pose.position.x = 1.0;
   config_->blackboard->set("goal", goal);
 
-  // tick until node succeeds
+  // tick until the operations reported in feedback reach the blackboard, then finish
+  action_server_->setFinish(false);
+  bool operations_seen = false;
+  for (int i = 0; i < 200 && !operations_seen; i++) {
+    tree_->rootNode()->executeTick();
+    std::vector<std::string> operations;
+    if (config_->blackboard->get<std::vector<std::string>>("operations_triggered", operations) &&
+      operations.size() == 1 && operations[0] == "AdjustSpeedLimit")
+    {
+      operations_seen = true;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+  }
+  action_server_->setFinish(true);
+  EXPECT_TRUE(operations_seen);
+
   while (tree_->rootNode()->status() != BT::NodeStatus::SUCCESS) {
     tree_->rootNode()->executeTick();
   }
