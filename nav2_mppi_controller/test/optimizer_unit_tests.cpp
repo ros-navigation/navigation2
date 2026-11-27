@@ -928,7 +928,7 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
   EXPECT_TRUE(traj.y.isApproxToConstant(0.0f));
   EXPECT_TRUE(traj.yaws.isApproxToConstant(0.0f));
   for (unsigned int i = 0; i != traj.x.cols(); i++) {
-    EXPECT_NEAR(traj.x(1, i), i * 0.1 /*vel*/ * 0.1 /*dt*/, 1e-3);
+    EXPECT_NEAR(traj.x(1, i), (i + 0.5) * 0.1 /*vel*/ * 0.1 /*dt*/, 1e-3);
   }
 
   // Give it a bit of a more complex trajectory to crunch
@@ -938,8 +938,8 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
 
   EXPECT_TRUE(traj.yaws.isApproxToConstant(0.0f));
   for (unsigned int i = 0; i != traj.x.cols(); i++) {
-    EXPECT_NEAR(traj.x(1, i), i * 0.1 /*vel*/ * 0.1 /*dt*/, 1e-3);
-    EXPECT_NEAR(traj.y(1, i), i * 0.2 /*vel*/ * 0.1 /*dt*/, 1e-3);
+    EXPECT_NEAR(traj.x(1, i), (i + 0.5) * 0.1 /*vel*/ * 0.1 /*dt*/, 1e-3);
+    EXPECT_NEAR(traj.y(1, i), (i + 0.5) * 0.2 /*vel*/ * 0.1 /*dt*/, 1e-3);
   }
 
   // Let's add some angular motion to the mix
@@ -948,11 +948,11 @@ TEST(OptimizerTests, integrateStateVelocitiesTests)
   state.wz.col(0) = Eigen::ArrayXf::Zero(1000);
   optimizer_tester.integrateStateVelocitiesWrapper(traj, state);
 
-  float x = 0;
-  float y = 0;
+  float x = (0.05 /*vx*/ * cosf(0.1 /*wz*/ * 0.1 /*model_dt*/ * 0.5)) * 0.1 /*model_dt*/;
+  float y = (0.05 /*vx*/ * sinf(0.1 /*wz*/ * 0.1 /*model_dt*/ * 0.5)) * 0.1 /*model_dt*/;
   for (unsigned int i = 1; i != traj.x.cols(); i++) {
-    x += (0.1 /*vx*/ * cosf(0.2 /*wz*/ * 0.1 /*model_dt*/ * (i - 1))) * 0.1 /*model_dt*/;
-    y += (0.1 /*vx*/ * sinf(0.2 /*wz*/ * 0.1 /*model_dt*/ * (i - 1))) * 0.1 /*model_dt*/;
+    x += (0.1 /*vx*/ * cosf(0.2 /*wz*/ * 0.1 /*model_dt*/ * i)) * 0.1 /*model_dt*/;
+    y += (0.1 /*vx*/ * sinf(0.2 /*wz*/ * 0.1 /*model_dt*/ * i)) * 0.1 /*model_dt*/;
 
     EXPECT_NEAR(traj.x(1, i), x, 1e-6);
     EXPECT_NEAR(traj.y(1, i), y, 1e-6);
