@@ -1363,8 +1363,10 @@ AmclNode::convertMap(const nav_msgs::msg::OccupancyGrid & map_msg)
   map->size_x = map_msg.info.width;
   map->size_y = map_msg.info.height;
   map->scale = map_msg.info.resolution;
-  map->origin_x = map_msg.info.origin.position.x + (map->size_x / 2) * map->scale;
-  map->origin_y = map_msg.info.origin.position.y + (map->size_y / 2) * map->scale;
+  // The message origin is the corner of cell (0, 0), while the map macros treat
+  // origin_x/y as the center of cell (size_x / 2, size_y / 2), so add half a cell.
+  map->origin_x = map_msg.info.origin.position.x + (map->size_x / 2 + 0.5) * map->scale;
+  map->origin_y = map_msg.info.origin.position.y + (map->size_y / 2 + 0.5) * map->scale;
 
   map->cells =
     reinterpret_cast<map_cell_t *>(malloc(sizeof(map_cell_t) * map->size_x * map->size_y));
