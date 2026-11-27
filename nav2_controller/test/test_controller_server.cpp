@@ -38,6 +38,10 @@ public:
   using nav2_controller::ControllerServer::ControllerServer;
 
   void setEndPoseFrame(const std::string & frame) {end_pose_.header.frame_id = frame;}
+  static std::vector<double> callBuildPathRemainingLengths(const nav_msgs::msg::Path & path)
+  {
+    return buildPathRemainingLengths(path);
+  }
   void callTransformedPlanAndGoal(
     const geometry_msgs::msg::PoseStamped & current_robot_pose)
   {
@@ -245,6 +249,23 @@ TEST(ControllerServerTest, test_dynamic_parameters)
     results);
 
   EXPECT_EQ(params_->search_window, 10.0);
+}
+
+TEST(ControllerServerTest, BuildPathRemainingLengths)
+{
+  nav_msgs::msg::Path path;
+  for (int i = 0; i < 4; ++i) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = static_cast<double>(i);
+    path.poses.push_back(pose);
+  }
+
+  const auto lengths = ControllerServerShim::callBuildPathRemainingLengths(path);
+  ASSERT_EQ(lengths.size(), path.poses.size());
+  EXPECT_DOUBLE_EQ(lengths[0], 3.0);
+  EXPECT_DOUBLE_EQ(lengths[1], 2.0);
+  EXPECT_DOUBLE_EQ(lengths[2], 1.0);
+  EXPECT_DOUBLE_EQ(lengths[3], 0.0);
 }
 
 int main(int argc, char ** argv)

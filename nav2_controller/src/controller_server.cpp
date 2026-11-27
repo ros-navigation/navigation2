@@ -695,6 +695,18 @@ double ControllerServer::waitForCostmap()
   return 0.0;
 }
 
+std::vector<double> ControllerServer::buildPathRemainingLengths(
+  const nav_msgs::msg::Path & path)
+{
+  std::vector<double> remaining_lengths(path.poses.size(), 0.0);
+  for (size_t i = path.poses.size(); i-- > 1; ) {
+    remaining_lengths[i - 1] = remaining_lengths[i] +
+      nav2_util::geometry_utils::euclidean_distance(
+      path.poses[i - 1].pose, path.poses[i].pose);
+  }
+  return remaining_lengths;
+}
+
 void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
 {
   RCLCPP_DEBUG(
@@ -716,6 +728,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
 
   start_index_ = 0;
   current_path_ = path;
+  path_remaining_lengths_ = buildPathRemainingLengths(current_path_);
 }
 
 void ControllerServer::transformedPlanAndGoal(
@@ -845,7 +858,8 @@ void ControllerServer::computeAndPublishVelocity(
     tracking_feedback_msg->speed = std::hypot(twist.linear.x, twist.linear.y);
     start_index_ = path_search_result.closest_segment_index;
     tracking_feedback_msg->remaining_path_length =
-      nav2_util::geometry_utils::calculate_path_length(current_path_, start_index_);
+      start_index_ < path_remaining_lengths_.size() ?
+      path_remaining_lengths_[start_index_] : 0.0;
 
     // Update current tracking error and publish
     current_tracking_feedback = *tracking_feedback_msg;

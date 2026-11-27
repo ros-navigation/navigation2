@@ -238,6 +238,13 @@ protected:
   }
 
   /**
+   * @brief Build the remaining path length for each pose in a path
+   * @param path Path to compute the suffix lengths for
+   * @return Remaining length from each pose to the end of the path
+   */
+  static std::vector<double> buildPathRemainingLengths(const nav_msgs::msg::Path & path);
+
+  /**
    * @brief get the thresholded Twist
    * @param Twist The current Twist from odometry
    * @return Twist Twist after thresholds applied
@@ -293,6 +300,7 @@ protected:
 
   // Current path container
   nav_msgs::msg::Path current_path_;
+  std::vector<double> path_remaining_lengths_;
   nav_msgs::msg::Path transformed_global_plan_;
   std::unique_ptr<nav2_controller::ParameterHandler> param_handler_;
   Parameters * params_;
