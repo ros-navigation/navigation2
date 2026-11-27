@@ -292,8 +292,7 @@ std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> Optimizer::evalCon
   bool trajectory_valid = true;
 
   do {
-    // A retry after fallback() must score its fresh samples: a fail_flag left from the
-    // failed attempt makes CriticManager skip every critic, so the retry always fails.
+    critics_data_.fail_flag = false;
     optimize();
     optimal_trajectory = getOptimizedTrajectory();
     switch (trajectory_validator_->validateTrajectory(
