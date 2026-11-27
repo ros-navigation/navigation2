@@ -270,7 +270,6 @@ protected:
   std::string path_handler_ids_concat_, current_path_handler_;
 
   size_t start_index_;
-  geometry_msgs::msg::PoseStamped end_pose_;
   geometry_msgs::msg::PoseStamped transformed_end_pose_;
 
   // Last time the controller generated a valid command
