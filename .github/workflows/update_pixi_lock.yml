@@ -1,0 +1,50 @@
+name: Update Pixi lock file
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 0 5 1 * * # Runs at 05:00 on the first day of each month
+
+permissions:
+  contents: read
+
+jobs:
+  pixi-update:
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up pixi
+        uses: prefix-dev/setup-pixi@ad1da6449d9e506fd127fd67ab2d054a769f6a94 # v0.11.2
+        with:
+          pixi-version: v0.78.0
+          run-install: false
+      - name: Update lock file
+        run: |
+          set -o pipefail
+          pixi update --json --no-install | pixi exec pixi-diff-to-markdown >> diff.md
+      - name: Create pull request
+        id: create-pull-request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Update pixi lock file
+          title: Update pixi lock file
+          body-path: diff.md
+          branch: update-pixi
+          base: main
+          labels: pixi
+          delete-branch: true
+          add-paths: pixi.lock
+      # Pull requests created with GITHUB_TOKEN do not trigger other workflows,
+      # but workflow_dispatch does, so start the build check explicitly.
+      - name: Run the Pixi build on the pull request
+        if: steps.create-pull-request.outputs.pull-request-number != ''
+        run: gh workflow run build_pixi.yml --repo ${{ github.repository }} --ref update-pixi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
