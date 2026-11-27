@@ -13,16 +13,28 @@
 // limitations under the License.
 
 #include <algorithm>
-#include <string>
 #include <limits>
 #include <memory>
-#include <vector>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "opennav_following/parameter_handler.hpp"
 
 namespace opennav_following
 {
+
+namespace
+{
+
+bool hasServerParameter(const std::vector<rclcpp::Parameter> & parameters)
+{
+  return std::any_of(
+    parameters.begin(), parameters.end(),
+    [](const auto & p) {return p.get_name().find('.') == std::string::npos;});
+}
+
+}  // namespace
 
 using nav2::declare_parameter_if_not_declared;
 using rcl_interfaces::msg::ParameterType;
@@ -76,6 +88,21 @@ rcl_interfaces::msg::SetParametersResult ParameterHandler::validateParameterUpda
 {
   rcl_interfaces::msg::SetParametersResult result;
   result.successful = true;
+  if (!hasServerParameter(parameters)) {
+    return result;
+  }
+
+  std::unique_lock<std::mutex> param_lock(mutex_, std::try_to_lock);
+  if (!param_lock.owns_lock()) {
+    RCLCPP_WARN(
+      logger_,
+      "Unable to change following server parameters while the following action is running.");
+    result.successful = false;
+    result.reason =
+      "Unable to change following server parameters while the following action is running.";
+    return result;
+  }
+
   for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();
     const auto & param_name = parameter.get_name();
@@ -110,7 +137,17 @@ void
 ParameterHandler::updateParametersCallback(
   const std::vector<rclcpp::Parameter> & parameters)
 {
-  std::lock_guard<std::mutex> lock_reinit(mutex_);
+  if (!hasServerParameter(parameters)) {
+    return;
+  }
+
+  std::unique_lock<std::mutex> param_lock(mutex_, std::try_to_lock);
+  if (!param_lock.owns_lock()) {
+    RCLCPP_WARN(
+      logger_,
+      "Unable to change following server parameters while the following action is running.");
+    return;
+  }
 
   for (const auto & parameter : parameters) {
     const auto & param_type = parameter.get_type();

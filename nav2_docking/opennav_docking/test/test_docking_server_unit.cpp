@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <chrono>
+#include <mutex>
 #include "gtest/gtest.h"
 #include "rclcpp/executors.hpp"
 #include "rclcpp/future_return_code.hpp"
@@ -51,6 +52,11 @@ public:
   std::optional<bool> getDockBackward()
   {
     return params_->dock_backwards;
+  }
+
+  std::mutex & getParamMutex()
+  {
+    return param_handler_->getMutex();
   }
 };
 
@@ -276,6 +282,10 @@ TEST(DockingServerTests, testErrorExceptions)
     } else {
       EXPECT_TRUE(false);
     }
+    // Wait for the action callback to release the parameter mutex before the next set_parameter
+    {
+      std::lock_guard<std::mutex> lock(node->getParamMutex());
+    }
   }
 
   // Now for undocking
@@ -316,6 +326,9 @@ TEST(DockingServerTests, testErrorExceptions)
       }
     } else {
       EXPECT_TRUE(false);
+    }
+    {
+      std::lock_guard<std::mutex> lock(node->getParamMutex());
     }
   }
   node->on_deactivate(rclcpp_lifecycle::State());
@@ -561,6 +574,9 @@ TEST(DockingServerTests, ExceptionHandlingDuringDocking)
 
     auto result = future_result.get();
     EXPECT_EQ(result.code, rclcpp_action::ResultCode::ABORTED);
+    {
+      std::lock_guard<std::mutex> lock(node->getParamMutex());
+    }
   }
 
   node->on_deactivate(rclcpp_lifecycle::State());
@@ -666,6 +682,57 @@ TEST(DockingServerTests, HandlesPluginStartFailure)
   auto result = future_result.get();
   EXPECT_EQ(result.code, rclcpp_action::ResultCode::ABORTED);
   EXPECT_EQ(result.result->error_code, DockRobot::Result::FAILED_TO_DETECT_DOCK);
+
+  node->on_deactivate(rclcpp_lifecycle::State());
+  node->on_cleanup(rclcpp_lifecycle::State());
+  node->shutdown();
+}
+
+class TestableParameterHandler : public ParameterHandler
+{
+public:
+  using ParameterHandler::ParameterHandler;
+  using ParameterHandler::updateParametersCallback;
+};
+
+TEST(DockingServerTests, RejectDynamicParamsWhenLocked)
+{
+  auto node = std::make_shared<DockingServerShim>();
+  node->declare_parameter("controller.use_collision_detection", false);
+  node->declare_parameter("dock_plugins", std::vector<std::string>{"test_plugin"});
+  node->declare_parameter("test_plugin.plugin", "opennav_docking::TestFailureDock");
+  node->on_configure(rclcpp_lifecycle::State());
+  node->on_activate(rclcpp_lifecycle::State());
+
+  {
+    std::lock_guard<std::mutex> lock(node->getParamMutex());
+
+    // Server parameter updates are rejected without deadlocking while locked
+    auto res = node->set_parameters_atomically(
+      {rclcpp::Parameter("controller_frequency", 25.0)});
+    EXPECT_FALSE(res.successful);
+    EXPECT_DOUBLE_EQ(node->get_parameter("controller_frequency").as_double(), 50.0);
+
+    // Dotted plugin parameters bypass the server lock
+    auto plugin_res = node->set_parameters_atomically(
+      {rclcpp::Parameter("controller.k_phi", 2.0)});
+    EXPECT_TRUE(plugin_res.successful);
+    EXPECT_DOUBLE_EQ(node->get_parameter("controller.k_phi").as_double(), 2.0);
+  }
+
+  // Server parameter updates succeed once unlocked
+  auto res_after = node->set_parameters_atomically(
+    {rclcpp::Parameter("controller_frequency", 25.0)});
+  EXPECT_TRUE(res_after.successful);
+  EXPECT_DOUBLE_EQ(node->get_parameter("controller_frequency").as_double(), 25.0);
+
+  // Post-set callback also skips cleanly when lock is held
+  TestableParameterHandler handler(node, node->get_logger());
+  {
+    std::lock_guard<std::mutex> lock(handler.getMutex());
+    handler.updateParametersCallback({rclcpp::Parameter("controller_frequency", 10.0)});
+    EXPECT_DOUBLE_EQ(handler.getParams()->controller_frequency, 25.0);
+  }
 
   node->on_deactivate(rclcpp_lifecycle::State());
   node->on_cleanup(rclcpp_lifecycle::State());

@@ -15,6 +15,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <mutex>
 #include <vector>
 #include "gtest/gtest.h"
 #include "rclcpp/executors.hpp"
@@ -123,6 +124,11 @@ public:
   {
     iteration_start_time_ = stamp;
   }
+
+  std::mutex & getParamMutex()
+  {
+    return param_handler_->getMutex();
+  }
 };
 
 TEST(FollowingServerTests, ObjectLifecycle)
@@ -188,6 +194,9 @@ TEST(FollowingServerTests, ErrorExceptions)
       }
     } else {
       EXPECT_TRUE(false);
+    }
+    {
+      std::lock_guard<std::mutex> lock(node->getParamMutex());
     }
   }
 
@@ -507,6 +516,55 @@ TEST(FollowingServerTests, DynamicParams)
     {rclcpp::Parameter("transform_staleness_threshold", -1.0)});
   rclcpp::spin_until_future_complete(node->get_node_base_interface(), results);
   EXPECT_EQ(node->get_parameter("transform_staleness_threshold").as_double(), 10.0);
+}
+
+class TestableParameterHandler : public ParameterHandler
+{
+public:
+  using ParameterHandler::ParameterHandler;
+  using ParameterHandler::updateParametersCallback;
+};
+
+TEST(FollowingServerTests, RejectDynamicParamsWhenLocked)
+{
+  auto node = std::make_shared<FollowingServerShim>();
+  node->declare_parameter("controller.use_collision_detection", false);
+  node->on_configure(rclcpp_lifecycle::State());
+  node->on_activate(rclcpp_lifecycle::State());
+
+  {
+    std::lock_guard<std::mutex> lock(node->getParamMutex());
+
+    // Server parameter updates are rejected without deadlocking while locked
+    auto res = node->set_parameters_atomically(
+      {rclcpp::Parameter("controller_frequency", 25.0)});
+    EXPECT_FALSE(res.successful);
+    EXPECT_DOUBLE_EQ(node->get_parameter("controller_frequency").as_double(), 50.0);
+
+    // Dotted plugin parameters bypass the server lock
+    auto plugin_res = node->set_parameters_atomically(
+      {rclcpp::Parameter("controller.k_phi", 2.0)});
+    EXPECT_TRUE(plugin_res.successful);
+    EXPECT_DOUBLE_EQ(node->get_parameter("controller.k_phi").as_double(), 2.0);
+  }
+
+  // Server parameter updates succeed once unlocked
+  auto res_after = node->set_parameters_atomically(
+    {rclcpp::Parameter("controller_frequency", 25.0)});
+  EXPECT_TRUE(res_after.successful);
+  EXPECT_DOUBLE_EQ(node->get_parameter("controller_frequency").as_double(), 25.0);
+
+  // Post-set callback also skips cleanly when lock is held
+  TestableParameterHandler handler(node, node->get_logger());
+  {
+    std::lock_guard<std::mutex> lock(handler.getMutex());
+    handler.updateParametersCallback({rclcpp::Parameter("controller_frequency", 10.0)});
+    EXPECT_DOUBLE_EQ(handler.getParams()->controller_frequency, 25.0);
+  }
+
+  node->on_deactivate(rclcpp_lifecycle::State());
+  node->on_cleanup(rclcpp_lifecycle::State());
+  node->on_shutdown(rclcpp_lifecycle::State());
 }
 
 }  // namespace opennav_following
