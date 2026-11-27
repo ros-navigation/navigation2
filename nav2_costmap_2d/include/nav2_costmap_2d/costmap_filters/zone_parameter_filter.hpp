@@ -15,8 +15,11 @@
 #ifndef NAV2_COSTMAP_2D__COSTMAP_FILTERS__ZONE_PARAMETER_FILTER_HPP_
 #define NAV2_COSTMAP_2D__COSTMAP_FILTERS__ZONE_PARAMETER_FILTER_HPP_
 
+#include <chrono>
 #include <map>
 #include <memory>
+#include <optional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -54,8 +57,9 @@ public:
 
   /**
    * @brief Sample the mask at the robot pose; if the state changed,
-   *        apply the new state's parameter set via async client and,
-   *        if configured, publish the state event.
+   *        apply the new state's parameter set via async client. The state
+   *        is entered, and its event published if configured, once all its
+   *        updates have succeeded.
    */
   void process(
     nav2_costmap_2d::Costmap2D & master_grid,
@@ -94,9 +98,26 @@ protected:
 
   /**
    * @brief Apply the parameter set associated with the given state.
-   *        State 0 restores nominal_defaults; throws on unknown state.
+   *        State 0 restores nominal_defaults. The parameters of the state
+   *        entered last, and of any state applied after it, that the new
+   *        state does not set are restored too.
+   * @param publish_event Whether entering the state publishes the state event
+   * @return false, with nothing applied, if the state is unknown
    */
-  void applyState(uint8_t new_state);
+  bool applyState(uint8_t new_state, bool publish_event = true);
+
+  /**
+   * @brief Whether the given state has to be applied: it is not the state
+   *        entered or being applied, or it failed and is due to be applied
+   *        again.
+   */
+  bool needsApplying(uint8_t state) const;
+
+  /**
+   * @brief Enter the state being applied, and publish its event if asked
+   *        to, once all its updates have succeeded.
+   */
+  void enterAppliedState();
 
   /**
    * @brief Restore all overridden parameters to their nominal_defaults
@@ -105,16 +126,25 @@ protected:
   void resetToNominal();
 
   /**
-   * @brief Issue an async set_parameters call to the named target node.
+   * @brief Queue an async set_parameters call to the named target node. It is
+   *        sent as soon as the node's parameter service is ready.
    */
   void issueAsyncSetParameters(
     const std::string & target_node,
     const std::vector<rclcpp::Parameter> & params);
 
   /**
+   * @brief Send the queued set_parameters calls whose target node's parameter
+   *        service is ready, in the order they were issued.
+   */
+  void sendReadyParameterUpdates();
+
+  /**
    * @brief Process completed set_parameters results non-blockingly. Called
-   *        at the start of every process(); a failed set on any target
-   *        throws (a failed set on a safety parameter is a stop condition).
+   *        at the start of every process(). A set that fails, or that is not
+   *        answered within parameter_update_timeout, is logged; if it belongs
+   *        to the state being applied, that state is not entered and is
+   *        applied again parameter_update_timeout later.
    */
   void checkPendingParameterUpdates();
 
@@ -125,8 +155,19 @@ protected:
   nav_msgs::msg::OccupancyGrid::ConstSharedPtr filter_mask_;
   std::string global_frame_;
 
+  // The state entered last: all its updates succeeded
   uint8_t current_state_{0};
   bool state_initialized_{false};
+  // The state applied after it, until its updates succeed, whether entering
+  // it publishes the state event, and when it is applied again if one of its
+  // updates fails
+  std::optional<uint8_t> applying_state_;
+  bool publish_applying_state_{true};
+  std::optional<std::chrono::steady_clock::time_point> retry_time_;
+  // The states applied since current_state_ was entered
+  std::set<uint8_t> unconfirmed_states_;
+  // Increased on every applyState, to tell its updates from older ones
+  uint64_t transition_{0};
 
   // One per-state-override or per-nominal-default entry.
   struct StateParamEntry
@@ -139,8 +180,20 @@ protected:
   std::map<std::string, std::vector<rclcpp::Parameter>> nominal_defaults_;
   std::map<std::string, rclcpp::AsyncParametersClient::SharedPtr> param_clients_;
 
-  std::vector<std::shared_future<
-      std::vector<rcl_interfaces::msg::SetParametersResult>>> pending_futures_;
+  // A set_parameters call to one target node, issued by `transition`: sent
+  // once the node's parameter service is ready, and failed if not answered by
+  // `deadline`.
+  struct PendingParameterUpdate
+  {
+    std::string target_node;
+    std::vector<rclcpp::Parameter> params;
+    uint64_t transition;
+    std::chrono::steady_clock::time_point deadline;
+    std::optional<std::shared_future<
+        std::vector<rcl_interfaces::msg::SetParametersResult>>> future;
+  };
+  std::vector<PendingParameterUpdate> pending_updates_;
+  double parameter_update_timeout_{1.0};  // seconds
 
   std::string state_event_topic_;
 
