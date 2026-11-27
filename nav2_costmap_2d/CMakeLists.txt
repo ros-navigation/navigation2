@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(nav2_costmap_2d)
 
 find_package(ament_cmake REQUIRED)
+find_package(action_msgs REQUIRED)
 find_package(angles REQUIRED)
 find_package(backward_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -79,6 +80,7 @@ add_library(layers SHARED
   src/observation_buffer.cpp
   plugins/voxel_layer.cpp
   plugins/range_sensor_layer.cpp
+  plugins/route_corridor_layer.cpp
   plugins/denoise_layer.cpp
   plugins/plugin_container_layer.cpp
 )
@@ -88,6 +90,7 @@ target_include_directories(layers
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 )
 target_link_libraries(layers PUBLIC
+  ${action_msgs_TARGETS}
   angles::angles
   rclcpp::rclcpp
   message_filters::message_filters
@@ -225,6 +228,7 @@ endif()
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
+  action_msgs
   angles
   geometry_msgs
   laser_geometry

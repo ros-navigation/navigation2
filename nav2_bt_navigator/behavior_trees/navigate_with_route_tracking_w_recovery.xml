@@ -1,0 +1,102 @@
+<!--
+  Move the robot to the goal in three steps:
+    1. Drive to the start of the route.
+    2. Follow the route while updating the path.
+    3. Drive from the end of the route to the goal.
+
+  The corridor layer reads the route path published on /route_plan.
+
+  Keep the last nonempty route path when route tracking finishes.
+  This lets the robot finish driving to the end of the route.
+-->
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+
+    <!-- If navigation fails, try recovery and retry up to six times. -->
+    <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+      <Sequence name="NavigateWithRouteTracking">
+
+        <!-- Choose the controller and planner. Use the defaults if none are selected. -->
+        <ControllerSelector selected_controller="{selected_controller}" default_controller="FollowPath" topic_name="controller_selector"/>
+        <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased" topic_name="planner_selector"/>
+
+        <!-- Find a route to the goal and get its starting pose. -->
+        <ComputeRoute goal="{goal}" path="{route_path}" route="{route}" use_poses="true" error_code_id="{compute_route_error_code}" error_msg="{compute_route_error_msg}"/>
+        <GetPoseFromPath path="{route_path}" index="0" pose="{route_start_pose}"/>
+
+        <!--
+          If the robot is within 0.1 m of the route start, continue.
+          Otherwise, plan and follow a path to the route start.
+        -->
+        <Fallback name="FirstMile">
+          <Sequence>
+            <GetCurrentPose current_pose="{current_pose}"/>
+            <ArePosesNear ref_pose="{current_pose}" target_pose="{route_start_pose}" tolerance="0.1"/>
+          </Sequence>
+          <Sequence>
+            <ComputePathToPose goal="{route_start_pose}" path="{connection_path}" planner_id="{selected_planner}" error_code_id="{compute_path_error_code}" error_msg="{compute_path_error_msg}"/>
+            <FollowPath path="{connection_path}" controller_id="{selected_controller}" error_code_id="{follow_path_error_code}" error_msg="{follow_path_error_msg}"/>
+          </Sequence>
+        </Fallback>
+
+        <!--
+          Track the route and drive the robot at the same time.
+          Both tasks must finish before moving to the final goal.
+          If either task fails, start recovery.
+        -->
+        <Parallel success_count="2" failure_count="1">
+
+          <!-- Track progress along the route and update tracked_path. /route_plan outputs the selected route -->
+          <ComputeAndTrackRoute goal="{goal}" path="{tracked_path}" use_poses="true" error_code_id="{route_error_code}" error_msg="{route_error_msg}"/>
+
+          <PipelineSequence name="FollowTrackedRoute">
+
+            <!--
+              Keep checking for a new path while the robot drives.
+              If tracked_path has at least one pose, copy it to route_path.
+              If it is empty, keep the previous route_path and continue driving.
+            -->
+            <ForceSuccess>
+              <Sequence>
+                <GetPoseFromPath path="{tracked_path}" index="0" pose="{tracked_start_pose}"/>
+                <SetBlackboard output_key="route_path" value="{tracked_path}"/>
+              </Sequence>
+            </ForceSuccess>
+
+            <!-- Drive along the saved route path. -->
+            <FollowPath path="{route_path}" controller_id="{selected_controller}" error_code_id="{follow_path_error_code}" error_msg="{follow_path_error_msg}"/>
+          </PipelineSequence>
+        </Parallel>
+
+        <!--
+          If the robot is within 0.1 m of the goal, finish.
+          Otherwise, plan and follow a path to the goal.
+        -->
+        <Fallback name="LastMile">
+          <Sequence>
+            <GetCurrentPose current_pose="{current_pose}"/>
+            <ArePosesNear ref_pose="{current_pose}" target_pose="{goal}" tolerance="0.1"/>
+          </Sequence>
+          <Sequence>
+            <ComputePathToPose goal="{goal}" path="{connection_path}" planner_id="{selected_planner}" error_code_id="{compute_path_error_code}" error_msg="{compute_path_error_msg}"/>
+            <FollowPath path="{connection_path}" controller_id="{selected_controller}" error_code_id="{follow_path_error_code}" error_msg="{follow_path_error_msg}"/>
+          </Sequence>
+        </Fallback>
+      </Sequence>
+
+      <!--
+        If the goal changes, stop recovery and retry navigation.
+        Otherwise, clear both costmaps and wait one second before retrying.
+        Keep checking for a new goal during recovery.
+      -->
+      <ReactiveFallback name="RecoveryFallback">
+        <GoalUpdated/>
+        <Sequence>
+          <ClearEntireCostmap name="ClearGlobalCostmap" service_name="global_costmap/clear_entirely_global_costmap"/>
+          <ClearEntireCostmap name="ClearLocalCostmap" service_name="local_costmap/clear_entirely_local_costmap"/>
+          <Wait wait_duration="1.0" error_code_id="{wait_error_code}" error_msg="{wait_error_msg}"/>
+        </Sequence>
+      </ReactiveFallback>
+    </RecoveryNode>
+  </BehaviorTree>
+</root>
