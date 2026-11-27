@@ -30,6 +30,7 @@ uint16 INITIAL_PERCEPTION=1
 uint16 CONTROLLING=2
 uint16 STOPPING=3
 uint16 RETRY=4
+uint16 WAITING_FOR_TARGET=5
 
 uint16 state  # Current following state
 builtin_interfaces/Duration following_time
