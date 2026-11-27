@@ -1,0 +1,22 @@
+<!-- Replan from a validated prefix of the current path when moving forward.
+     The lookahead distance is proportional to lookahead_time and the current linear velocity. -->
+<root BTCPP_format="4" main_tree_to_execute="PlanWithLookahead">
+  <BehaviorTree ID="PlanWithLookahead">
+    <Fallback>
+      <Sequence>
+        <ForceSuccess>
+          <GetForwardVelocity forward_velocity="{_velocity}" _onFailure="_velocity := 0.0"/>
+        </ForceSuccess>
+        <Script code="_distance := _velocity * lookahead_time"/>
+        <ScriptCondition code="_distance > 0.0"/>
+        <GetPoseFromPath path="{path}" index="0" pose="{_first_pose}"/>
+        <TruncatePathLocal input_path="{path}" output_path="{_prefix}" distance_backward="0.0" distance_forward="{_distance}"/>
+        <GetPoseFromPath path="{_prefix}" index="-1" pose="{_start}"/>
+        <ValidatePath path="{_prefix}"/>
+        <ComputePathToPose start="{_start}" goal="{goal}" path="{_suffix}" planner_id="{planner_id}" error_code_id="{_lookahead_error_code}" error_msg="{_lookahead_error_msg}"/>
+        <ConcatenatePaths input_path1="{_prefix}" input_path2="{_suffix}" output_path="{path}"/>
+      </Sequence>
+      <ComputePathToPose goal="{goal}" path="{path}" planner_id="{planner_id}" error_code_id="{error_code}" error_msg="{error_msg}"/>
+    </Fallback>
+  </BehaviorTree>
+</root>

@@ -208,6 +208,9 @@ list(APPEND plugin_libs nav2_extract_route_nodes_as_goals_action_bt_node)
 add_library(nav2_get_next_few_goals_action_bt_node SHARED plugins/action/get_next_few_goals_action.cpp)
 list(APPEND plugin_libs nav2_get_next_few_goals_action_bt_node)
 
+add_library(nav2_get_forward_velocity_action_bt_node SHARED plugins/action/get_forward_velocity_action.cpp)
+list(APPEND plugin_libs nav2_get_forward_velocity_action_bt_node)
+
 add_library(nav2_get_current_pose_action_bt_node SHARED plugins/action/get_current_pose_action.cpp)
 list(APPEND plugin_libs nav2_get_current_pose_action_bt_node)
 
