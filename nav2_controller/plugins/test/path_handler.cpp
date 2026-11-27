@@ -62,7 +62,7 @@ public:
 
   void setGlobalPlanUpToInversion(const nav_msgs::msg::Path & path)
   {
-    global_plan_up_to_constraint_ = path;
+    global_plan_up_to_constraint_ = {path};
   }
 
   bool isWithinInversionTolerancesWrapper(const geometry_msgs::msg::PoseStamped & robot_pose)
@@ -70,7 +70,7 @@ public:
     return isWithinInversionTolerances(robot_pose);
   }
 
-  nav_msgs::msg::Path & getInvertedPath()
+  nav2_controller::PrunablePath & getInvertedPath()
   {
     return global_plan_up_to_constraint_;
   }
@@ -150,8 +150,10 @@ TEST(PathHandlerTests, TestBounds)
   auto [closest, pruned_plan_end] = handler.findPlanSegmentWrapper(robot_pose);
   EXPECT_THROW(handler.transformLocalPlanWrapper(closest, pruned_plan_end), std::runtime_error);
   auto & path_inverted = handler.getInvertedPath();
-  EXPECT_EQ(closest - path_inverted.poses.begin(), 25);
-  EXPECT_EQ(path_inverted.poses.size(), 75u);
+  EXPECT_EQ(closest - path_inverted.path.poses.begin(), 25);
+  EXPECT_EQ(closest, path_inverted.begin());
+  EXPECT_EQ(path_inverted.size(), 75u);
+  EXPECT_EQ(path_inverted.path.poses.size(), 100u);
 }
 
 TEST(PathHandlerTests, SearchDistanceSmallerThanPoseSpacing)
@@ -192,8 +194,8 @@ TEST(PathHandlerTests, SearchDistanceSmallerThanPoseSpacing)
   handler.setPlan(path);
   auto [closest, pruned_plan_end] = handler.findPlanSegmentWrapper(robot_pose);
   auto & bounded_path = handler.getInvertedPath();
-  EXPECT_EQ(closest, bounded_path.poses.begin());
-  EXPECT_EQ(pruned_plan_end, bounded_path.poses.end());
+  EXPECT_EQ(closest, bounded_path.begin());
+  EXPECT_EQ(pruned_plan_end, bounded_path.end());
 }
 
 TEST(PathHandlerTests, TestBoundsWithConstraintCheck)
@@ -245,10 +247,65 @@ TEST(PathHandlerTests, TestBoundsWithConstraintCheck)
 
   handler.setPlan(path);
   auto [closest, pruned_plan_end] = handler.findPlanSegmentWrapper(robot_pose);
-  EXPECT_THROW(handler.transformLocalPlanWrapper(closest, pruned_plan_end), std::runtime_error);
   auto & path_inverted = handler.getInvertedPath();
-  EXPECT_EQ(closest - path_inverted.poses.begin(), 49);
-  EXPECT_EQ(path_inverted.poses.size(), 49u);
+  EXPECT_EQ(closest - path_inverted.path.poses.begin(), 49);
+  EXPECT_THROW(handler.transformLocalPlanWrapper(closest, pruned_plan_end), std::runtime_error);
+  EXPECT_EQ(path_inverted.start_index, 0u);
+  EXPECT_EQ(path_inverted.size(), 49u);
+}
+
+TEST(PathHandlerTests, TestPruningKeepsPosesUntilNewPlan)
+{
+  PathHandlerWrapper handler;
+  auto node = std::make_shared<nav2::LifecycleNode>("my_node");
+  node->declare_parameter("dummy.max_robot_pose_search_dist", rclcpp::ParameterValue(99999.9));
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>(
+    "dummy_costmap", "", true);
+  rclcpp_lifecycle::State state;
+  costmap_ros->on_configure(state);
+  costmap_ros->set_parameters_atomically(
+    {rclcpp::Parameter("global_frame", "odom"),
+      rclcpp::Parameter("robot_base_frame", "base_link")});
+  handler.initialize(node, node->get_logger(), "dummy", costmap_ros, costmap_ros->getTfManager());
+
+  geometry_msgs::msg::TransformStamped t;
+  t.header.frame_id = "map";
+  t.child_frame_id = "odom";
+  t.transform.rotation.w = 1.0;
+  ASSERT_TRUE(costmap_ros->getTfManager()->getRawBuffer()->setTransform(t, "test", true));
+
+  nav_msgs::msg::Path path;
+  path.header.frame_id = "map";
+  path.poses.resize(100);
+  for (unsigned int i = 0; i != path.poses.size(); ++i) {
+    path.poses[i].pose.position.x = 0.1 * i;
+    path.poses[i].header.frame_id = "map";
+  }
+
+  geometry_msgs::msg::PoseStamped robot_pose;
+  robot_pose.header.frame_id = "odom";
+
+  // Pruning only moves the start of the path, the passed poses are kept
+  handler.setPlan(path);
+  auto & pruned_path = handler.getInvertedPath();
+  for (const unsigned int index : {10u, 20u}) {
+    robot_pose.pose.position.x = 0.1 * index;
+    auto [closest, pruned_plan_end] = handler.findPlanSegmentWrapper(robot_pose);
+    EXPECT_NO_THROW(handler.transformLocalPlanWrapper(closest, pruned_plan_end));
+    EXPECT_EQ(pruned_path.begin(), closest);
+    EXPECT_EQ(pruned_path.start_index, index);
+    EXPECT_EQ(pruned_path.path.poses.size(), path.poses.size());
+  }
+
+  // The search does not go back into the pruned poses
+  robot_pose.pose.position.x = 0.0;
+  auto [closest, pruned_plan_end] = handler.findPlanSegmentWrapper(robot_pose);
+  EXPECT_EQ(closest, pruned_path.begin());
+
+  // A new plan starts unpruned
+  handler.setPlan(path);
+  EXPECT_EQ(pruned_path.begin(), pruned_path.path.poses.begin());
+  EXPECT_EQ(pruned_path.size(), path.poses.size());
 }
 
 TEST(PathHandlerTests, TestTransforms)
