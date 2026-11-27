@@ -36,81 +36,93 @@
 #ifndef NAV2_CORE__PLANNER_EXCEPTIONS_HPP_
 #define NAV2_CORE__PLANNER_EXCEPTIONS_HPP_
 
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <memory>
 
+#include "nav2_msgs/action/compute_path_through_poses.hpp"
+
 namespace nav2_core
 {
+
+using ComputePathThroughPosesResult = nav2_msgs::action::ComputePathThroughPoses::Result;
 
 class PlannerException : public std::runtime_error
 {
 public:
-  explicit PlannerException(const std::string & description)
-  : std::runtime_error(description) {}
+  explicit PlannerException(
+    const std::string & description,
+    uint16_t error_code = ComputePathThroughPosesResult::UNKNOWN)
+  : std::runtime_error(description), error_code_(error_code) {}
+
+  uint16_t errorCode() const {return error_code_;}
+
+private:
+  uint16_t error_code_;
 };
 
 class InvalidPlanner : public PlannerException
 {
 public:
   explicit InvalidPlanner(const std::string & description)
-  : PlannerException(description) {}
+  : PlannerException(description, ComputePathThroughPosesResult::INVALID_PLANNER) {}
 };
 
 class StartOccupied : public PlannerException
 {
 public:
   explicit StartOccupied(const std::string & description)
-  : PlannerException(description) {}
+  : PlannerException(description, ComputePathThroughPosesResult::START_OCCUPIED) {}
 };
 
 class GoalOccupied : public PlannerException
 {
 public:
   explicit GoalOccupied(const std::string & description)
-  : PlannerException(description) {}
+  : PlannerException(description, ComputePathThroughPosesResult::GOAL_OCCUPIED) {}
 };
 
 class StartOutsideMapBounds : public PlannerException
 {
 public:
   explicit StartOutsideMapBounds(const std::string & description)
-  : PlannerException(description) {}
+  : PlannerException(description, ComputePathThroughPosesResult::START_OUTSIDE_MAP) {}
 };
 
 class GoalOutsideMapBounds : public PlannerException
 {
 public:
   explicit GoalOutsideMapBounds(const std::string & description)
-  : PlannerException(description) {}
+  : PlannerException(description, ComputePathThroughPosesResult::GOAL_OUTSIDE_MAP) {}
 };
 
 class NoValidPathCouldBeFound : public PlannerException
 {
 public:
   explicit NoValidPathCouldBeFound(const std::string & description)
-  : PlannerException(description) {}
+  : PlannerException(description, ComputePathThroughPosesResult::NO_VALID_PATH) {}
 };
 
 class PlannerTimedOut : public PlannerException
 {
 public:
   explicit PlannerTimedOut(const std::string & description)
-  : PlannerException(description) {}
+  : PlannerException(description, ComputePathThroughPosesResult::TIMEOUT) {}
 };
 
 class PlannerTFError : public PlannerException
 {
 public:
   explicit PlannerTFError(const std::string & description)
-  : PlannerException(description) {}
+  : PlannerException(description, ComputePathThroughPosesResult::TF_ERROR) {}
 };
 
 class NoViapointsGiven : public PlannerException
 {
 public:
   explicit NoViapointsGiven(const std::string & description)
-  : PlannerException(description) {}
+  : PlannerException(description, ComputePathThroughPosesResult::NO_VIAPOINTS_GIVEN) {}
 };
 
 class PlannerCancelled : public PlannerException
