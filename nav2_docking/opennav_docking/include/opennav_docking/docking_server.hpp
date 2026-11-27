@@ -29,7 +29,7 @@
 #include "nav2_ros_common/simple_action_server.hpp"
 #include "nav2_util/twist_publisher.hpp"
 #include "nav2_util/odometry_utils.hpp"
-#include "opennav_docking/controller.hpp"
+#include "opennav_docking/controller_base.hpp"
 #include "opennav_docking/utils.hpp"
 #include "opennav_docking/types.hpp"
 #include "opennav_docking/dock_database.hpp"
@@ -224,6 +224,17 @@ protected:
    */
   void undockRobot();
 
+  /**
+   * @brief Select the controller for a docking or undocking request.
+   *
+   * @param requested_controller_name Controller to use. If empty, the dock type's
+   * controller is used. If it is also empty, the default controller
+   * @param dock_type Dock type
+   * @throw DockNotValid if the name does not resolve to a loaded controller
+   */
+  void selectController(
+    const std::string & requested_controller_name, const std::string & dock_type);
+
   // Parameter handler
   std::unique_ptr<opennav_docking::ParameterHandler> param_handler_;
   Parameters * params_;
@@ -241,8 +252,10 @@ protected:
 
   std::unique_ptr<DockDatabase> dock_db_;
   std::unique_ptr<Navigator> navigator_;
-  std::unique_ptr<Controller> controller_;
   std::string curr_dock_type_;
+  std::string curr_dock_controller_;
+  // Controller declared after its owner dock_db_ so it is destroyed first
+  ControllerBase::Ptr controller_;
 
   nav2::TransformManager::SharedPtr tf_manager_;
 };

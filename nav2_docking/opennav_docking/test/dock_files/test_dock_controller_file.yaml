@@ -1,0 +1,8 @@
+docks:
+  dock1:
+    type: "dockv1"
+    pose: [0.3, 0.3, 0.0]
+    controller: "pid"
+  dock2:
+    type: "dockv1"
+    pose: [0.0, 0.0, 0.4]

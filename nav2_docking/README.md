@@ -28,7 +28,7 @@ The Docking Framework has 5 main components:
 - `DockingServer`: The main action server and logic for performing the docking/undocking actions
 - `Navigator`: A NavigateToPose action client to navigate the robot to the dock's staging pose if not with the prestaging tolerances
 - `DockDatabase`: A database of dock instances in an environment and their associated interfaces for transacting with each type. An arbitrary number of types are supported.
-- `Controller`: A spiral-based graceful controller to use for the vision-control loop for docking
+- `ControllerBase`: Plugins that compute the velocity commands for docking and undocking. Provided plugins: `opennav_docking::GracefulController` (default graceful controller) and `opennav_docking::PIDController`. Each dock type or dock instance can select its controller.
 - `ChargingDock` and `NonChargingDock`: Plugins that describe the dock and how to transact with it (check if charging, detection, etc). You can find these plugin headers in the `opennav_docking_core` package.
 
 The `ChargingDock` and `NonChargingDock` plugins are the heart of the customizability of the framework to support any type of charging or non-charging dock for any kind of robot. This means you can both dock with charging stations, as well as non-charging infrastructure such as static locations (ex. conveyers) or dynamic locations (ex. pallets). The `DockDatabase` is how you describe where these docks exist in your environment to interact with and any of them may be used in your docking request. For dynamic locations like docking with movable objects, the action request can include an approximate docking location that uses vision-control loops to refine motion into it.
@@ -218,27 +218,53 @@ For debugging purposes, there are several publishers which can be used with RVIZ
 | dock_database  |  The filepath to the dock database to use for this environment | string |  N/A  |
 | docks  |  Instead of `dock_database`, the set of docks specified in the params file itself | vector<string> | N/A     |
 | navigator_bt_xml  | BT XML to use for Navigator, if non-default | string | ""     |
-| controller.k_phi  | Ratio of the rate of change in phi to the rate of change in r. Controls the convergence of the slow subsystem  | double | 3.0  |
-| controller.k_delta  | Constant factor applied to the heading error feedback. Controls the convergence of the fast subsystem | double | 2.0     |
-| controller.beta  | Constant factor applied to the path curvature. This value must be positive. Determines how fast the velocity drops when the curvature increases | double | 0.4  |
-| controller.lambda  | Constant factor applied to the path curvature. This value must be greater or equal to 1. Determines the sharpness of the curve: higher lambda implies sharper curves | double | 2.0     |
-| controller.v_linear_min | Minimum linear velocity (m/s) | double | 0.1     |
-| controller.v_linear_max | Maximum linear velocity (m/s) | double | 0.25    |
-| controller.v_angular_max | Maximum angular velocity (rad/s) produced by the control law | double | 0.75    |
-| controller.slowdown_radius | Radius (m) around the goal pose in which the robot will start to slow down | double | 0.25     |
-| controller.deceleration_max | Maximum deceleration (m/s²) used to compute a velocity limit based on distance to the goal: `v = sqrt(2 * dist * deceleration_max)` | double | 2.5     |
-| controller.rotate_to_heading_angular_vel | Angular velocity (rad/s) to rotate to the goal heading when rotate_to_dock is enabled | double | 1.0    |
-| controller.rotate_to_heading_max_angular_accel | Maximum angular acceleration (rad/s^2) to rotate to the goal heading when rotate_to_dock is enabled | double | 3.2    |
-| controller.use_collision_detection | Whether to use collision detection to avoid obstacles | bool | true     |
-| controller.costmap_topic | The topic to use for the costmap | string | "local_costmap/costmap_raw"     |
-| controller.footprint_topic | The topic to use for the robot's footprint | string | "local_costmap/published_footprint"     |
-| controller.transform_tolerance | Time with which to post-date the transform that is published, to indicate that this transform is valid into the future. | double | 0.1     |
-| controller.projection_time | Time to look ahead for collisions (s). | double | 5.0     |
-| controller.simulation_time_step | Time step for projections (s). | double | 0.1     |
-| controller.dock_collision_threshold | Distance (m) from the dock pose to ignore collisions. | double | 0.3     |
+| controllers  | Additional controller plugin instances to load. Each entry names a parameter namespace and requires a `<name>.plugin` type. `controller` is reserved for the default graceful controller, which is always loaded, and must not be listed. | vector<string> | []     |
+| \<dock plugin\>.controller  | Name of the controller for this dock type when no dock instance gives one. Must be `controller` or in `controllers` list. Optional; if not set, `controller` is used. | string | "controller"     |
+| \<dock\>.controller  | Name of the controller this dock instance uses. Must be `controller` or in `controllers` list. Optional. | string | "controller"     |
+| \<controller\>.plugin | Controller plugin type, e.g. `opennav_docking::GracefulController` or `opennav_docking::PIDController`. Required for each name in `controllers` list. | string | "opennav_docking::GracefulController" for `controller`, N/A otherwise     |
 
 Note: `dock_plugins` and either `docks` or `dock_database` are required.
 
+Controller parameters are set for each controller instance. Controller named `controller` using the default graceful controller is always loaded. Docks that name no controller use `controller`.
+
+| Controller Parameter (all plugins) | Description | Type | Default |
+|------------------------------------|-------------|------|---------|
+| \<controller\>.rotate_to_heading_angular_vel | Angular velocity (rad/s) to rotate to the goal heading when rotate_to_dock is enabled | double | 1.0    |
+| \<controller\>.rotate_to_heading_max_angular_accel | Maximum angular acceleration (rad/s^2) to rotate to the goal heading when rotate_to_dock is enabled | double | 3.2    |
+| \<controller\>.use_collision_detection | Whether to use collision detection to avoid obstacles | bool | true     |
+| \<controller\>.costmap_topic | The topic to use for the costmap | string | "local_costmap/costmap_raw"     |
+| \<controller\>.footprint_topic | The topic to use for the robot's footprint | string | "local_costmap/published_footprint"     |
+| \<controller\>.transform_tolerance | Time with which to post-date the transform that is published, to indicate that this transform is valid into the future. | double | 0.1     |
+| \<controller\>.projection_time | Time to look ahead for collisions (s). | double | 5.0     |
+| \<controller\>.simulation_time_step | Time step for projections (s). | double | 0.1     |
+| \<controller\>.dock_collision_threshold | Distance (m) from the dock pose to ignore collisions. | double | 0.3     |
+
+| GracefulController Parameter | Description | Type | Default |
+|------------------------------|-------------|------|---------|
+| \<controller\>.k_phi  | Ratio of the rate of change in phi to the rate of change in r. Controls the convergence of the slow subsystem  | double | 3.0  |
+| \<controller\>.k_delta  | Constant factor applied to the heading error feedback. Controls the convergence of the fast subsystem | double | 2.0     |
+| \<controller\>.beta  | Constant factor applied to the path curvature. This value must be positive. Determines how fast the velocity drops when the curvature increases | double | 0.4  |
+| \<controller\>.lambda  | Constant factor applied to the path curvature. This value must be greater or equal to 1. Determines the sharpness of the curve: higher lambda implies sharper curves | double | 2.0     |
+| \<controller\>.v_linear_min | Minimum linear velocity (m/s) | double | 0.1     |
+| \<controller\>.v_linear_max | Maximum linear velocity (m/s) | double | 0.25    |
+| \<controller\>.v_angular_max | Maximum angular velocity (rad/s) produced by the control law | double | 0.75    |
+| \<controller\>.slowdown_radius | Radius (m) around the goal pose in which the robot will start to slow down | double | 0.25     |
+| \<controller\>.deceleration_max | Maximum deceleration (m/s²) used to compute a velocity limit based on distance to the goal: `v = sqrt(2 * dist * deceleration_max)` | double | 2.5     |
+
+| PIDController Parameter | Description | Type | Default |
+|-------------------------|-------------|------|---------|
+| \<controller\>.kp_x | Proportional gain on the distance to the target along the robot's x axis. It outputs linear velocity | double | 1.0 |
+| \<controller\>.ki_x | Integral gain on the distance to the target | double | 0.0 |
+| \<controller\>.kd_x | Derivative gain on the distance to the target | double | 0.0 |
+| \<controller\>.i_clamp_x | Anti-windup bound on the distance integral | double | 0.2 |
+| \<controller\>.kp_y | Proportional gain on the heading error. It outputs angular velocity | double | 2.2 |
+| \<controller\>.ki_y | Integral gain on the heading error | double | 0.0 |
+| \<controller\>.kd_y | Derivative gain on the heading error | double | 0.0 |
+| \<controller\>.i_clamp_y | Anti-windup bound on the heading error integral | double | 0.5 |
+| \<controller\>.v_linear_max | Maximum linear velocity (m/s) | double | 0.25 |
+| \<controller\>.v_angular_max | Maximum angular velocity (rad/s) | double | 0.75 |
+| \<controller\>.lookahead_distance | Distance (m) used to turn the lateral error from dock axis to a heading correction, `atan2(lateral_error, lookahead_distance)`. Smaller values correct the offset more aggressively. Must be > 0 | double | 0.25 |
+| \<controller\>.passed_target_hysteresis | Distance (m) the robot must pass target before angular velocity produced by controller changes direction. It prevents oscillating angular velocity when distance to target is very close to zero.  | double | 0.05 |
 
 | SimpleChargingDock Parameter | Description                                             | Type   | Default   |
 |------------------------------|---------------------------------------------------------|--------|-----------|

@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+#include <string>
+#include <vector>
+
 #include "opennav_docking/dock_database.hpp"
 #include "nav2_ros_common/tf_manager.hpp"
 
@@ -20,13 +24,19 @@ namespace opennav_docking
 
 DockDatabase::DockDatabase(std::mutex & mutex)
 : mutex_(mutex),
-  dock_loader_("opennav_docking_core", "opennav_docking_core::ChargingDock")
+  dock_loader_("opennav_docking_core", "opennav_docking_core::ChargingDock"),
+  controller_loader_("opennav_docking", "opennav_docking::ControllerBase")
 {}
 
 DockDatabase::~DockDatabase()
 {
   dock_instances_.clear();
   dock_plugins_.clear();
+  for (auto & controller : controllers_) {
+    controller.second->cleanup();
+  }
+  controllers_.clear();
+  type_controllers_.clear();
   reload_db_service_.reset();
 }
 
@@ -44,10 +54,22 @@ bool DockDatabase::initialize(
     return false;
   }
 
+  if (!getControllerPlugins(node, tf_manager)) {
+    RCLCPP_ERROR(
+      node->get_logger(),
+      "An error occurred while getting the controller plugins!");
+    return false;
+  }
+
   if (!getDockInstances(node)) {
     RCLCPP_ERROR(
       node->get_logger(),
       "An error occurred while getting the dock instances!");
+    return false;
+  }
+
+  assignControllers(dock_instances_);
+  if (!validateControllersExist(dock_instances_)) {
     return false;
   }
 
@@ -71,6 +93,9 @@ void DockDatabase::activate()
   for (it = dock_plugins_.begin(); it != dock_plugins_.end(); ++it) {
     it->second->activate();
   }
+  for (auto & controller : controllers_) {
+    controller.second->activate();
+  }
 }
 
 void DockDatabase::deactivate()
@@ -79,6 +104,44 @@ void DockDatabase::deactivate()
   for (it = dock_plugins_.begin(); it != dock_plugins_.end(); ++it) {
     it->second->deactivate();
   }
+  for (auto & controller : controllers_) {
+    controller.second->deactivate();
+  }
+}
+
+bool DockDatabase::validateControllersExist(const DockMap & docks) const
+{
+  auto node = node_.lock();
+  bool valid = true;
+
+  auto isControllerLoaded = [this](const std::string & name) {
+      return controllers_.find(name) != controllers_.end();
+    };
+
+  for (const auto & entry : type_controllers_) {
+    const std::string & name = entry.second;
+    // An empty name selects the server's default graceful controller
+    if (!name.empty() && !isControllerLoaded(name)) {
+      RCLCPP_ERROR(
+        node->get_logger(),
+        "Dock plugin '%s' names controller '%s', which is not loaded.",
+        entry.first.c_str(), name.c_str());
+      valid = false;
+    }
+  }
+
+  for (const auto & entry : docks) {
+    const std::string & name = entry.second.controller_name;
+    if (!isControllerLoaded(name)) {
+      RCLCPP_ERROR(
+        node->get_logger(),
+        "Dock '%s' names controller '%s', which is not loaded.",
+        entry.first.c_str(), name.c_str());
+      valid = false;
+    }
+  }
+
+  return valid;
 }
 
 void DockDatabase::reloadDbCb(
@@ -95,13 +158,16 @@ void DockDatabase::reloadDbCb(
   auto node = node_.lock();
   DockMap dock_instances;
   if (utils::parseDockFile(request->filepath, node, dock_instances)) {
-    dock_instances_ = dock_instances;
-    response->success = true;
-    RCLCPP_INFO(
-      node->get_logger(),
-      "Dock database reloaded from file %s.", request->filepath.c_str());
-    mutex_.unlock();
-    return;
+    assignControllers(dock_instances);
+    if (validateControllersExist(dock_instances)) {
+      dock_instances_ = dock_instances;
+      response->success = true;
+      RCLCPP_INFO(
+        node->get_logger(),
+        "Dock database reloaded from file %s.", request->filepath.c_str());
+      mutex_.unlock();
+      return;
+    }
   }
   response->success = false;
   mutex_.unlock();
@@ -147,6 +213,52 @@ ChargingDock::Ptr DockDatabase::findDockPlugin(const std::string & type)
   return nullptr;
 }
 
+ControllerBase::Ptr DockDatabase::findController(
+  const std::string & requested_controller_name, const std::string & type) const
+{
+  const std::string name = getControllerName(requested_controller_name, type);
+  auto it = controllers_.find(name);
+  if (it == controllers_.end()) {
+    auto node = node_.lock();
+    if (node) {
+      std::string available;
+      for (const auto & controller : controllers_) {
+        available += controller.first + " ";
+      }
+      RCLCPP_ERROR(
+        node->get_logger(), "Dock requested controller '%s', which does not exist. "
+        "Available controllers are: %s.", name.c_str(), available.c_str());
+    }
+    throw opennav_docking_core::DockNotValid("Controller '" + name + "' is not loaded");
+  }
+  return it->second;
+}
+
+std::string DockDatabase::getControllerName(
+  const std::string & requested_controller_name, const std::string & type) const
+{
+  if (!requested_controller_name.empty()) {
+    return requested_controller_name;
+  }
+
+  // If only one dock type and type not set, use that type's controller
+  auto it = (type.empty() && type_controllers_.size() == 1) ?
+    type_controllers_.begin() : type_controllers_.find(type);
+  if (it != type_controllers_.end() && !it->second.empty()) {
+    return it->second;
+  }
+
+  return kDefaultControllerId;
+}
+
+void DockDatabase::assignControllers(DockMap & docks) const
+{
+  for (auto & entry : docks) {
+    Dock & dock = entry.second;
+    dock.controller_name = getControllerName(dock.controller_name, dock.type);
+  }
+}
+
 bool DockDatabase::getDockPlugins(
   const nav2::LifecycleNode::SharedPtr & node,
   nav2::TransformManager::SharedPtr tf_manager)
@@ -174,6 +286,10 @@ bool DockDatabase::getDockPlugins(
         node->get_logger(), "Created charging dock plugin %s of type %s",
         docks_plugins[i].c_str(), plugin_type.c_str());
       dock->configure(node, docks_plugins[i], tf_manager);
+      // Type-level controller selection. An individual dock instance may override this;
+      // when both are empty the server's default controller is used.
+      type_controllers_[docks_plugins[i]] = node->declare_or_get_parameter(
+        docks_plugins[i] + ".controller", std::string(kDefaultControllerId));
       dock_plugins_.insert({docks_plugins[i], dock});
     } catch (const std::exception & ex) {
       RCLCPP_FATAL(
@@ -182,6 +298,66 @@ bool DockDatabase::getDockPlugins(
       return false;
     }
   }
+
+  return true;
+}
+
+bool DockDatabase::getControllerPlugins(
+  const nav2::LifecycleNode::SharedPtr & node,
+  nav2::TransformManager::SharedPtr tf_manager)
+{
+  std::vector<std::string> controller_ids =
+    node->declare_or_get_parameter("controllers", std::vector<std::string>{});
+
+  if (std::find(controller_ids.begin(), controller_ids.end(), kDefaultControllerId) !=
+    controller_ids.end())
+  {
+    RCLCPP_ERROR(
+      node->get_logger(), "Controller name '%s' is reserved. Please rename it in `controllers`.",
+      kDefaultControllerId);
+    return false;
+  }
+
+  // The default controller is always a graceful controller named `controller`
+  const std::string graceful_type = "opennav_docking::GracefulController";
+  nav2::declare_parameter_if_not_declared(
+    node, std::string(kDefaultControllerId) + ".plugin", rclcpp::ParameterValue(graceful_type));
+  if (nav2::get_plugin_type_param(node, kDefaultControllerId) != graceful_type) {
+    RCLCPP_ERROR(
+      node->get_logger(), "Controller '%s' is reserved for the default %s.",
+      kDefaultControllerId, graceful_type.c_str());
+    return false;
+  }
+  controller_ids.push_back(kDefaultControllerId);
+
+  std::string available;
+  for (const auto & controller_id : controller_ids) {
+    if (controllers_.find(controller_id) != controllers_.end()) {
+      RCLCPP_FATAL(
+        node->get_logger(), "Controller %s is listed more than once in `controllers`.",
+        controller_id.c_str());
+      return false;
+    }
+
+    try {
+      std::string plugin_type = nav2::get_plugin_type_param(node, controller_id);
+      ControllerBase::Ptr controller = controller_loader_.createSharedInstance(plugin_type);
+      RCLCPP_INFO(
+        node->get_logger(), "Created controller plugin %s of type %s",
+        controller_id.c_str(), plugin_type.c_str());
+      controller->configure(node, controller_id, tf_manager);
+      controllers_.insert({controller_id, controller});
+    } catch (const std::exception & ex) {
+      RCLCPP_FATAL(
+        node->get_logger(), "Failed to create controller plugin %s. Exception: %s",
+        controller_id.c_str(), ex.what());
+      return false;
+    }
+    available += controller_id + " ";
+  }
+
+  RCLCPP_INFO(
+    node->get_logger(), "Docking server has %s controllers available.", available.c_str());
 
   return true;
 }
@@ -233,6 +409,11 @@ unsigned int DockDatabase::plugin_size() const
 unsigned int DockDatabase::instance_size() const
 {
   return dock_instances_.size();
+}
+
+unsigned int DockDatabase::controller_size() const
+{
+  return controllers_.size();
 }
 
 }  // namespace opennav_docking

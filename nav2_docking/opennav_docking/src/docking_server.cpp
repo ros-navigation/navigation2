@@ -62,7 +62,6 @@ DockingServer::on_configure(const rclcpp_lifecycle::State & state)
     true);
 
   // Create composed utilities
-  controller_ = std::make_unique<Controller>(node, tf_manager_, params_->base_frame);
   navigator_ = std::make_unique<Navigator>(node);
   dock_db_ = std::make_unique<DockDatabase>(param_handler_->getMutex());
   if (!dock_db_->initialize(node, tf_manager_)) {
@@ -87,6 +86,7 @@ DockingServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   undocking_action_server_->activate();
   param_handler_->activate();
   curr_dock_type_.clear();
+  curr_dock_controller_.clear();
 
   // Create bond connection
   createBond();
@@ -119,10 +119,12 @@ DockingServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
   tf_manager_.reset();
   docking_action_server_.reset();
   undocking_action_server_.reset();
+  // Release controller before the database that owns its loader
+  controller_.reset();
   dock_db_.reset();
   navigator_.reset();
   curr_dock_type_.clear();
-  controller_.reset();
+  curr_dock_controller_.clear();
   vel_publisher_.reset();
   params_->dock_backwards.reset();
   odom_sub_.reset();
@@ -134,6 +136,13 @@ DockingServer::on_shutdown(const rclcpp_lifecycle::State &)
 {
   RCLCPP_INFO(get_logger(), "Shutting down %s", get_name());
   return nav2::CallbackReturn::SUCCESS;
+}
+
+void DockingServer::selectController(
+  const std::string & requested_controller_name, const std::string & dock_type)
+{
+  controller_ = dock_db_->findController(requested_controller_name, dock_type);
+  RCLCPP_DEBUG(get_logger(), "Selected controller: %s.", controller_->getName().c_str());
 }
 
 template<typename ActionT>
@@ -208,6 +217,9 @@ void DockingServer::dockRobot()
         goal->dock_pose.pose.position.x, goal->dock_pose.pose.position.y);
       dock = generateGoalDock(goal);
     }
+
+    // Pick the controller this dock drives with before any motion is commanded.
+    selectController(dock->controller_name, dock->type);
 
     // Check if robot is docked or charging before proceeding, only applicable to charging docks
     if (dock->plugin->isCharger() && (dock->plugin->isDocked() || dock->plugin->isCharging())) {
@@ -376,6 +388,7 @@ void DockingServer::stashDockData(bool use_dock_id, Dock * dock, bool successful
 {
   if (dock && successful) {
     curr_dock_type_ = dock->type;
+    curr_dock_controller_ = controller_ ? controller_->getName() : std::string();
   }
 
   if (!use_dock_id && dock) {
@@ -438,6 +451,8 @@ void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_po
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(params_->rotate_to_dock_timeout);
 
+  controller_->reset();
+
   while (rclcpp::ok()) {
     auto robot_pose = getRobotPoseInFrame(dock_pose.header.frame_id);
     auto angular_distance_to_heading = angles::shortest_angular_distance(
@@ -467,9 +482,12 @@ void DockingServer::rotateToDock(const geometry_msgs::msg::PoseStamped & dock_po
 bool DockingServer::approachDock(
   Dock * dock, geometry_msgs::msg::PoseStamped & dock_pose, bool backward)
 {
+  const double dt = 1.0 / params_->controller_frequency;
   nav2::Rate loop_rate(this, params_->controller_frequency);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(params_->dock_approach_timeout);
+
+  controller_->reset();
 
   while (rclcpp::ok()) {
     publishDockingFeedback(DockRobot::Feedback::CONTROLLING);
@@ -491,8 +509,8 @@ bool DockingServer::approachDock(
       throw opennav_docking_core::FailedToDetectDock("Failed dock detection");
     }
 
-    // Transform target_pose into base_link frame
-    auto target_pose = utils::transformPoseToFrame(
+    // Transform the dock pose into the fixed frame
+    geometry_msgs::msg::PoseStamped target_pose = utils::transformPoseToFrame(
       *tf_manager_, dock_pose, params_->fixed_frame, params_->transform_staleness_threshold);
 
     // Transforming the target pose from the fixed frame into the robot's base frame
@@ -524,9 +542,11 @@ bool DockingServer::approachDock(
     // Compute and publish controls
     auto command = std::make_unique<geometry_msgs::msg::TwistStamped>();
     command->header.stamp = now();
-    if (!controller_->computeVelocityCommand(
-        target_pose.pose, collision_pose.pose, command->twist, base_to_fixed_transform, true,
-        backward))
+    DockingOptions options;
+    options.backward = backward;
+    options.collision_pose = collision_pose.pose;
+    if (!controller_->computeVelocityCommands(
+        robot_pose, odom_sub_->getRawTwist(), target_pose.pose, options, dt, command->twist))
     {
       throw opennav_docking_core::FailedToControl("Failed to get control");
     }
@@ -583,6 +603,9 @@ bool DockingServer::resetApproach(
   nav2::Rate loop_rate(this, params_->controller_frequency);
   auto start = this->now();
   auto timeout = rclcpp::Duration::from_seconds(params_->dock_approach_timeout);
+
+  controller_->reset();
+
   while (rclcpp::ok()) {
     publishDockingFeedback(DockRobot::Feedback::INITIAL_PERCEPTION);
 
@@ -644,8 +667,12 @@ bool DockingServer::getCommandToPose(
       tf_manager_->invertTransform(base_to_fixed_transform));
 
   // Compute velocity command
-  if (!controller_->computeVelocityCommand(
-      target_pose.pose, target_pose.pose, cmd, base_to_fixed_transform, is_docking, backward))
+  DockingOptions options;
+  options.backward = backward;
+  options.is_docking = is_docking;
+  if (!controller_->computeVelocityCommands(
+      robot_pose, odom_sub_->getRawTwist(), target_pose.pose, options,
+      1.0 / params_->controller_frequency, cmd))
   {
     throw opennav_docking_core::FailedToControl("Failed to get control");
   }
@@ -692,6 +719,14 @@ void DockingServer::undockRobot()
       get_logger(),
       "Attempting to undock robot of dock type %s.", dock->getName().c_str());
 
+    // Undock with the controller the robot docked with if it is still at the same dock type,
+    // else with the dock type's controller.
+    std::string controller_name;
+    if (dock_type == curr_dock_type_) {
+      controller_name = curr_dock_controller_;
+    }
+    selectController(controller_name, dock_type);
+
     // Check if the robot is docked before proceeding
     if (dock->isCharger() && (!dock->isDocked() && !dock->isCharging())) {
       RCLCPP_INFO(get_logger(), "Robot is not in the dock, no need to undock");
@@ -724,6 +759,7 @@ void DockingServer::undockRobot()
 
     // Control robot to staging pose
     rclcpp::Time loop_start = this->now();
+    controller_->reset();
     while (rclcpp::ok()) {
       // Stop if we exceed max duration
       auto timeout = rclcpp::Duration::from_seconds(goal->max_undocking_time);
@@ -767,6 +803,7 @@ void DockingServer::undockRobot()
           RCLCPP_INFO(get_logger(), "Robot has undocked!");
           result->success = true;
           curr_dock_type_.clear();
+          curr_dock_controller_.clear();
           publishZeroVelocity();
           undocking_action_server_->succeeded_current(result);
           return;
