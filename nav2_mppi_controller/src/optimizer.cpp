@@ -292,6 +292,7 @@ std::tuple<geometry_msgs::msg::TwistStamped, Eigen::ArrayXXf> Optimizer::evalCon
   bool trajectory_valid = true;
 
   do {
+    critics_data_.fail_flag = false;
     optimize();
     optimal_trajectory = getOptimizedTrajectory();
     switch (trajectory_validator_->validateTrajectory(
