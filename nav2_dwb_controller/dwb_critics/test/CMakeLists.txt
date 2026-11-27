@@ -33,3 +33,10 @@ target_link_libraries(twirling_tests
   dwb_core::dwb_core
   rclcpp::rclcpp
 )
+
+nav2_add_gtest(map_grid_tests map_grid_test.cpp)
+target_link_libraries(map_grid_tests
+  dwb_critics
+  dwb_core::dwb_core
+  rclcpp::rclcpp
+)

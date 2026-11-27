@@ -40,8 +40,22 @@
 
 namespace dwb_critics
 {
+void GoalDistCritic::onInit()
+{
+  MapGridCritic::onInit();
+
+  auto node = node_.lock();
+  if (!node) {
+    throw std::runtime_error{"Failed to lock node"};
+  }
+
+  setObstacleAwarePropagation(
+    node->declare_or_get_parameter(
+      dwb_plugin_name_ + "." + name_ + ".obstacle_aware_propagation", false));
+}
+
 bool GoalDistCritic::prepare(
-  const geometry_msgs::msg::Pose &, const nav_2d_msgs::msg::Twist2D &,
+  const geometry_msgs::msg::Pose & pose, const nav_2d_msgs::msg::Twist2D &,
   const geometry_msgs::msg::Pose &,
   const nav_msgs::msg::Path & global_plan)
 {
@@ -53,11 +67,9 @@ bool GoalDistCritic::prepare(
   }
 
   // Enqueue just the last pose
-  int index = costmap_->getIndex(local_goal_x, local_goal_y);
-  cell_values_[index] = 0.0;
-  queue_->enqueueCell(local_goal_x, local_goal_y);
+  enqueueSeed(local_goal_x, local_goal_y);
 
-  propagateManhattanDistances();
+  propagateDistances(pose);
 
   return true;
 }

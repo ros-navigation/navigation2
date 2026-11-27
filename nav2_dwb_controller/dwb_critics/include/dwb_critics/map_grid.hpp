@@ -130,11 +130,55 @@ protected:
    */
   void propagateManhattanDistances();
 
+  /**
+   * @brief Set a cell to 0 and enqueue it as a source of the distance propagation
+   * @param x X coordinate of the cell
+   * @param y Y coordinate of the cell
+   */
+  void enqueueSeed(unsigned int x, unsigned int y);
+
+  /**
+   * @brief Route the distance propagation around lethal obstacles
+   * @param enabled Whether to use obstacle aware propagation
+   */
+  void setObstacleAwarePropagation(bool enabled) {obstacle_aware_propagation_ = enabled;}
+
+  /**
+   * @brief Go through the queue and set the cells to the Manhattan distance walked around
+   * lethal obstacles. Lethal cells are set as obstacles and the search does not pass them.
+   */
+  void propagateObstacleAwareManhattanDistances();
+
+  /**
+   * @brief Check whether the distance propagation reached the cell of a pose
+   * @param robot_pose The pose of the robot, assumed to be in the same frame as the costmap
+   * @return True if the pose is on the costmap and its cell has a distance
+   */
+  bool robotReachable(const geometry_msgs::msg::Pose & robot_pose);
+
+  /**
+   * @brief Reset the cell values and enqueue the same seeds again
+   */
+  void reseed();
+
+  /**
+   * @brief Set the cells to their distance from the queued seeds
+   *
+   * With obstacle aware propagation this uses propagateObstacleAwareManhattanDistances. If that
+   * does not reach the robot, as it is blocked or no seed is free, this uses
+   * propagateManhattanDistances from the same seeds.
+   *
+   * @param robot_pose The pose of the robot, assumed to be in the same frame as the costmap
+   */
+  void propagateDistances(const geometry_msgs::msg::Pose & robot_pose);
+
   std::shared_ptr<MapGridQueue> queue_;
   nav2_costmap_2d::Costmap2D * costmap_;
   std::vector<double> cell_values_;
+  std::vector<std::pair<unsigned int, unsigned int>> seeds_;
   double obstacle_score_, unreachable_score_;  ///< Special cell_values
   bool stop_on_failure_;
+  bool obstacle_aware_propagation_{false};
   ScoreAggregationType aggregationType_;
 };
 }  // namespace dwb_critics

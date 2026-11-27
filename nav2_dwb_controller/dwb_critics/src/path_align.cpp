@@ -43,7 +43,7 @@ namespace dwb_critics
 
 void PathAlignCritic::onInit()
 {
-  PathDistCritic::onInit();
+  MapGridCritic::onInit();
   stop_on_failure_ = false;
 
   auto node = node_.lock();
