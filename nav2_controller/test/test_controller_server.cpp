@@ -22,6 +22,7 @@
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "nav2_core/controller_exceptions.hpp"
+#include "nav2_util/geometry_utils.hpp"
 #include "nav2_ros_common/lifecycle_node.hpp"
 #include "nav2_controller/controller_server.hpp"
 #include "rclcpp/executors.hpp"
@@ -245,6 +246,32 @@ TEST(ControllerServerTest, test_dynamic_parameters)
     results);
 
   EXPECT_EQ(params_->search_window, 10.0);
+}
+
+TEST(ControllerServerTest, TrackedPathRemainingLength)
+{
+  nav_msgs::msg::Path path;
+  path.poses.resize(10);
+  for (size_t i = 0; i != path.poses.size(); ++i) {
+    path.poses[i].pose.position.x = 0.1 * i * i;
+    path.poses[i].pose.position.y = std::sin(i);
+  }
+
+  nav2_controller::TrackedPath tracked_path;
+  tracked_path.set(path);
+  ASSERT_EQ(tracked_path.remaining_lengths.size(), path.poses.size());
+  for (size_t i = 0; i != path.poses.size(); ++i) {
+    tracked_path.prune(i);
+    EXPECT_NEAR(
+      tracked_path.remainingLength(),
+      nav2_util::geometry_utils::calculate_path_length(path, i), 1e-9);
+  }
+
+  // A new path is tracked from its start
+  path.poses.resize(1);
+  tracked_path.set(path);
+  EXPECT_EQ(tracked_path.start_index, 0u);
+  EXPECT_DOUBLE_EQ(tracked_path.remainingLength(), 0.0);
 }
 
 int main(int argc, char ** argv)

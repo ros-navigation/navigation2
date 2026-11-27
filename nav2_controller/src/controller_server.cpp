@@ -37,13 +37,23 @@ using nav2_util::geometry_utils::euclidean_distance;
 namespace nav2_controller
 {
 
+void TrackedPath::set(const nav_msgs::msg::Path & new_path)
+{
+  path = new_path;
+  start_index = 0u;
+  remaining_lengths.assign(path.poses.size(), 0.0);
+  for (size_t i = path.poses.size(); i > 1; --i) {
+    remaining_lengths[i - 2] = remaining_lengths[i - 1] +
+      euclidean_distance(path.poses[i - 2].pose, path.poses[i - 1].pose);
+  }
+}
+
 ControllerServer::ControllerServer(const rclcpp::NodeOptions & options)
 : nav2::LifecycleNode("controller_server", "", options),
   progress_checker_loader_("nav2_core", "nav2_core::ProgressChecker"),
   goal_checker_loader_("nav2_core", "nav2_core::GoalChecker"),
   lp_loader_("nav2_core", "nav2_core::Controller"),
-  path_handler_loader_("nav2_core", "nav2_core::PathHandler"),
-  start_index_(0)
+  path_handler_loader_("nav2_core", "nav2_core::PathHandler")
 {
   RCLCPP_INFO(get_logger(), "Creating controller server");
 
@@ -714,8 +724,7 @@ void ControllerServer::setPlannerPath(const nav_msgs::msg::Path & path)
     get_logger(), "Path end point is (%.2f, %.2f)",
     end_pose_.pose.position.x, end_pose_.pose.position.y);
 
-  start_index_ = 0;
-  current_path_ = path;
+  current_path_.set(path);
 }
 
 void ControllerServer::transformedPlanAndGoal(
@@ -798,7 +807,7 @@ void ControllerServer::computeAndPublishVelocity(
 
   nav2_msgs::msg::TrackingFeedback current_tracking_feedback;
 
-  if (current_path_.poses.size() >= 2) {
+  if (current_path_.path.poses.size() >= 2) {
     double current_distance_to_goal = nav2_util::geometry_utils::euclidean_distance(
       current_robot_pose, transformed_end_pose_);
 
@@ -806,7 +815,7 @@ void ControllerServer::computeAndPublishVelocity(
 
     std::string tf_error_details;
     const auto robot_pose_in_path_frame = costmap_ros_->getTfManager()->transformStampedPose(
-      current_path_.header.frame_id, current_robot_pose,
+      current_path_.path.header.frame_id, current_robot_pose,
       transform_tolerance_, &tf_error_details);
     if (!robot_pose_in_path_frame) {
       throw nav2_core::ControllerTFError("Failed to transform robot pose to path frame: " +
@@ -815,17 +824,18 @@ void ControllerServer::computeAndPublishVelocity(
 
     // Calculate closest point and position error from path
     const auto path_search_result = nav2_util::distance_from_path(
-      current_path_, robot_pose_in_path_frame->pose, start_index_, params_->search_window);
+      current_path_.path, robot_pose_in_path_frame->pose, current_path_.start_index,
+      params_->search_window);
 
     // Calculate heading error
     double heading_tracking_error = 0.0;
     if (path_search_result.closest_segment_index <
-      current_path_.poses.size() - 1)
+      current_path_.path.poses.size() - 1)
     {
       const auto & path_segment_start =
-        current_path_.poses[path_search_result.closest_segment_index].pose;
+        current_path_.path.poses[path_search_result.closest_segment_index].pose;
       const auto & path_segment_end =
-        current_path_.poses[path_search_result.closest_segment_index + 1].pose;
+        current_path_.path.poses[path_search_result.closest_segment_index + 1].pose;
       double path_yaw = std::atan2(
         path_segment_end.position.y - path_segment_start.position.y,
         path_segment_end.position.x - path_segment_start.position.x);
@@ -843,9 +853,8 @@ void ControllerServer::computeAndPublishVelocity(
     tracking_feedback_msg->robot_pose = current_robot_pose;
     tracking_feedback_msg->distance_to_goal = current_distance_to_goal;
     tracking_feedback_msg->speed = std::hypot(twist.linear.x, twist.linear.y);
-    start_index_ = path_search_result.closest_segment_index;
-    tracking_feedback_msg->remaining_path_length =
-      nav2_util::geometry_utils::calculate_path_length(current_path_, start_index_);
+    current_path_.prune(path_search_result.closest_segment_index);
+    tracking_feedback_msg->remaining_path_length = current_path_.remainingLength();
 
     // Update current tracking error and publish
     current_tracking_feedback = *tracking_feedback_msg;

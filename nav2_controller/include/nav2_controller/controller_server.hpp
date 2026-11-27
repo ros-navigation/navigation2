@@ -43,6 +43,37 @@ namespace nav2_controller
 {
 
 class ProgressChecker;
+
+/**
+ * @struct nav2_controller::TrackedPath
+ * @brief The path being tracked with the index the robot has reached on it and the
+ * remaining length from each pose, so the three are always updated together
+ */
+struct TrackedPath
+{
+  nav_msgs::msg::Path path;
+  size_t start_index{0u};
+  std::vector<double> remaining_lengths;
+
+  /**
+   * @brief Track a new path from its start and compute its remaining lengths
+   * @param new_path Path to track
+   */
+  void set(const nav_msgs::msg::Path & new_path);
+
+  /**
+   * @brief Advance the index the robot has reached on the path
+   * @param new_start_index Index of the closest path segment
+   */
+  void prune(size_t new_start_index) {start_index = new_start_index;}
+
+  /**
+   * @brief Path length from the start index to the end of the path
+   * @return Remaining path length
+   */
+  double remainingLength() const {return remaining_lengths[start_index];}
+};
+
 /**
  * @class nav2_controller::ControllerServer
  * @brief This class hosts variety of plugins of different algorithms to
@@ -284,7 +315,6 @@ protected:
   PathHandlerMap path_handlers_;
   std::string path_handler_ids_concat_, current_path_handler_;
 
-  size_t start_index_;
   geometry_msgs::msg::PoseStamped end_pose_;
   geometry_msgs::msg::PoseStamped transformed_end_pose_;
 
@@ -292,7 +322,7 @@ protected:
   rclcpp::Time last_valid_cmd_time_;
 
   // Current path container
-  nav_msgs::msg::Path current_path_;
+  TrackedPath current_path_;
   nav_msgs::msg::Path transformed_global_plan_;
   std::unique_ptr<nav2_controller::ParameterHandler> param_handler_;
   Parameters * params_;
