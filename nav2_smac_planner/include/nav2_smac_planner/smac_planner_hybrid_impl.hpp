@@ -414,8 +414,15 @@ nav_msgs::msg::Path SmacPlannerHybridT<NodeT>::createPlan(
   // The resolution can change, even if the parameter is not updated
   // (e.g. if the map is provided with a different resolution). Therefore, we
   // need to check the costmap resolution and update the search resolution if it has changed.
-  if (_search_resolution != costmap->getResolution()) {
-    updateSearchResolution(costmap->getResolution());
+  // Derive the search resolution from the full-resolution costmap the same way configure()
+  // and updateParametersCallback() do. The downsampled costmap stores its resolution as a
+  // float, so comparing against it would not match exactly and would rebuild A* (including
+  // the expensive distance heuristic lookup table) on the first plan and after every
+  // parameter update.
+  const double search_resolution =
+    _costmap->getResolution() * (_downsample_costmap ? _downsampling_factor : 1);
+  if (_search_resolution != search_resolution) {
+    updateSearchResolution(search_resolution);
     _a_star = std::make_unique<AStarAlgorithm<NodeT>>(_motion_model, _search_info);
     _a_star->initialize(
       _allow_unknown, _max_iterations, _max_on_approach_iterations,
