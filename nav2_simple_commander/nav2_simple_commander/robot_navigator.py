@@ -246,7 +246,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = f'NavigateThroughPoses request with {len(poses.goals)} was rejected!'
-            self.setTaskError(NavigateThroughPoses.Result.UNKNOWN, msg)
+            self.setTaskRejected(NavigateThroughPoses.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -285,7 +285,7 @@ class BasicNavigator(Node):
                 + str(pose.pose.position.y)
                 + ' was rejected!'
             )
-            self.setTaskError(NavigateToPose.Result.UNKNOWN, msg)
+            self.setTaskRejected(NavigateToPose.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -315,7 +315,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = f'Following {len(poses)} waypoints request was rejected!'
-            self.setTaskError(FollowWaypoints.Result.UNKNOWN, msg)
+            self.setTaskRejected(FollowWaypoints.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -341,7 +341,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = f'Following {len(gps_poses)} gps waypoints request was rejected!'
-            self.setTaskError(FollowGPSWaypoints.Result.UNKNOWN, msg)
+            self.setTaskRejected(FollowGPSWaypoints.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -369,7 +369,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = 'Spin request was rejected!'
-            self.setTaskError(Spin.Result.UNKNOWN, msg)
+            self.setTaskRejected(Spin.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -399,7 +399,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = 'Backup request was rejected!'
-            self.setTaskError(BackUp.Result.UNKNOWN, msg)
+            self.setTaskRejected(BackUp.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -429,7 +429,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = 'Drive On Heading request was rejected!'
-            self.setTaskError(DriveOnHeading.Result.UNKNOWN, msg)
+            self.setTaskRejected(DriveOnHeading.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -455,7 +455,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = 'Assisted Teleop request was rejected!'
-            self.setTaskError(AssistedTeleop.Result.UNKNOWN, msg)
+            self.setTaskRejected(AssistedTeleop.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -487,7 +487,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = 'FollowPath goal was rejected!'
-            self.setTaskError(FollowPath.Result.UNKNOWN, msg)
+            self.setTaskRejected(FollowPath.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -516,7 +516,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = 'DockRobot request was rejected!'
-            self.setTaskError(DockRobot.Result.UNKNOWN, msg)
+            self.setTaskRejected(DockRobot.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -543,7 +543,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = 'DockRobot request was rejected!'
-            self.setTaskError(DockRobot.Result.UNKNOWN, msg)
+            self.setTaskRejected(DockRobot.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -568,7 +568,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = 'UndockRobot request was rejected!'
-            self.setTaskError(UndockRobot.Result.UNKNOWN, msg)
+            self.setTaskRejected(UndockRobot.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -594,7 +594,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = 'FollowObject request was rejected!'
-            self.setTaskError(FollowObject.Result.UNKNOWN, msg)
+            self.setTaskRejected(FollowObject.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -620,7 +620,7 @@ class BasicNavigator(Node):
 
         if not self.goal_handle or not self.goal_handle.accepted:
             msg = 'FollowObject request was rejected!'
-            self.setTaskError(FollowObject.Result.UNKNOWN, msg)
+            self.setTaskRejected(FollowObject.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
@@ -719,6 +719,14 @@ class BasicNavigator(Node):
     def setTaskError(self, error_code: int, error_msg: str):
         self.last_action_error_code = error_code
         self.last_action_error_msg = error_msg
+
+    def setTaskRejected(self, error_code: int, error_msg: str):
+        self.goal_handle = None
+        self.result_future = None
+        self.route_goal_handle = None
+        self.route_result_future = None
+        self.status = GoalStatus.STATUS_ABORTED
+        self.setTaskError(error_code, error_msg)
 
     def getTaskError(self):
         return (self.last_action_error_code, self.last_action_error_msg)
@@ -943,8 +951,8 @@ class BasicNavigator(Node):
             goal_msg.goal = goal
             goal_msg.use_poses = True
         else:
-            self.setTaskError(ComputeAndTrackRoute.Result.UNKNOWN,
-                              'Request type fields were invalid!')
+            self.setTaskRejected(
+                ComputeAndTrackRoute.Result.UNKNOWN, 'Request type fields were invalid!')
             self.error('Invalid start and goal types. Must be PoseStamped for pose or int for ID')
             return None
 
@@ -956,7 +964,7 @@ class BasicNavigator(Node):
 
         if not self.route_goal_handle or not self.route_goal_handle.accepted:
             msg = 'Compute and track route was rejected!'
-            self.setTaskError(ComputeAndTrackRoute.Result.UNKNOWN, msg)
+            self.setTaskRejected(ComputeAndTrackRoute.Result.UNKNOWN, msg)
             self.error(msg)
             return None
 
